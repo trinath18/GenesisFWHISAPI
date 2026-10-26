@@ -5,11 +5,18 @@ namespace Genesis.Core.Membership;
 /// <summary>Add a supplementary (covered) person to a principal member: endorsement type S. Fees and limits come from the plan tables exactly as the legacy form calculated them.</summary>
 public sealed record SupplementaryRequest(
     string? MemberNumber, string? Name, string? Salutation, string? IcBcPp, DateOnly? DateOfBirth, string? Sex, string? Relationship, string? Allergies, string? Exclusion,
-    string? SupplementaryPlan, DateOnly? EffectiveDate, DateOnly? EndorsementBordxDate, int? BatchNo, decimal? RenewalDiscount = null, decimal? PolicyDiscount = null);
+    string? SupplementaryPlan, DateOnly? EffectiveDate, DateOnly? EndorsementBordxDate, int? BatchNo, decimal? RenewalDiscount = null, decimal? PolicyDiscount = null, string? GuaranteeRenewal = null);
 
 public sealed record SupplementaryQuote(
     string MemberNumber, string CoverId, string Name, string AgeText, string AgeCode, string AdultChild, string Plan, DateOnly EffectiveDate, DateOnly ExpiryDate,
-    decimal AnnualLimit, decimal BasicPremium, decimal Premium, decimal BasicMco, decimal Mco, string SuppLimitStatus, string SuppMcoStatus, string SuppPremiumStatus);
+    decimal AnnualLimit, decimal BasicPremium, decimal Premium, decimal BasicMco, decimal Mco, string SuppLimitStatus, string SuppMcoStatus, string SuppPremiumStatus,
+    BenefitLimitRow? BenefitLimits = null, SupplementaryLifetimeRow? LifetimeLimit = null);
+
+/// <summary>Row written to MBMBnfLmt: kidney dialysis, cancer and home nursing annual limits (the balance starts equal to the limit).</summary>
+public sealed record BenefitLimitRow(decimal Kidney, decimal Cancer, decimal HomeNursing, string BenefitStatus);
+
+/// <summary>Row written to MBMLifeTime, keyed by the member number the lifetime limit is tracked under (the top-up number when there is one).</summary>
+public sealed record SupplementaryLifetimeRow(string MemberNumber, decimal Limit);
 
 public sealed record SupplementaryResult(SupplementaryQuote Quote);
 
@@ -34,6 +41,7 @@ public static class SupplementaryRules
         if (r.DateOfBirth is null || r.DateOfBirth < min || r.DateOfBirth > DateOnly.FromDateTime(DateTime.Today)) return ("dateOfBirth", "Please enter a valid date of birth.");
         if (r.RenewalDiscount is < 0 or > 100) return ("renewalDiscount", "The renewal discount must be between 0 and 100.");
         if (r.PolicyDiscount is < 0 or > 100) return ("policyDiscount", "The policy discount must be between 0 and 100.");
+        if (r.GuaranteeRenewal is { Length: > 0 } g && g.Trim() is not ("" or "1" or "3")) return ("guaranteeRenewal", "Guarantee renewal must be blank, 1 (no lifetime limit) or 3 (with lifetime limit).");
         if (!needEndorsement) return null;
         if (r.EffectiveDate is null || r.EffectiveDate < min) return ("effectiveDate", "Please enter the endorsement effective date.");
         if (r.EndorsementBordxDate is null || r.EndorsementBordxDate < min) return ("endorsementBordxDate", "Please enter the endorsement bordx date.");
@@ -49,3 +57,4 @@ public interface ISupplementaryRepository
     /// <summary>Adds the covered person (MBMCoveredPersons + MBMCoveredPersonsTwo), the S endorsement and history, in one transaction.</summary>
     Task<SupplementaryResult> AddAsync(SupplementaryRequest request, string user, CancellationToken ct = default);
 }
+

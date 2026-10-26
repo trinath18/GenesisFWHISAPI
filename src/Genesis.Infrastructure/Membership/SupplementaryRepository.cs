@@ -56,8 +56,10 @@ internal sealed class SupplementaryRepository(IDbConnectionFactory connections, 
 
         var planRow = (await session.QueryAsync("SELECT PLNLifeTimeStatus, PlnAgeLimit FROM PLN WHERE PLNCode = @plan", new { plan = suppPlan }, ct)).FirstOrDefault();
         if (planRow is null) throw BusinessRuleException.NotFound($"Plan '{suppPlan}' does not exist.");
-        if (string.Equals(T(S(planRow, "PLNLifeTimeStatus")), "Y", StringComparison.OrdinalIgnoreCase))
-            throw new BusinessRuleException("This plan has a lifetime limit; the lifetime/benefit limit rules are not migrated yet. Please use the legacy application.");
+        var lifetimePlan = string.Equals(T(S(planRow, "PLNLifeTimeStatus")), "Y", StringComparison.OrdinalIgnoreCase);
+        var guarantee = Blank(req.GuaranteeRenewal) ?? "";
+        if (lifetimePlan && guarantee.Length == 0)
+            throw new BusinessRuleException("This plan has a lifetime limit: please choose guarantee renewal 1 (no lifetime limit) or 3 (with lifetime limit).", field: "guaranteeRenewal");
         var suppExp = SuppExpiry(dob, (int)(Dec(planRow, "PlnAgeLimit") ?? 0), m.Exp);
 
         // Annual limit
@@ -105,7 +107,41 @@ internal sealed class SupplementaryRepository(IDbConnectionFactory connections, 
             }
         }
 
-        var quote = new SupplementaryQuote(m.Number, coverId, req.Name!.Trim(), ageText, ageCode, adultChild, suppPlan, suppEff, suppExp, annual, basicPrem, prem, basicMco, mco, limitStatus, mcoStatus, premStatus);
+        // Benefit and lifetime limits (legacy GetBenefitLimit / PrincipalLifeTimeChecking / SaveMBMBnfAnnLmt / SaveMBMLifeTimeLmt): only for lifetime-limit plans.
+        BenefitLimitRow? benefit = null;
+        SupplementaryLifetimeRow? lifetime = null;
+        if (lifetimePlan)
+        {
+            var bnf = (await session.QueryAsync("""
+                SELECT TOP 1 SuppALBStatus, KidDialysisLmt, CancerLmt, HomeNursLmt FROM BnfAnnLmt WHERE INSCode = @ins AND PLNCode = @plan AND HLTCode = @health AND ALBEffDate <= @eff ORDER BY ALBEffDate DESC
+                """, new { ins = T(m.Insurer), plan = T(m.Plan), health = T(m.Health), eff = At(m.Eff) }, ct)).FirstOrDefault();
+            if (bnf is not null)
+            {
+                var bnfStatus = T(S(bnf, "SuppALBStatus")) is { Length: > 0 } bs ? bs : "A";
+                if ((bnfStatus == "B" && coverId == "01") || bnfStatus == "C")
+                    benefit = new BenefitLimitRow(Dec(bnf, "KidDialysisLmt") ?? 0, Dec(bnf, "CancerLmt") ?? 0, Dec(bnf, "HomeNursLmt") ?? 0, bnfStatus);
+            }
+
+            // The member whose lifetime rows are used: the top-up number of the latest active policy with the same policy no, payor and insurer.
+            var prevNo = m.Number;
+            var latest = (await session.QueryAsync("SELECT TOP 1 MBMTopupNumber FROM MBM WHERE MBMPolicyNo = @policy AND MBMStatus = 'A' AND PAYCode = @payor AND INSCode = @ins ORDER BY MBMPayorEffDate DESC",
+                new { policy = T(m.Policy), payor = T(m.Payor), ins = T(m.Insurer) }, ct)).FirstOrDefault();
+            if (latest is not null && T(S(latest, "MBMTopupNumber")) is { Length: > 0 } topup) prevNo = topup;
+
+            var principalLifetime = await session.ScalarAsync<int>("SELECT COUNT(*) FROM MBMLifeTime WHERE MBMNumber = @prev AND MBMCovID = '00'", new { prev = prevNo }, ct) > 0;
+            if (guarantee == "3" && principalLifetime && ((limitStatus == "B" && coverId == "01") || limitStatus == "C"))
+            {
+                if (await session.ScalarAsync<int>("SELECT COUNT(*) FROM MBMLifeTime WHERE MBMNumber = @prev AND MBMCovID = @cover", new { prev = prevNo, cover = coverId }, ct) > 0)
+                    throw BusinessRuleException.Conflict($"A lifetime limit already exists for cover {coverId}; it cannot be added twice.");
+                var ltl = (await session.QueryAsync("""
+                    SELECT TOP 1 SuppLifeTimeLimit FROM AnnualLimit WHERE INSCode = @ins AND PLNCode = @plan AND HLTCode = @health AND AnnualEffDate <= @eff ORDER BY AnnualEffDate DESC
+                    """, new { ins = T(m.Insurer), plan = T(m.Plan), health = T(m.Health), eff = At(m.Eff) }, ct)).Select(x => Dec(x, "SuppLifeTimeLimit") ?? 0).FirstOrDefault();
+                // Legacy: limit = lifetime limit - (annual limit - next limit), where next = annual limit when guarantee renewal is 3 (always the case here), so nothing is deducted.
+                lifetime = new SupplementaryLifetimeRow(prevNo, ltl);
+            }
+        }
+
+        var quote = new SupplementaryQuote(m.Number, coverId, req.Name!.Trim(), ageText, ageCode, adultChild, suppPlan, suppEff, suppExp, annual, basicPrem, prem, basicMco, mco, limitStatus, mcoStatus, premStatus, benefit, lifetime);
         return (quote, m, coverNo);
     }
 
@@ -142,6 +178,12 @@ internal sealed class SupplementaryRepository(IDbConnectionFactory connections, 
                 VALUES (@number, @cover, @sal, @allergic, @exclusion, 0, 0, 0, 0, 0, 0, 0, @renew, @policy)
                 """, new { number, cover = q.CoverId, sal = Blank(request.Salutation), allergic = Blank(request.Allergies), exclusion = Blank(request.Exclusion), renew = request.RenewalDiscount ?? 0, policy = request.PolicyDiscount ?? 0 }, ct);
 
+            if (q.BenefitLimits is { } b)
+                await session.ExecuteAsync("INSERT INTO MBMBnfLmt (MBMNumber, MBMCoveredID, MBMKidneyAnnLmt, MBMKidneyBalLmt, MBMCancerAnnLmt, MBMCancerBalLmt, MBMHomeNCAnnLmt, MBMHomeNCBalLmt) VALUES (@number, @cover, @k, @k, @c, @c, @h, @h)",
+                    new { number, cover = q.CoverId, k = b.Kidney, c = b.Cancer, h = b.HomeNursing }, ct);
+            if (q.LifetimeLimit is { } lt)
+                await session.ExecuteAsync("INSERT INTO MBMLifeTime (MBMNumber, MBMCovID, MBMLifeTimeLmt) VALUES (@prev, @cover, @limit)", new { prev = lt.MemberNumber, cover = q.CoverId, limit = lt.Limit }, ct);
+
             // Write2MBMnHistory with the member's current status: status unchanged, last endorsement S, history row.
             if (await session.ScalarAsync<int>("SELECT COUNT(*) FROM MBMTwo WHERE MBMNumber = @number", new { number }, ct) == 0)
                 await session.ExecuteAsync("INSERT INTO MBMTwo (MBMNumber) VALUES (@number)", new { number }, ct);
@@ -158,4 +200,5 @@ internal sealed class SupplementaryRepository(IDbConnectionFactory connections, 
         return new SupplementaryResult(q);
     }
 }
+
 
