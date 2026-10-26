@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using Genesis.Api.Infrastructure;
 using Genesis.Core.Membership;
 
@@ -15,7 +15,11 @@ public static class AdjustmentEndpoints
 
         g.MapGet("/", async (string memberNumber, IAdjustmentRepository repo, CancellationToken ct) =>
             await repo.GetAsync(memberNumber, ct) is { } m ? Results.Ok(m) : Results.NotFound(new { error = "Record not found." }));
+        g.MapPost("/cancellation/quote", async (CancellationRequest request, ICancellationRepository repo, CancellationToken ct) => Results.Ok(await repo.QuoteAsync(request, ct)));
+        g.MapPost("/cancellation", async (CancellationRequest request, ClaimsPrincipal user, ICancellationRepository repo, CancellationToken ct) =>
+            Results.Ok(await repo.CancelAsync(request, user.UserCode(), ct)));
         g.MapPut("/amendment", async (PrincipalAmendment amendment, ClaimsPrincipal user, IAdjustmentRepository repo, CancellationToken ct) =>
             Results.Ok(await repo.AmendAsync(amendment, user.UserCode(), ct)));
     }
 }
+
