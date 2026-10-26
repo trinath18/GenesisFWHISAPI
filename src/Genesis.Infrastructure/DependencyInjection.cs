@@ -34,12 +34,14 @@ public static class DependencyInjection
         services.AddScoped<IPanelHospitalRepository, PanelHospitalRepository>();
         services.AddScoped<ILookupRepository, LookupRepository>();
         services.AddScoped<ISuspensionRepository, SuspensionRepository>();
+        services.AddScoped<ICardSendingRepository, CardSendingRepository>();
         services.AddScoped<IValidDateRangeRepository, ValidDateRangeRepository>();
         services.AddScoped<ISummaryService, SummaryService>();
         services.AddSingleton<ICaseDocumentStore, FileSystemCaseDocumentStore>();
         return services;
     }
 }
+
 
 
 

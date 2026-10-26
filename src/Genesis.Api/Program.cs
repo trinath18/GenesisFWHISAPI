@@ -74,10 +74,12 @@ app.MapSummaries();
 app.MapPanelHospitals();
 app.MapLookups();
 app.MapSuspensions();
+app.MapCardSending();
 
 app.Run();
 
 public partial class Program;
+
 
 
 
