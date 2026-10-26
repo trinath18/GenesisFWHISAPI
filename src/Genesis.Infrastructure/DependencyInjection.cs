@@ -36,12 +36,14 @@ public static class DependencyInjection
         services.AddScoped<ISuspensionRepository, SuspensionRepository>();
         services.AddScoped<ICardSendingRepository, CardSendingRepository>();
         services.AddScoped<IMcoPendingRepository, McoPendingRepository>();
+        services.AddScoped<IMemberDeletionRepository, MemberDeletionRepository>();
         services.AddScoped<IValidDateRangeRepository, ValidDateRangeRepository>();
         services.AddScoped<ISummaryService, SummaryService>();
         services.AddSingleton<ICaseDocumentStore, FileSystemCaseDocumentStore>();
         return services;
     }
 }
+
 
 
 
