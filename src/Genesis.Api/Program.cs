@@ -75,10 +75,12 @@ app.MapPanelHospitals();
 app.MapLookups();
 app.MapSuspensions();
 app.MapCardSending();
+app.MapMcoPending();
 
 app.Run();
 
 public partial class Program;
+
 
 
 
