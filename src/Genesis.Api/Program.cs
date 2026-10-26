@@ -72,10 +72,12 @@ app.MapCases();
 app.MapTracking();
 app.MapSummaries();
 app.MapPanelHospitals();
+app.MapLookups();
 
 app.Run();
 
 public partial class Program;
+
 
 
 

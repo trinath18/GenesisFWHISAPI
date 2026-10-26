@@ -32,11 +32,14 @@ public static class DependencyInjection
         services.AddScoped<ITrackingService, TrackingService>();
         services.AddSingleton<IAuditLog, AuditLog>();
         services.AddScoped<IPanelHospitalRepository, PanelHospitalRepository>();
+        services.AddScoped<ILookupRepository, LookupRepository>();
+        services.AddScoped<IValidDateRangeRepository, ValidDateRangeRepository>();
         services.AddScoped<ISummaryService, SummaryService>();
         services.AddSingleton<ICaseDocumentStore, FileSystemCaseDocumentStore>();
         return services;
     }
 }
+
 
 
 
