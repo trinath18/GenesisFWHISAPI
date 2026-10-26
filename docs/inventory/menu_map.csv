@@ -1,253 +1,253 @@
-﻿menu,caption,path,level,opens
-mnuFile,File,File,1,
-mnuPageSetup,Page Setup,File > Page Setup,2,
-mnuPrint,Print,File > Print,2,
-mnuAttendance,Attendance,File > Attendance,2,frmStaffAttendance
-Logout,Logout,File > Logout,2,frmLogin
-CloseConnection,Close Connection,File > Close Connection,2,
-Membership,Membership,Membership,1,
-MembershipRegistration,Registration,Membership > Registration,2,frmMemberEntry
-MembershipAdjustment,Adjustment,Membership > Adjustment,2,frmNewMBMAdjustment
-MembershipEnquiry,Enquiry,Membership > Enquiry,2,frmNewMBMEnquiry
-MembershipReport,Leaflet  Card,Membership > Leaflet  Card,2,frmReportMain
-mnucardsend,Card Sending Mode,Membership > Card Sending Mode,2,frmMembershipCardControl
-mnuMBMReinstatement,Member Reinstatement,Membership > Member Reinstatement,2,frmMBMReintstatement
-MembershipMCOPending,MCO Pending,Membership > MCO Pending,2,frmMBMMCOPending
-MembershipDelete,Deletion,Membership > Deletion,2,frmDeleteMembers
-MembershipTracking,Tracking,Membership > Tracking,2,FrmNewMBMTracking
-MBMTrackingSimple,Tracking (Simple),Membership > Tracking (Simple),2,frmNewMBMTrackingSimple
-MembershipTracking2,Tracking (Jupiter),Membership > Tracking (Jupiter),2,FrmMBMTracking2
-MBMTrackingSimpleJup,Tracking (Simple - Jupiter),Membership > Tracking (Simple - Jupiter),2,frmMBMTrackingRepSimple
-mnuniam,NIAM Report,Membership > NIAM Report,2,FrmNiamReport
-mnuNiam2,NIAM Report 2,Membership > NIAM Report 2,2,FrmNiamReport2
-mnuMemberASCII,Generate Membership ASCII(Pluto),Membership > Generate Membership ASCII(Pluto),2,frmMembershipASCIIPluto
-mnuUpload,Upload Bordx,Membership > Upload Bordx,2,FrmNewMBMEndt2012
-mnuUploadBordx2010,Upload Bordx 2010,Membership > Upload Bordx 2010,2,FrmNewMBMEndt10
-mnuUploadBordxEtiqa,Upload Bordx Etiqa,Membership > Upload Bordx Etiqa,2,FrmNewMBMEndt08
-mnuMBMAscii,Generate Ascii,Membership > Generate Ascii,2,FrmMBMAscii
-mnuGenMAAAscii,Generate MAA ASCII,Membership > Generate MAA ASCII,2,frmMAAASCII
-UploadBordxByIC,Upload Bordx By IC,Membership > Upload Bordx By IC,2,
-UploadMBM,Upload MBM,Membership > Upload MBM,2,
-mnDashM,-,Membership > -,2,
-mnTempMBMReg,Temp MBM Reg,Membership > Temp MBM Reg,2,
-mnTempMBMAdj,Temp MBM Adj,Membership > Temp MBM Adj,2,
-mnMBMExpPol,MBM Expired Policy,Membership > MBM Expired Policy,2,frmMBMExpiredPolicy
-mnuMemberEnquiry07,Member Enquiry,Membership > Member Enquiry,2,
-mnuUploadBordx08,Upload Bordx 08,Membership > Upload Bordx 08,2,FrmNewMBMEndt08
-MCOFees,MCOFees,MCOFees,1,
-FeeListingNew,MCO Inv/Listing,MCOFees > MCO Inv/Listing,2,frmFWHSMCOFee
-FeeListingGST,MCO Inv/Listing GST,MCOFees > MCO Inv/Listing GST,2,frmFWHSMCOFeeGST
-FeeListingSST,MCO Inv/Listing SST,MCOFees > MCO Inv/Listing SST,2,frmFWHSMCOFeeSST
-mnuMCOReinstatement,MCO Reinstatement,MCOFees > MCO Reinstatement,2,frmMCOInvoiceReinstatement
-RefundListing,Refund Listing,MCOFees > Refund Listing,2,frmMCORefundListing2
-mnuMCOCorrection,MCO Correction,MCOFees > MCO Correction,2,frmMCOCorrection
-mnuInvoiceDateCorrection,Date Correction,MCOFees > Date Correction,2,frmMCOInvoiceCorrection
-InvManualUpd,Invoice Manual Upd,MCOFees > Invoice Manual Upd,2,frmMCOManualUpd
-mnuRecMCO,Receipt MCO/Others,MCOFees > Receipt MCO/Others,2,FrmRecMCO
-mnuRecMCOOthMan,Receipt MCO/Others (Manual),MCOFees > Receipt MCO/Others (Manual),2,frmRecMCOManual
-mnuForeignWorkers,Foreign Workers,MCOFees > Foreign Workers,2,
-mnuMCOInvASCII,MCO Invoice (ASCII),MCOFees > MCO Invoice (ASCII),2,frmMCOInvoiceASCII
-Admission,Case,Case,1,
-CaseEntry,Case Registration,Case > Case Registration,2,frmCaseAdmission
-CaseAdjustment,Case Adjustment,Case > Case Adjustment,2,frmCaseAdjustmentNew
-CASInMBM,Case Inquiry,Case > Case Inquiry,2,frmCaseInquiry
-mnCaseTransfer,Case Transfer,Case > Case Transfer,2,frmCaseTransferMBMNo
-mnuPanelHospitals,Panel Hospitals,Case > Panel Hospitals,2,frmPanelHospital
-mnTempCase,Temp Case Transfer,Case > Temp Case Transfer,2,FrmTempCaseTransfer
-mnuMBMLifetimeLmt,Lifetime Lmt Upgrade,Case > Lifetime Lmt Upgrade,2,frmMembershipLifetimeLmt
-CaseAuditReview,Case Audit Review,Case > Case Audit Review,2,frmCaseAuditReview
-mnuARTracking,Audit Review Tracking,Case > Audit Review Tracking,2,FrmAuditReviewReport
-CaseTracking,Case Tracking,Case > Case Tracking,2,FrmCaseTracking
-CaseTracking2,Case Tracking (Jupiter),Case > Case Tracking (Jupiter),2,FrmCaseTrackingNep
-MMAFees,MMA/CPT,Case > MMA/CPT,2,frmMMASchedule
-mnuCustomerService,Customer Service,Case > Customer Service,2,
-CasePayClaim,Case PayClaim,Case > Case PayClaim,2,frmCASPayClaim
-mnuNonDisclousreInfo,Non-Disclousre Info,Case > Non-Disclousre Info,2,frmRECNonDisclosure
-Correspondence,Correspondence,Case > Correspondence,2,
-MnuCaseSeperator,-,Case > -,2,
-mnuCase2Claim,Send to Bordx Unit,Case > Send to Bordx Unit,2,FrmCSSendtoClaim
-mnuCase2ClaimRep,Send to Claims (Rep),Case > Send to Claims (Rep),2,FrmCSRepSendtoClaim
-mnuCRUSend2Claim,CRU Send to Claims,Case > CRU Send to Claims,2,FrmCRUPassOut
-mnuLGTracking,LG Tracking,Case > LG Tracking,2,frmLGTracking
-mnuClaimASCII,Claim ASCII,Case > Claim ASCII,2,frmNewClaimAscii
-CaseASCII,Case ASCII,Case > Case ASCII,2,frmCaseASCII
-mnuClaimASCIIMedGen,Claim ASCII(MedGen),Case > Claim ASCII(MedGen),2,frmClaimASCIIMedGen
-mnuClaimASCIIEtiqa,Claims ASCII (To SPPA),Case > Claims ASCII (To SPPA),2,frmCLMASCIISPPA2012
-mnuClaimASCIIEtiqaPymt,Claims ASCII Pymt(To SPPA),Case > Claims ASCII Pymt(To SPPA),2,frmCLMASCIISPPAPymt
-mnuClaimASCIISPPA,Claims ASCII (From SPPA),Case > Claims ASCII (From SPPA),2,frmCLMASCIIUpload2012
-mnuClaimsASCIIKurnia,Claims ASCII (Kurnia),Case > Claims ASCII (Kurnia),2,frmClaimsKurnia
-mnuCaseNotice,Case ASCII Notice (Zurich),Case > Case ASCII Notice (Zurich),2,frmCLMNotificationZurich
-mnuClaimsASCIIZurich,Claims ASCII (Zurich),Case > Claims ASCII (Zurich),2,frmClaimsASCIIZurichGen
-mnuCLMESPUpload,Claims ASCII (ESP - Upload),Case > Claims ASCII (ESP - Upload),2,frmClaimsESPUpload
-MnuInvoices,Invoice,Invoice,1,
-mniInvoiceProcess,Invoice Processing,Invoice > Invoice Processing,2,frmInvoice
-mniOriginalInvUpd,Original Invoice Update,Invoice > Original Invoice Update,2,frmClaimUpdateOIR
-mnuInvMBMAcc,Invoice MBM Accounting,Invoice > Invoice MBM Accounting,2,FrmInvoiceMBMAC
-mnuInvHOSAcc,Invoice HOS Accounting,Invoice > Invoice HOS Accounting,2,FrmInvoiceHOSAC
-InvoiceHOSDebittoMBM,Invoice HOS (DR to MBM),Invoice > Invoice HOS (DR to MBM),2,frmHOSInvD2MBM
-InvoiceHOSCRtoMBM,Invoice HOS (CR to MBM),Invoice > Invoice HOS (CR to MBM),2,frmHOSInvC2MBM
-mnuInvTrack,Invoice Tracking,Invoice > Invoice Tracking,2,FrmInvoiceTracking2
-mnuInvTrackNep,Invoice Tracking (Jupiter),Invoice > Invoice Tracking (Jupiter),2,FrmInvoiceTrackNep
-mnuDCN,Main DCN Checking,Invoice > Main DCN Checking,2,FrmMainDC
-Claim,Worksheet,Worksheet,1,
-mnuNewWorksheet,Worksheet Registration,Worksheet > Worksheet Registration,2,frmNewWorksheet2010
-mnuWSAdjust,WorkSheet Adjustment,Worksheet > WorkSheet Adjustment,2,frmNewWSAdjust2010
-mnuWSEnq,Worksheet Enquiry,Worksheet > Worksheet Enquiry,2,frmWorksheetEnq
-mnuCreditDebitNote,Generate Credit/Debit Note,Worksheet > Generate Credit/Debit Note,2,frmGenerateCNNote
-mnuWSToAC,Worksheet Send to A/C,Worksheet > Worksheet Send to A/C,2,FrmWksSendToAC
-mnuWSReturnCLM,Worksheet Send to A/R,Worksheet > Worksheet Send to A/R,2,FrmARRecFrCLM
-mnuWksTracking,Worksheet Tracking,Worksheet > Worksheet Tracking,2,FrmWorksheetTracking
-mnuWksTracking2,Worksheet Tracking (Jupiter),Worksheet > Worksheet Tracking (Jupiter),2,FrmWorksheetTracking2
-ClaimWriteOff,Claim Write Off,Worksheet > Claim Write Off,2,frmCLMWriteOff
-mnuClaim,Claim,Claim,1,
-ClaimTracking1Jup,Claim Tracking (Sat.),Claim > Claim Tracking (Sat.),2,
-ClaimTracking,Claim Report 1,Claim > Claim Tracking (Sat.) > Claim Report 1,3,FrmClaimRpt
-ClaimTracking2,Claim Report 2,Claim > Claim Tracking (Sat.) > Claim Report 2,3,FrmClaimRpt2
-ClaimTracking3,Claim Report 3,Claim > Claim Tracking (Sat.) > Claim Report 3,3,FrmClaimRpt3
-ClaimTracking4,Claim Report 4,Claim > Claim Tracking (Sat.) > Claim Report 4,3,FrmClaimRpt4
-ClaimTrackingSimple,Claim Report (Simple),Claim > Claim Tracking (Sat.) > Claim Report (Simple),3,frmClaimRptSimple
-KPIReport,KPI Report,Claim > Claim Tracking (Sat.) > KPI Report,3,
-ClaimTracking2Nep,Claim Tracking (Jup.),Claim > Claim Tracking (Jup.),2,
-ClaimTrackingNep,Claim Report 1,Claim > Claim Tracking (Jup.) > Claim Report 1,3,FrmClaimRptNep
-ClaimTrackingNep2,Claim Report 2,Claim > Claim Tracking (Jup.) > Claim Report 2,3,FrmClaimRptNep2
-ClaimTrackingNep3,Claim Report 3,Claim > Claim Tracking (Jup.) > Claim Report 3,3,FrmClaimRptNep3
-ClaimTrackingNep4,Claim Report 4,Claim > Claim Tracking (Jup.) > Claim Report 4,3,FrmClaimRptNep4
-ClaimTrackingSimpleJup,Claim Report (Simple),Claim > Claim Tracking (Jup.) > Claim Report (Simple),3,frmClaimRptSimpleREP
-KPIReportJup,KPI Report,Claim > Claim Tracking (Jup.) > KPI Report,3,
-DcuTracking,DCU Tracking,Claim > DCU Tracking,2,
-mnuReport1,Claim Report,Claim > DCU Tracking > Claim Report,3,FrmDCUReport1
-mnuReport2,Claim Report (Jup.),Claim > DCU Tracking > Claim Report (Jup.),3,FrmDCUReport2
-MnuClaimSeperator,-,Claim > -,2,
-mnuClaimNotification,Claim Notification,Claim > Claim Notification,2,frmClaimNotification
-mnuCorrespondence,Correspondence,Claim > Correspondence,2,frmCLMCrpd
-CLMReminder,Claim Reminder,Claim > Claim Reminder,2,frmClaimReminder
-mnReminderTracking,Reminder Tracking,Claim > Reminder Tracking,2,
-mnuClaimPass2AC,Claim Pass to A/C,Claim > Claim Pass to A/C,2,
-mnuEtiqaRpt,Etiqa Report,Claim > Etiqa Report,2,frmGenerateEtiqaCLM
-mnuBordx,Claim Bordx,Claim Bordx,1,
-mnuWSSelection,Worksheet,Claim Bordx > Worksheet,2,
-mnuGenerateBordx,Insert Worksheet,Claim Bordx > Worksheet > Insert Worksheet,3,FrmWksBordx
-mnuBordxRevise,Remove Worksheet,Claim Bordx > Worksheet > Remove Worksheet,3,FrmBordxRevise
-mnuPrintBordx,Print Bordx,Claim Bordx > Print Bordx,2,FrmPrintBordx
-mnuPrintRecovery,Print Recovery,Claim Bordx > Print Recovery,2,frmGenerateRecovery
-mnuPaymentAdvice,Payment Advice,Claim Bordx > Payment Advice,2,
-mnuPayAdviceBordx,Generate Bordx No,Claim Bordx > Payment Advice > Generate Bordx No,3,frmPayAdviceHosp
-mnuPayAdviceHosp,Hospital Report,Claim Bordx > Payment Advice > Hospital Report,3,frmPayAdviceHosRpt
-mnuPrintBordxExc,Print Bordx Excess,Claim Bordx > Print Bordx Excess,2,FrmPrintBordxEx
-mnuUploadApproval,Upload Approval/Sent Date,Claim Bordx > Upload Approval/Sent Date,2,frmUploadApproval
-UpdateBordx,Update Bordx,Claim Bordx > Update Bordx,2,frmUpdateWS2Bordx
-mnuBordxDelivery,Bor Delivery,Claim Bordx > Bor Delivery,2,
-mnuBordxSendDate,Bordx Send Date,Claim Bordx > Bor Delivery > Bordx Send Date,3,frmSendClaimBordxV2
-mnuToPayor,Send to Payor,Claim Bordx > Bor Delivery > Send to Payor,3,FrmSendtoPayor
-RetfrPay,Returned From Payor,Claim Bordx > Bor Delivery > Returned From Payor,3,frmReturnFrPayor
-mnuFrPayorCase,Returned Fr Payor(Not App),Claim Bordx > Bor Delivery > Returned Fr Payor(Not App),3,FrmReturnPayorCase
-mnuToMNRB,Send to MNRB,Claim Bordx > Bor Delivery > Send to MNRB,3,FrmSendtoMNRB
-mnuSentAC,Send to A/C,Claim Bordx > Bor Delivery > Send to A/C,3,FrmSendtoAC
-BorAccPeriod,Bor Acc Period,Claim Bordx > Bor Acc Period,2,FrmACPeriod
-mnsBordxTrack,Monitoring,Claim Bordx > Monitoring,2,
-mnuBordxCtrl,Bordx Control,Claim Bordx > Monitoring > Bordx Control,3,FrmBordxControl
-mnuOSBordx,Outstanding Bordx,Claim Bordx > Monitoring > Outstanding Bordx,3,FrmOSBordx
-mnuBordxTracking,Bordx  Worksheet,Claim Bordx > Monitoring > Bordx  Worksheet,3,FrmBordxTracking
-mnuApproval,Bordx Approval,Claim Bordx > Bordx Approval,2,FrmBordxApproval
-BordxTracking,Bor Tracking,Claim Bordx > Bor Tracking,2,FrmBordxTracking2
-storage,Storage,Claim Bordx > Storage,2,
-StorageEntry,Claim files,Claim Bordx > Storage > Claim files,3,frmStorageEntry
-StorageEnquiry,Enquiry,Claim Bordx > Storage > Enquiry,3,frmStorageEnq
-StoRepudiateCase,Repudiated Case,Claim Bordx > Storage > Repudiated Case,3,FrmStorageRepEntry
-StoRepEnq,Repudiated Enquiry,Claim Bordx > Storage > Repudiated Enquiry,3,frmStorageRepEnq
-StoDocument,Document,Claim Bordx > Storage > Document,3,frmStorageDoc
-mnuDnRpt,Monthly DN Report,Claim Bordx > Storage > Monthly DN Report,3,FrmMonthlyDNRpt
-mnuPosting,A/C Export,A/C Export,1,
-InvoiceExp,Invoice,A/C Export > Invoice,2,
-Hospital,Hospital,A/C Export > Invoice > Hospital,3,frmPostingInvoiceHosp
-Member,Member,A/C Export > Invoice > Member,3,frmPostingInvoiceMBM
-mnuReceiptExp,Receipt,A/C Export > Receipt,2,
-MNRB,MNRB,A/C Export > Receipt > MNRB,3,frmPostingRecMNRB
-PayorExp,Payor,A/C Export > Receipt > Payor,3,frmPostingRecPayor
-PostPayment,Payment,A/C Export > Payment,2,
-PostPay2Hosp,Hospital,A/C Export > Payment > Hospital,3,frmPostingPay2Hosp
-Post2MBM,Member,A/C Export > Payment > Member,3,frmPostingPay2MBM
-PostBordx,Bordx,A/C Export > Bordx,2,
-BordxPost2MNRB,MNRB,A/C Export > Bordx > MNRB,3,frmPostingBordxInv2MNRB
-BordxPost2Pay,Payor,A/C Export > Bordx > Payor,3,frmPostingBordxInv2Pay
-mnSales,Sales,A/C Export > Sales,2,
-mnSalesInvoice,Invoice,A/C Export > Sales > Invoice,3,frmPostingSalesInvoice
-mnuPostingBTBG,BTBG,A/C Export > BTBG,2,frmPostingBTBG
-mniPostingDataTracking,PostingData Tracking,A/C Export > PostingData Tracking,2,
-mnuStatistic,Statistic,Statistic,1,
-mnuDateSelection,Date Selection,Statistic > Date Selection,2,frmDateSelection
-mnuPaymentModule,Payment,Payment,1,
-mnuPaymentHos,To Hospital,Payment > To Hospital,2,FrmPaymentHospital
-mnuPaymentMBM,To Member,Payment > To Member,2,
-mnPay2MBMAuto,Pay2MBM(Auto),Payment > To Member > Pay2MBM(Auto),3,frmPayMemberJul08
-mnPay2MBM,Pay2MBM,Payment > To Member > Pay2MBM,3,FrmPayMember
-mnPay2MBMReverse,Chq. Cancellation,Payment > To Member > Chq. Cancellation,3,FrmPaymentMBMReverse
-mnPay2MBMReissue,Chq. Reissue,Payment > To Member > Chq. Reissue,3,frmPaymentMBMReissue
-mnPaymentPayor,Payor,Payment > Payor,2,FrmPaymentPayor
-mnPaymentOther,Others,Payment > Others,2,FrmPaymentOthers
-ContraAllocation,Contra Allocation,Payment > Contra Allocation,2,frmContraAllocation
-mnuUpdateInvoice,Update Invoice,Payment > Update Invoice,2,frmUpdateInvoice
-mnuPayAllocation,PayAllocation,Payment > PayAllocation,2,
-mnuMedixGainLoss,MedixGainLoss,Payment > PayAllocation > MedixGainLoss,3,frmAllocMedixGainLoss
-mnMedixFloat,Medix Float,Payment > PayAllocation > Medix Float,3,FrmAllocMedixFloat
-mbMedixBankChrg,Medix Bank Chrg,Payment > PayAllocation > Medix Bank Chrg,3,FrmAllocMedixBankChrg
-mnMedixGuarantee,Medix Guarantee,Payment > PayAllocation > Medix Guarantee,3,FrmAllocMedixGuarantee
-mnBankContra,Bank Contra,Payment > PayAllocation > Bank Contra,3,FrmAllocBankContra
-mnHospAdj,Hosp Adj,Payment > PayAllocation > Hosp Adj,3,FrmAllocHospAdj
-mnuPaymentTracking,Payment Tracking,Payment > Payment Tracking,2,FrmPaymentTracking
-Enquiry,Enquiry,Payment > Enquiry,2,
-PaymentToHospital,Payment To Hospital,Payment > Enquiry > Payment To Hospital,3,FrmEnquiryPaymentHospital
-PaymentToMember,Payment To Member,Payment > Enquiry > Payment To Member,3,FrmEnquiryPayMember
-mnuTrustAC,Reconciliation,Payment > Reconciliation,2,FrmTrustAC
-mnPVUpdate,PV Update (Manual),Payment > PV Update (Manual),2,FrmPaymentManual
-mnuPayAmtAdj,Payable Amt Adjustment,Payment > Payable Amt Adjustment,2,frmPayableAmtAdj
-mnuSunHISPVCheck,SunHIS PV Check,Payment > SunHIS PV Check,2,frmPVSunHISFlag
-mnuReceiptModule,Receipt,Receipt,1,
-mnuReceiptMBM,From Member,Receipt > From Member,2,FrmReceiptMember
-mnuOthers,Others,Receipt > Others,2,
-mnuReceiptPayor,Payor,Receipt > Payor,2,FrmReceiptPayor
-mnuReceiptPayorManual,Payor (Manual),Receipt > Payor (Manual),2,FrmReceiptPayorManual
-mnuReceipt,MNRB,Receipt > MNRB,2,FrmReceiptMNRB
-mnuReceiptManual,MNRB (Manual),Receipt > MNRB (Manual),2,FrmReceiptMNRBManual
-RecCLMFloatTrans,Claim Float Transfer,Receipt > Claim Float Transfer,2,frmCLMFloatTransfer
-RECCLMFloatReq,Claim Float Request,Receipt > Claim Float Request,2,frmCLMFloatTopupReq
-mnuFloatReceipt,Claim Float Receipt,Receipt > Claim Float Receipt,2,frmCLMFloatReceipt
-RECCLMFloatTopup,Claim Float Topup,Receipt > Claim Float Topup,2,frmCLMFloatTopup
-mnuAllocation,RecAllocation,Receipt > RecAllocation,2,
-mnuRecMedixGainLoss,MedixGainLoss,Receipt > RecAllocation > MedixGainLoss,3,frmRecAllocMedixGainLoss
-mnuMedixBankCharge,Medix Bank Charge,Receipt > RecAllocation > Medix Bank Charge,3,FrmRecBankCharges
-mnuMedixBankContra,Medix Bank Contra,Receipt > RecAllocation > Medix Bank Contra,3,FrmRecBankContra
-mnuMedixHospAdj,Medix Hosp Adj,Receipt > RecAllocation > Medix Hosp Adj,3,FrmRecHospAdj
-mnuReceiptTracking,Receipt Tracking,Receipt > Receipt Tracking,2,FrmReceiptTracking
-mnPosting,Posting,Posting,1,
-mnPostInvoice,Invoice,Posting > Invoice,2,
-mnPostInvHosp,Hospital,Posting > Invoice > Hospital,3,frmPostingInvoiceHosp
-mnPostMBM,Member,Posting > Invoice > Member,3,frmPostingInvoiceMBM
-MaintenanceTables,Maintenance,Maintenance,1,
-MaintenancePlan,Plan,Maintenance > Plan,2,
-mnuBenefits,Benefits,Maintenance > Benefits,2,frmMaintenanceBenefits
-MaintenanceCase,Case,Maintenance > Case,2,frmMaintenanceCase
-MnuMemberMaintenance,Date,Maintenance > Date,2,frmMaintenanceMembers
-MaintenanceGeneral,Entity,Maintenance > Entity,2,frmMaintenanceGeneral
-MaintenanceOthers,Member,Maintenance > Member,2,frmMaintenanceOthers
-HOSPanelMaintenance,Panel Hospital Maintenance,Maintenance > Panel Hospital Maintenance,2,FrmMaintenancePanelHos
-Suspension,Suspension,Maintenance > Suspension,2,frmSuspensionDetail
-mnuComInfo,Company Info,Maintenance > Company Info,2,FrmMaintenanceComInfo
-mnuSurgicalOperation,Surgical Schedule,Maintenance > Surgical Schedule,2,
-MMA,MMA,Maintenance > MMA,2,frmMMA
-mnDataTrans,Data Transfer,Maintenance > Data Transfer,2,
-mnMBMTransfer,Member,Maintenance > Data Transfer > Member,3,frmDataTransferMBM1
-mnCASTrans,Case,Maintenance > Data Transfer > Case,3,frmDataTransferCAS1
-mnuDash,-,Maintenance > -,2,
-SecurityMaintenance,Security,Maintenance > Security,2,
-GroupMaintenance,Department,Maintenance > Security > Department,3,frmGroupMaintenance
-mnuPermission,User Permission,Maintenance > Security > User Permission,3,frmUserPermissionMaintenance
-mnMBMDel,MBM Del,Maintenance > Security > MBM Del,3,FrmITPasswordEntry
-mnClaimDel,Claim Del,Maintenance > Security > Claim Del,3,FrmITPasswordEntry
-mnuLGDel,LG Del,Maintenance > Security > LG Del,3,FrmITPasswordEntry
-View,View,View,1,
-MnuStatusBar,Status Bar,View > Status Bar,2,
-mnuWindowBar,Window,Window,1,
-mnuWindowTileHorizontal,Tile Horizontally,Window > Tile Horizontally,2,
-mnuWindowTileVertical,Tile Vertically,Window > Tile Vertically,2,
-mnuWindowCascade,Cascade Window,Window > Cascade Window,2,
+﻿menu,caption,path,level,opens,access_position
+mnuFile,File,File,1,,
+mnuPageSetup,Page Setup,File > Page Setup,2,,
+mnuPrint,Print,File > Print,2,,
+mnuAttendance,Attendance,File > Attendance,2,frmStaffAttendance,3
+Logout,Logout,File > Logout,2,frmLogin,
+CloseConnection,Close Connection,File > Close Connection,2,,
+Membership,Membership,Membership,1,,
+MembershipRegistration,Registration,Membership > Registration,2,frmMemberEntry,1
+MembershipAdjustment,Adjustment,Membership > Adjustment,2,frmNewMBMAdjustment,2
+MembershipEnquiry,Enquiry,Membership > Enquiry,2,frmNewMBMEnquiry,3
+MembershipReport,Leaflet  Card,Membership > Leaflet  Card,2,frmReportMain,4
+mnucardsend,Card Sending Mode,Membership > Card Sending Mode,2,frmMembershipCardControl,1
+mnuMBMReinstatement,Member Reinstatement,Membership > Member Reinstatement,2,frmMBMReintstatement,1
+MembershipMCOPending,MCO Pending,Membership > MCO Pending,2,frmMBMMCOPending,3
+MembershipDelete,Deletion,Membership > Deletion,2,frmDeleteMembers,5
+MembershipTracking,Tracking,Membership > Tracking,2,FrmNewMBMTracking,6
+MBMTrackingSimple,Tracking (Simple),Membership > Tracking (Simple),2,frmNewMBMTrackingSimple,6
+MembershipTracking2,Tracking (Jupiter),Membership > Tracking (Jupiter),2,FrmMBMTracking2,7
+MBMTrackingSimpleJup,Tracking (Simple - Jupiter),Membership > Tracking (Simple - Jupiter),2,frmMBMTrackingRepSimple,7
+mnuniam,NIAM Report,Membership > NIAM Report,2,FrmNiamReport,149
+mnuNiam2,NIAM Report 2,Membership > NIAM Report 2,2,FrmNiamReport2,149
+mnuMemberASCII,Generate Membership ASCII(Pluto),Membership > Generate Membership ASCII(Pluto),2,frmMembershipASCIIPluto,1
+mnuUpload,Upload Bordx,Membership > Upload Bordx,2,FrmNewMBMEndt2012,8
+mnuUploadBordx2010,Upload Bordx 2010,Membership > Upload Bordx 2010,2,FrmNewMBMEndt10,8
+mnuUploadBordxEtiqa,Upload Bordx Etiqa,Membership > Upload Bordx Etiqa,2,FrmNewMBMEndt08,8
+mnuMBMAscii,Generate Ascii,Membership > Generate Ascii,2,FrmMBMAscii,9
+mnuGenMAAAscii,Generate MAA ASCII,Membership > Generate MAA ASCII,2,frmMAAASCII,9
+UploadBordxByIC,Upload Bordx By IC,Membership > Upload Bordx By IC,2,,
+UploadMBM,Upload MBM,Membership > Upload MBM,2,,
+mnDashM,-,Membership > -,2,,
+mnTempMBMReg,Temp MBM Reg,Membership > Temp MBM Reg,2,,
+mnTempMBMAdj,Temp MBM Adj,Membership > Temp MBM Adj,2,,
+mnMBMExpPol,MBM Expired Policy,Membership > MBM Expired Policy,2,frmMBMExpiredPolicy,
+mnuMemberEnquiry07,Member Enquiry,Membership > Member Enquiry,2,,
+mnuUploadBordx08,Upload Bordx 08,Membership > Upload Bordx 08,2,FrmNewMBMEndt08,8
+MCOFees,MCOFees,MCOFees,1,,
+FeeListingNew,MCO Inv/Listing,MCOFees > MCO Inv/Listing,2,frmFWHSMCOFee,20
+FeeListingGST,MCO Inv/Listing GST,MCOFees > MCO Inv/Listing GST,2,frmFWHSMCOFeeGST,20
+FeeListingSST,MCO Inv/Listing SST,MCOFees > MCO Inv/Listing SST,2,frmFWHSMCOFeeSST,20
+mnuMCOReinstatement,MCO Reinstatement,MCOFees > MCO Reinstatement,2,frmMCOInvoiceReinstatement,1
+RefundListing,Refund Listing,MCOFees > Refund Listing,2,frmMCORefundListing2,21
+mnuMCOCorrection,MCO Correction,MCOFees > MCO Correction,2,frmMCOCorrection,20
+mnuInvoiceDateCorrection,Date Correction,MCOFees > Date Correction,2,frmMCOInvoiceCorrection,20
+InvManualUpd,Invoice Manual Upd,MCOFees > Invoice Manual Upd,2,frmMCOManualUpd,148
+mnuRecMCO,Receipt MCO/Others,MCOFees > Receipt MCO/Others,2,FrmRecMCO,19
+mnuRecMCOOthMan,Receipt MCO/Others (Manual),MCOFees > Receipt MCO/Others (Manual),2,frmRecMCOManual,19
+mnuForeignWorkers,Foreign Workers,MCOFees > Foreign Workers,2,,
+mnuMCOInvASCII,MCO Invoice (ASCII),MCOFees > MCO Invoice (ASCII),2,frmMCOInvoiceASCII,20
+Admission,Case,Case,1,,
+CaseEntry,Case Registration,Case > Case Registration,2,frmCaseAdmission,11
+CaseAdjustment,Case Adjustment,Case > Case Adjustment,2,frmCaseAdjustmentNew,12
+CASInMBM,Case Inquiry,Case > Case Inquiry,2,frmCaseInquiry,13;178
+mnCaseTransfer,Case Transfer,Case > Case Transfer,2,frmCaseTransferMBMNo,11
+mnuPanelHospitals,Panel Hospitals,Case > Panel Hospitals,2,frmPanelHospital,3
+mnTempCase,Temp Case Transfer,Case > Temp Case Transfer,2,FrmTempCaseTransfer,11
+mnuMBMLifetimeLmt,Lifetime Lmt Upgrade,Case > Lifetime Lmt Upgrade,2,frmMembershipLifetimeLmt,11
+CaseAuditReview,Case Audit Review,Case > Case Audit Review,2,frmCaseAuditReview,16
+mnuARTracking,Audit Review Tracking,Case > Audit Review Tracking,2,FrmAuditReviewReport,16
+CaseTracking,Case Tracking,Case > Case Tracking,2,FrmCaseTracking,14
+CaseTracking2,Case Tracking (Jupiter),Case > Case Tracking (Jupiter),2,FrmCaseTrackingNep,15
+MMAFees,MMA/CPT,Case > MMA/CPT,2,frmMMASchedule,150
+mnuCustomerService,Customer Service,Case > Customer Service,2,,
+CasePayClaim,Case PayClaim,Case > Case PayClaim,2,frmCASPayClaim,11
+mnuNonDisclousreInfo,Non-Disclousre Info,Case > Non-Disclousre Info,2,frmRECNonDisclosure,11
+Correspondence,Correspondence,Case > Correspondence,2,,
+MnuCaseSeperator,-,Case > -,2,,
+mnuCase2Claim,Send to Bordx Unit,Case > Send to Bordx Unit,2,FrmCSSendtoClaim,154
+mnuCase2ClaimRep,Send to Claims (Rep),Case > Send to Claims (Rep),2,FrmCSRepSendtoClaim,154
+mnuCRUSend2Claim,CRU Send to Claims,Case > CRU Send to Claims,2,FrmCRUPassOut,154
+mnuLGTracking,LG Tracking,Case > LG Tracking,2,frmLGTracking,17
+mnuClaimASCII,Claim ASCII,Case > Claim ASCII,2,frmNewClaimAscii,18
+CaseASCII,Case ASCII,Case > Case ASCII,2,frmCaseASCII,18
+mnuClaimASCIIMedGen,Claim ASCII(MedGen),Case > Claim ASCII(MedGen),2,frmClaimASCIIMedGen,18
+mnuClaimASCIIEtiqa,Claims ASCII (To SPPA),Case > Claims ASCII (To SPPA),2,frmCLMASCIISPPA2012,18
+mnuClaimASCIIEtiqaPymt,Claims ASCII Pymt(To SPPA),Case > Claims ASCII Pymt(To SPPA),2,frmCLMASCIISPPAPymt,18
+mnuClaimASCIISPPA,Claims ASCII (From SPPA),Case > Claims ASCII (From SPPA),2,frmCLMASCIIUpload2012,18
+mnuClaimsASCIIKurnia,Claims ASCII (Kurnia),Case > Claims ASCII (Kurnia),2,frmClaimsKurnia,18
+mnuCaseNotice,Case ASCII Notice (Zurich),Case > Case ASCII Notice (Zurich),2,frmCLMNotificationZurich,18
+mnuClaimsASCIIZurich,Claims ASCII (Zurich),Case > Claims ASCII (Zurich),2,frmClaimsASCIIZurichGen,18
+mnuCLMESPUpload,Claims ASCII (ESP - Upload),Case > Claims ASCII (ESP - Upload),2,frmClaimsESPUpload,18
+MnuInvoices,Invoice,Invoice,1,,
+mniInvoiceProcess,Invoice Processing,Invoice > Invoice Processing,2,frmInvoice,22
+mniOriginalInvUpd,Original Invoice Update,Invoice > Original Invoice Update,2,frmClaimUpdateOIR,13
+mnuInvMBMAcc,Invoice MBM Accounting,Invoice > Invoice MBM Accounting,2,FrmInvoiceMBMAC,23
+mnuInvHOSAcc,Invoice HOS Accounting,Invoice > Invoice HOS Accounting,2,FrmInvoiceHOSAC,24
+InvoiceHOSDebittoMBM,Invoice HOS (DR to MBM),Invoice > Invoice HOS (DR to MBM),2,frmHOSInvD2MBM,25
+InvoiceHOSCRtoMBM,Invoice HOS (CR to MBM),Invoice > Invoice HOS (CR to MBM),2,frmHOSInvC2MBM,26
+mnuInvTrack,Invoice Tracking,Invoice > Invoice Tracking,2,FrmInvoiceTracking2,27
+mnuInvTrackNep,Invoice Tracking (Jupiter),Invoice > Invoice Tracking (Jupiter),2,FrmInvoiceTrackNep,28
+mnuDCN,Main DCN Checking,Invoice > Main DCN Checking,2,FrmMainDC,29
+Claim,Worksheet,Worksheet,1,,
+mnuNewWorksheet,Worksheet Registration,Worksheet > Worksheet Registration,2,frmNewWorksheet2010,64
+mnuWSAdjust,WorkSheet Adjustment,Worksheet > WorkSheet Adjustment,2,frmNewWSAdjust2010,65
+mnuWSEnq,Worksheet Enquiry,Worksheet > Worksheet Enquiry,2,frmWorksheetEnq,13
+mnuCreditDebitNote,Generate Credit/Debit Note,Worksheet > Generate Credit/Debit Note,2,frmGenerateCNNote,65
+mnuWSToAC,Worksheet Send to A/C,Worksheet > Worksheet Send to A/C,2,FrmWksSendToAC,66
+mnuWSReturnCLM,Worksheet Send to A/R,Worksheet > Worksheet Send to A/R,2,FrmARRecFrCLM,66
+mnuWksTracking,Worksheet Tracking,Worksheet > Worksheet Tracking,2,FrmWorksheetTracking,67
+mnuWksTracking2,Worksheet Tracking (Jupiter),Worksheet > Worksheet Tracking (Jupiter),2,FrmWorksheetTracking2,68
+ClaimWriteOff,Claim Write Off,Worksheet > Claim Write Off,2,frmCLMWriteOff,59
+mnuClaim,Claim,Claim,1,,
+ClaimTracking1Jup,Claim Tracking (Sat.),Claim > Claim Tracking (Sat.),2,,
+ClaimTracking,Claim Report 1,Claim > Claim Tracking (Sat.) > Claim Report 1,3,FrmClaimRpt,44
+ClaimTracking2,Claim Report 2,Claim > Claim Tracking (Sat.) > Claim Report 2,3,FrmClaimRpt2,45
+ClaimTracking3,Claim Report 3,Claim > Claim Tracking (Sat.) > Claim Report 3,3,FrmClaimRpt3,46
+ClaimTracking4,Claim Report 4,Claim > Claim Tracking (Sat.) > Claim Report 4,3,FrmClaimRpt4,47
+ClaimTrackingSimple,Claim Report (Simple),Claim > Claim Tracking (Sat.) > Claim Report (Simple),3,frmClaimRptSimple,44
+KPIReport,KPI Report,Claim > Claim Tracking (Sat.) > KPI Report,3,,
+ClaimTracking2Nep,Claim Tracking (Jup.),Claim > Claim Tracking (Jup.),2,,
+ClaimTrackingNep,Claim Report 1,Claim > Claim Tracking (Jup.) > Claim Report 1,3,FrmClaimRptNep,50
+ClaimTrackingNep2,Claim Report 2,Claim > Claim Tracking (Jup.) > Claim Report 2,3,FrmClaimRptNep2,51
+ClaimTrackingNep3,Claim Report 3,Claim > Claim Tracking (Jup.) > Claim Report 3,3,FrmClaimRptNep3,52
+ClaimTrackingNep4,Claim Report 4,Claim > Claim Tracking (Jup.) > Claim Report 4,3,FrmClaimRptNep4,53
+ClaimTrackingSimpleJup,Claim Report (Simple),Claim > Claim Tracking (Jup.) > Claim Report (Simple),3,frmClaimRptSimpleREP,50
+KPIReportJup,KPI Report,Claim > Claim Tracking (Jup.) > KPI Report,3,,
+DcuTracking,DCU Tracking,Claim > DCU Tracking,2,,
+mnuReport1,Claim Report,Claim > DCU Tracking > Claim Report,3,FrmDCUReport1,155
+mnuReport2,Claim Report (Jup.),Claim > DCU Tracking > Claim Report (Jup.),3,FrmDCUReport2,156
+MnuClaimSeperator,-,Claim > -,2,,
+mnuClaimNotification,Claim Notification,Claim > Claim Notification,2,frmClaimNotification,11
+mnuCorrespondence,Correspondence,Claim > Correspondence,2,frmCLMCrpd,11
+CLMReminder,Claim Reminder,Claim > Claim Reminder,2,frmClaimReminder,11
+mnReminderTracking,Reminder Tracking,Claim > Reminder Tracking,2,,
+mnuClaimPass2AC,Claim Pass to A/C,Claim > Claim Pass to A/C,2,,
+mnuEtiqaRpt,Etiqa Report,Claim > Etiqa Report,2,frmGenerateEtiqaCLM,65
+mnuBordx,Claim Bordx,Claim Bordx,1,,
+mnuWSSelection,Worksheet,Claim Bordx > Worksheet,2,,
+mnuGenerateBordx,Insert Worksheet,Claim Bordx > Worksheet > Insert Worksheet,3,FrmWksBordx,30
+mnuBordxRevise,Remove Worksheet,Claim Bordx > Worksheet > Remove Worksheet,3,FrmBordxRevise,31
+mnuPrintBordx,Print Bordx,Claim Bordx > Print Bordx,2,FrmPrintBordx,32
+mnuPrintRecovery,Print Recovery,Claim Bordx > Print Recovery,2,frmGenerateRecovery,32
+mnuPaymentAdvice,Payment Advice,Claim Bordx > Payment Advice,2,,
+mnuPayAdviceBordx,Generate Bordx No,Claim Bordx > Payment Advice > Generate Bordx No,3,frmPayAdviceHosp,30
+mnuPayAdviceHosp,Hospital Report,Claim Bordx > Payment Advice > Hospital Report,3,frmPayAdviceHosRpt,30
+mnuPrintBordxExc,Print Bordx Excess,Claim Bordx > Print Bordx Excess,2,FrmPrintBordxEx,33
+mnuUploadApproval,Upload Approval/Sent Date,Claim Bordx > Upload Approval/Sent Date,2,frmUploadApproval,32
+UpdateBordx,Update Bordx,Claim Bordx > Update Bordx,2,frmUpdateWS2Bordx,34
+mnuBordxDelivery,Bor Delivery,Claim Bordx > Bor Delivery,2,,
+mnuBordxSendDate,Bordx Send Date,Claim Bordx > Bor Delivery > Bordx Send Date,3,frmSendClaimBordxV2,35
+mnuToPayor,Send to Payor,Claim Bordx > Bor Delivery > Send to Payor,3,FrmSendtoPayor,35
+RetfrPay,Returned From Payor,Claim Bordx > Bor Delivery > Returned From Payor,3,frmReturnFrPayor,36
+mnuFrPayorCase,Returned Fr Payor(Not App),Claim Bordx > Bor Delivery > Returned Fr Payor(Not App),3,FrmReturnPayorCase,36
+mnuToMNRB,Send to MNRB,Claim Bordx > Bor Delivery > Send to MNRB,3,FrmSendtoMNRB,37
+mnuSentAC,Send to A/C,Claim Bordx > Bor Delivery > Send to A/C,3,FrmSendtoAC,38
+BorAccPeriod,Bor Acc Period,Claim Bordx > Bor Acc Period,2,FrmACPeriod,39
+mnsBordxTrack,Monitoring,Claim Bordx > Monitoring,2,,
+mnuBordxCtrl,Bordx Control,Claim Bordx > Monitoring > Bordx Control,3,FrmBordxControl,40
+mnuOSBordx,Outstanding Bordx,Claim Bordx > Monitoring > Outstanding Bordx,3,FrmOSBordx,41
+mnuBordxTracking,Bordx  Worksheet,Claim Bordx > Monitoring > Bordx  Worksheet,3,FrmBordxTracking,42
+mnuApproval,Bordx Approval,Claim Bordx > Bordx Approval,2,FrmBordxApproval,34
+BordxTracking,Bor Tracking,Claim Bordx > Bor Tracking,2,FrmBordxTracking2,43
+storage,Storage,Claim Bordx > Storage,2,,
+StorageEntry,Claim files,Claim Bordx > Storage > Claim files,3,frmStorageEntry,48
+StorageEnquiry,Enquiry,Claim Bordx > Storage > Enquiry,3,frmStorageEnq,49
+StoRepudiateCase,Repudiated Case,Claim Bordx > Storage > Repudiated Case,3,FrmStorageRepEntry,151
+StoRepEnq,Repudiated Enquiry,Claim Bordx > Storage > Repudiated Enquiry,3,frmStorageRepEnq,152
+StoDocument,Document,Claim Bordx > Storage > Document,3,frmStorageDoc,48
+mnuDnRpt,Monthly DN Report,Claim Bordx > Storage > Monthly DN Report,3,FrmMonthlyDNRpt,16
+mnuPosting,A/C Export,A/C Export,1,,
+InvoiceExp,Invoice,A/C Export > Invoice,2,,
+Hospital,Hospital,A/C Export > Invoice > Hospital,3,frmPostingInvoiceHosp,169
+Member,Member,A/C Export > Invoice > Member,3,frmPostingInvoiceMBM,170
+mnuReceiptExp,Receipt,A/C Export > Receipt,2,,
+MNRB,MNRB,A/C Export > Receipt > MNRB,3,frmPostingRecMNRB,171
+PayorExp,Payor,A/C Export > Receipt > Payor,3,frmPostingRecPayor,172
+PostPayment,Payment,A/C Export > Payment,2,,
+PostPay2Hosp,Hospital,A/C Export > Payment > Hospital,3,frmPostingPay2Hosp,173
+Post2MBM,Member,A/C Export > Payment > Member,3,frmPostingPay2MBM,174
+PostBordx,Bordx,A/C Export > Bordx,2,,
+BordxPost2MNRB,MNRB,A/C Export > Bordx > MNRB,3,frmPostingBordxInv2MNRB,175
+BordxPost2Pay,Payor,A/C Export > Bordx > Payor,3,frmPostingBordxInv2Pay,176
+mnSales,Sales,A/C Export > Sales,2,,
+mnSalesInvoice,Invoice,A/C Export > Sales > Invoice,3,frmPostingSalesInvoice,177
+mnuPostingBTBG,BTBG,A/C Export > BTBG,2,frmPostingBTBG,170
+mniPostingDataTracking,PostingData Tracking,A/C Export > PostingData Tracking,2,,
+mnuStatistic,Statistic,Statistic,1,,
+mnuDateSelection,Date Selection,Statistic > Date Selection,2,frmDateSelection,54
+mnuPaymentModule,Payment,Payment,1,,
+mnuPaymentHos,To Hospital,Payment > To Hospital,2,FrmPaymentHospital,55
+mnuPaymentMBM,To Member,Payment > To Member,2,,
+mnPay2MBMAuto,Pay2MBM(Auto),Payment > To Member > Pay2MBM(Auto),3,frmPayMemberJul08,56
+mnPay2MBM,Pay2MBM,Payment > To Member > Pay2MBM,3,FrmPayMember,56
+mnPay2MBMReverse,Chq. Cancellation,Payment > To Member > Chq. Cancellation,3,FrmPaymentMBMReverse,56
+mnPay2MBMReissue,Chq. Reissue,Payment > To Member > Chq. Reissue,3,frmPaymentMBMReissue,56
+mnPaymentPayor,Payor,Payment > Payor,2,FrmPaymentPayor,55
+mnPaymentOther,Others,Payment > Others,2,FrmPaymentOthers,56
+ContraAllocation,Contra Allocation,Payment > Contra Allocation,2,frmContraAllocation,56
+mnuUpdateInvoice,Update Invoice,Payment > Update Invoice,2,frmUpdateInvoice,57
+mnuPayAllocation,PayAllocation,Payment > PayAllocation,2,,
+mnuMedixGainLoss,MedixGainLoss,Payment > PayAllocation > MedixGainLoss,3,frmAllocMedixGainLoss,55
+mnMedixFloat,Medix Float,Payment > PayAllocation > Medix Float,3,FrmAllocMedixFloat,55
+mbMedixBankChrg,Medix Bank Chrg,Payment > PayAllocation > Medix Bank Chrg,3,FrmAllocMedixBankChrg,55
+mnMedixGuarantee,Medix Guarantee,Payment > PayAllocation > Medix Guarantee,3,FrmAllocMedixGuarantee,55
+mnBankContra,Bank Contra,Payment > PayAllocation > Bank Contra,3,FrmAllocBankContra,55
+mnHospAdj,Hosp Adj,Payment > PayAllocation > Hosp Adj,3,FrmAllocHospAdj,55
+mnuPaymentTracking,Payment Tracking,Payment > Payment Tracking,2,FrmPaymentTracking,58
+Enquiry,Enquiry,Payment > Enquiry,2,,
+PaymentToHospital,Payment To Hospital,Payment > Enquiry > Payment To Hospital,3,FrmEnquiryPaymentHospital,145
+PaymentToMember,Payment To Member,Payment > Enquiry > Payment To Member,3,FrmEnquiryPayMember,146
+mnuTrustAC,Reconciliation,Payment > Reconciliation,2,FrmTrustAC,157
+mnPVUpdate,PV Update (Manual),Payment > PV Update (Manual),2,FrmPaymentManual,55;56
+mnuPayAmtAdj,Payable Amt Adjustment,Payment > Payable Amt Adjustment,2,frmPayableAmtAdj,55
+mnuSunHISPVCheck,SunHIS PV Check,Payment > SunHIS PV Check,2,frmPVSunHISFlag,55
+mnuReceiptModule,Receipt,Receipt,1,,
+mnuReceiptMBM,From Member,Receipt > From Member,2,FrmReceiptMember,59
+mnuOthers,Others,Receipt > Others,2,,60
+mnuReceiptPayor,Payor,Receipt > Payor,2,FrmReceiptPayor,61
+mnuReceiptPayorManual,Payor (Manual),Receipt > Payor (Manual),2,FrmReceiptPayorManual,61
+mnuReceipt,MNRB,Receipt > MNRB,2,FrmReceiptMNRB,62
+mnuReceiptManual,MNRB (Manual),Receipt > MNRB (Manual),2,FrmReceiptMNRBManual,62
+RecCLMFloatTrans,Claim Float Transfer,Receipt > Claim Float Transfer,2,frmCLMFloatTransfer,59
+RECCLMFloatReq,Claim Float Request,Receipt > Claim Float Request,2,frmCLMFloatTopupReq,59
+mnuFloatReceipt,Claim Float Receipt,Receipt > Claim Float Receipt,2,frmCLMFloatReceipt,59
+RECCLMFloatTopup,Claim Float Topup,Receipt > Claim Float Topup,2,frmCLMFloatTopup,59
+mnuAllocation,RecAllocation,Receipt > RecAllocation,2,,
+mnuRecMedixGainLoss,MedixGainLoss,Receipt > RecAllocation > MedixGainLoss,3,frmRecAllocMedixGainLoss,55
+mnuMedixBankCharge,Medix Bank Charge,Receipt > RecAllocation > Medix Bank Charge,3,FrmRecBankCharges,
+mnuMedixBankContra,Medix Bank Contra,Receipt > RecAllocation > Medix Bank Contra,3,FrmRecBankContra,
+mnuMedixHospAdj,Medix Hosp Adj,Receipt > RecAllocation > Medix Hosp Adj,3,FrmRecHospAdj,
+mnuReceiptTracking,Receipt Tracking,Receipt > Receipt Tracking,2,FrmReceiptTracking,63
+mnPosting,Posting,Posting,1,,
+mnPostInvoice,Invoice,Posting > Invoice,2,,
+mnPostInvHosp,Hospital,Posting > Invoice > Hospital,3,frmPostingInvoiceHosp,55
+mnPostMBM,Member,Posting > Invoice > Member,3,frmPostingInvoiceMBM,56
+MaintenanceTables,Maintenance,Maintenance,1,,
+MaintenancePlan,Plan,Maintenance > Plan,2,,80;81;82;83;84;85
+mnuBenefits,Benefits,Maintenance > Benefits,2,frmMaintenanceBenefits,86;87;88;89
+MaintenanceCase,Case,Maintenance > Case,2,frmMaintenanceCase,90;91;92;93;94;95;96;97
+MnuMemberMaintenance,Date,Maintenance > Date,2,frmMaintenanceMembers,109
+MaintenanceGeneral,Entity,Maintenance > Entity,2,frmMaintenanceGeneral,69;70;71;72;73;74;75;76;77;78;79
+MaintenanceOthers,Member,Maintenance > Member,2,frmMaintenanceOthers,98;99;100;101;102;103;104;105;106;107;108
+HOSPanelMaintenance,Panel Hospital Maintenance,Maintenance > Panel Hospital Maintenance,2,FrmMaintenancePanelHos,1
+Suspension,Suspension,Maintenance > Suspension,2,frmSuspensionDetail,110
+mnuComInfo,Company Info,Maintenance > Company Info,2,FrmMaintenanceComInfo,88
+mnuSurgicalOperation,Surgical Schedule,Maintenance > Surgical Schedule,2,,
+MMA,MMA,Maintenance > MMA,2,frmMMA,147
+mnDataTrans,Data Transfer,Maintenance > Data Transfer,2,,
+mnMBMTransfer,Member,Maintenance > Data Transfer > Member,3,frmDataTransferMBM1,168
+mnCASTrans,Case,Maintenance > Data Transfer > Case,3,frmDataTransferCAS1,168
+mnuDash,-,Maintenance > -,2,,
+SecurityMaintenance,Security,Maintenance > Security,2,,
+GroupMaintenance,Department,Maintenance > Security > Department,3,frmGroupMaintenance,111
+mnuPermission,User Permission,Maintenance > Security > User Permission,3,frmUserPermissionMaintenance,112
+mnMBMDel,MBM Del,Maintenance > Security > MBM Del,3,FrmITPasswordEntry,112
+mnClaimDel,Claim Del,Maintenance > Security > Claim Del,3,FrmITPasswordEntry,112
+mnuLGDel,LG Del,Maintenance > Security > LG Del,3,FrmITPasswordEntry,112
+View,View,View,1,,
+MnuStatusBar,Status Bar,View > Status Bar,2,,
+mnuWindowBar,Window,Window,1,,
+mnuWindowTileHorizontal,Tile Horizontally,Window > Tile Horizontally,2,,
+mnuWindowTileVertical,Tile Vertically,Window > Tile Vertically,2,,
+mnuWindowCascade,Cascade Window,Window > Cascade Window,2,,

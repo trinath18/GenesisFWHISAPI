@@ -1,8 +1,10 @@
-using Genesis.Core.Data;
+﻿using Genesis.Core.Data;
 using Genesis.Core.Hospitals;
+using Genesis.Core.Membership;
 using Genesis.Core.Users;
 using Genesis.Infrastructure.Data;
 using Genesis.Infrastructure.Hospitals;
+using Genesis.Infrastructure.Membership;
 using Genesis.Infrastructure.Users;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -15,6 +17,8 @@ public static class DependencyInjection
         services.AddSingleton<IDbConnectionFactory, SqlConnectionFactory>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IHospitalRepository, HospitalRepository>();
+        services.AddScoped<IMembershipEnquiryRepository, MembershipEnquiryRepository>();
         return services;
     }
 }
+

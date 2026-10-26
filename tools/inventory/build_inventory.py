@@ -214,7 +214,9 @@ if mdi.exists():
     for name, cap, path, level in items:
         body = handlers.get(name.lower(), "")
         targets = sorted({form_names[m.lower()] for m in form_ref_re.findall(body)})
-        menu_rows.append({"menu": name, "caption": cap, "path": path, "level": level, "opens": ";".join(targets)})
+        access = sorted({int(a) for a in re.findall(r"CheckAccess\((\d+)\)", body)})
+        menu_rows.append({"menu": name, "caption": cap, "path": path, "level": level, "opens": ";".join(targets),
+                          "access_position": ";".join(map(str, access))})
         for t in targets:
             form_menus[t].append(path)
 for r in rows:
@@ -278,7 +280,7 @@ write_csv("forms.csv", rows, fields)
 write_csv("sp_usage.csv", [{"stored_proc": s, "databases": ";".join(sorted(objs["P"].get(s.lower(), []))), "form_count": len(f), "forms": ";".join(sorted(f))} for s, f in sorted(sp_usage.items(), key=lambda x: -len(x[1]))], ["stored_proc", "databases", "form_count", "forms"])
 write_csv("table_usage.csv", [{"table": t, "databases": ";".join(sorted((objs["T"].get(t) or objs["V"].get(t) or []))), "form_count": len(f), "forms": ";".join(sorted(f))} for t, f in sorted(tbl_usage.items(), key=lambda x: -len(x[1]))], ["table", "databases", "form_count", "forms"])
 write_csv("reports.csv", [{"form": f, "type": t, "report": r} for f, t, r in sorted(set(reports))], ["form", "type", "report"])
-write_csv("menu_map.csv", menu_rows, ["menu", "caption", "path", "level", "opens"])
+write_csv("menu_map.csv", menu_rows, ["menu", "caption", "path", "level", "opens", "access_position"])
 write_csv("clone_groups.csv", cl_rows, ["group", "form", "loc"])
 
 # --- summary ---

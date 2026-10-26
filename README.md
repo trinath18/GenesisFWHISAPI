@@ -24,3 +24,15 @@ API docs (Development only): `/scalar/v1`. Health: `/api/health`.
 - New screen = new folder in `Features/` + a repository in Core/Infrastructure. Prefer calling the existing stored procedures through Dapper; always parameterize SQL.
 - Permissions: `.RequireScreen(position)` uses the legacy `USR.USRAccess` flag position (1-based).
 - Auth today: legacy password check (`LegacyPasswordCipher`) + JWT. Replace with SSO/OIDC later without touching feature code.
+
+## Migration inventory
+`tools/inventory/build_inventory.py` scans the legacy VB6 source and writes `docs/inventory/` (forms, stored procedures, tables,
+reports, menu-to-form map with `USRAccess` positions, clone groups, `summary.md`). Re-run it after changing the catalog TSVs
+(`tools/inventory/catalog`, one per database). Python 3 only, no packages needed.
+
+## Migrated screens
+| Legacy screen | API | Status |
+|---|---|---|
+| Membership > Enquiry (`frmNewMBMEnquiry`) | `/api/membership/members` | Search, details, cases, case history, adjust history, account summary/history, exclusions, remarks. Remaining tabs: benefits, policy terms/wording, fees, LT limit, non-disclosure, T/O claims, printing. |
+
+Integration tests (`DatabaseFact`) run against the local restored databases and skip themselves when SQL Server is unavailable.
