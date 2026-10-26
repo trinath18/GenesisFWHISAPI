@@ -18,8 +18,12 @@ public static class AdjustmentEndpoints
         g.MapPost("/cancellation/quote", async (CancellationRequest request, ICancellationRepository repo, CancellationToken ct) => Results.Ok(await repo.QuoteAsync(request, ct)));
         g.MapPost("/cancellation", async (CancellationRequest request, ClaimsPrincipal user, ICancellationRepository repo, CancellationToken ct) =>
             Results.Ok(await repo.CancelAsync(request, user.UserCode(), ct)));
+        g.MapPost("/plan-change/quote", async (PlanChangeRequest request, IPlanChangeRepository repo, CancellationToken ct) => Results.Ok(await repo.QuoteAsync(request, ct)));
+        g.MapPost("/plan-change", async (PlanChangeRequest request, ClaimsPrincipal user, IPlanChangeRepository repo, CancellationToken ct) =>
+            Results.Ok(await repo.ChangeAsync(request, user.UserCode(), ct)));
         g.MapPut("/amendment", async (PrincipalAmendment amendment, ClaimsPrincipal user, IAdjustmentRepository repo, CancellationToken ct) =>
             Results.Ok(await repo.AmendAsync(amendment, user.UserCode(), ct)));
     }
 }
+
 
