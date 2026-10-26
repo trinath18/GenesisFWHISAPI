@@ -1,7 +1,9 @@
-﻿using Genesis.Core.Data;
+﻿using Genesis.Core.Cases;
+using Genesis.Core.Data;
 using Genesis.Core.Hospitals;
 using Genesis.Core.Membership;
 using Genesis.Core.Users;
+using Genesis.Infrastructure.Cases;
 using Genesis.Infrastructure.Data;
 using Genesis.Infrastructure.Hospitals;
 using Genesis.Infrastructure.Membership;
@@ -20,8 +22,11 @@ public static class DependencyInjection
         services.AddScoped<IMembershipEnquiryRepository, MembershipEnquiryRepository>();
         services.AddScoped<IMembershipTabsRepository, MembershipTabsRepository>();
         services.AddSingleton<IPolicyWordingStore, FileSystemPolicyWordingStore>();
+        services.AddScoped<ICaseInquiryRepository, CaseInquiryRepository>();
+        services.AddSingleton<ICaseDocumentStore, FileSystemCaseDocumentStore>();
         return services;
     }
 }
+
 
 

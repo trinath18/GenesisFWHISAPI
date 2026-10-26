@@ -1,4 +1,5 @@
 ﻿using Genesis.Api.Features.Auth;
+using Genesis.Api.Features.Cases;
 using Genesis.Api.Features.Health;
 using Genesis.Api.Features.Membership;
 using Genesis.Api.Features.Reports;
@@ -59,8 +60,10 @@ app.MapHealth();
 app.MapAuth();
 app.MapReports();
 app.MapMembership();
+app.MapCases();
 
 app.Run();
 
 public partial class Program;
+
 

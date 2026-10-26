@@ -34,6 +34,7 @@ reports, menu-to-form map with `USRAccess` positions, clone groups, `summary.md`
 | Legacy screen | API | Status |
 |---|---|---|
 | Membership > Enquiry (`frmNewMBMEnquiry`) | `/api/membership/members` | Complete: search and all 16 tabs (details, supplementary, adjust history, benefits, current/historic cases, member history, accounts, fees, non-disclosure, policy terms, lifetime limit, policy wording, takeover claims, notes) plus the three print outputs. |
+| Case > Case Inquiry (`frmCaseInquiry`) | `/api/cases` | Complete: search by 7 criteria and all 19 tabs (case, others, take-over, notes, LG, worksheets, invoices, payments and receipts, reminders, non-disclosure, benefits, exclusions, policy terms, surgical schedule, lifetime limit, documents, policy wording, cartons, e-mails) plus 4 print outputs. Needs `USRAccess` position 13; payment print needs 178. |
 
 Integration tests (`DatabaseFact`) run against the local restored databases and skip themselves when SQL Server is unavailable.
 
@@ -42,3 +43,10 @@ Integration tests (`DatabaseFact`) run against the local restored databases and 
 - The legacy form passed raw SQL fragments to `SearchMBMHistory06`, `Case_SearchIllness`, `SP_SearchLTLmt` and `Case_Registration`. Those are replaced by parameterised queries on the same views/tables.
 - Policy wording documents are read from `FileStore:PolicyWordingRoot` (one sub-folder per plan, taken from `PLN.PLNPolicyWording`). Leave it unset to disable; swap `IPolicyWordingStore` for blob storage in the cloud.
 - The restored 2021 snapshot has no rows for covered persons, lifetime-limit views, non-disclosure or most account views, so those tabs are covered by "empty state" tests only.
+
+### Case Inquiry notes
+- Case record: `SearchCasAdjustment` (parameterised). The tabs read from four databases: Main, Worksheet (worksheets, invoices, reminders, cartons, account summary), Payment (payments and receipts), Maintenance (letters of guarantee).
+- The legacy `Case_Inquiry`, `Case_Adjustment` and `Case_SearchIllness` procedures took raw SQL fragments; they are replaced by parameterised queries on the same tables and views.
+- Benefits: the legacy form listed every effective-date version of the plan; this port shows the latest version on or before the admission date (same rule as Membership Enquiry).
+- Documents (scanned, internal, e-mails, policy wording) come from `FileStore:ScannedDocsRoot`, `InternalDocsRoot`, `EmailsRoot`, `PolicyWordingRoot` (one sub-folder per case or plan). Unset = tab says "not configured". Swap `ICaseDocumentStore` for blob storage in the cloud.
+- Print outputs replace `CaseEnq.xlt`, `CasePayment.xlt` and `CaseRemark.DOT`: `print/enquiry.xlsx`, `print/payments.xlsx`, `print/notes.pdf[?kind=internal]`.
