@@ -1,4 +1,4 @@
-using ClosedXML.Excel;
+﻿using ClosedXML.Excel;
 using Genesis.Core.Tracking;
 
 namespace Genesis.Reports.Tracking;
@@ -6,11 +6,14 @@ namespace Genesis.Reports.Tracking;
 /// <summary>Generic Excel export for any tracking definition (replaces the per-form Excel/ASCII export code of the legacy screens).</summary>
 public static class TrackingWorkbook
 {
-    public static byte[] ToExcel(TrackingDefinition def, TrackingResult result, IReadOnlyDictionary<string, string> filters, string generatedBy)
+    public static byte[] ToExcel(TrackingDefinition def, TrackingResult result, IReadOnlyDictionary<string, string> filters, string generatedBy) =>
+        ToExcel(def.Title, result, filters, generatedBy);
+
+    public static byte[] ToExcel(string title, TrackingResult result, IReadOnlyDictionary<string, string> filters, string generatedBy)
     {
         using var wb = new XLWorkbook();
-        var ws = wb.AddWorksheet(def.Title.Length > 31 ? def.Title[..31] : def.Title);
-        ws.Cell(1, 1).Value = def.Title;
+        var ws = wb.AddWorksheet(title.Length > 31 ? title[..31] : title);
+        ws.Cell(1, 1).Value = title;
         ws.Cell(1, 1).Style.Font.Bold = true;
         ws.Cell(2, 1).Value = $"Generated {DateTime.Now:yyyy-MM-dd HH:mm} by {generatedBy} - {result.Rows.Count} row(s){(result.Truncated ? " (limit reached - narrow the filters)" : "")}";
         var applied = string.Join("; ", filters.Where(f => !string.IsNullOrWhiteSpace(f.Value)).Select(f => $"{f.Key}={f.Value}"));
@@ -43,3 +46,4 @@ public static class TrackingWorkbook
         return ms.ToArray();
     }
 }
+

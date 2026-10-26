@@ -193,6 +193,42 @@ public static class TrackingCatalog
             [T("CASNumber", "Case No"), N("ClaimVersion", "Ver"), T("PVNo", "PV No"), D("PVDate", "PV date"), T("PVChequeNo", "Cheque No"), D("PVChequeDate", "Cheque date"),
                 M("MBMPaidAmt", "Paid amount"), T("PVStatus", "Status"), T("PVPayMBMStatus", "Payment status"), T("Remark", "Remark")]),
 
+        new("bordx-tracking", "Bordx Tracking", "Claim Bordx", 43, GenesisDb.Worksheet, "View_BordxTracking2", "BordxDate DESC, BordxRefNo",
+            [F("bordxRef", "Bordx ref", Prefix, "BordxRefNo"), F("payor", "Payor", Exact, "BordxPAYCode"), F("health", "Health", Exact, "HLTCode"), F("status", "Bordx status", Exact, "BordxStatus"),
+                F("bordxDate", "Bordx date", DateRange, "BordxDate"), F("sent", "Sent to payor", DateRange, "BordxPAYSentDate"), F("received", "Received from payor", DateRange, "BordxPAYRecDate"),
+                F("sentAc", "Sent to A/C", DateRange, "BordxSendACDate")],
+            [T("BordxRefNo", "Bordx ref"), T("BordxPAYCode", "Payor"), T("HLTCode", "Health"), D("BordxDate", "Bordx date"), M("BordxClaimAmt", "Amount"), M("CLMCaseMgmtFees", "Case mgmt fees"),
+                T("BordxStatus", "Status"), D("BordxMNRBSentDate", "Sent to MNRB"), D("BordxPAYSentDate", "Sent to payor"), D("BordxPAYRecDate", "Received from payor"),
+                D("BordxSendACDate", "Sent to A/C"), T("PAYToACPeriodYR", "A/C year"), T("PAYToACPeriodMth", "A/C month"), T("ClaimStatus", "Claim status")]),
+
+        new("monthly-dn", "Monthly DN Report", "Claim Bordx", 16, GenesisDb.Worksheet, "VIEW_Monthly_DNRpt", "DebitCreditDate DESC, CASNumber",
+            [F("caseNo", "Case No", Prefix, "CASNumber"), F("dcn", "DN/CN ref", Prefix, "DebitCreditRefNo"), F("payor", "Payor", Exact, "PAYCode"), F("enteredBy", "Invoice entered by", Exact, "INVEnteredBy"),
+                F("dcnDate", "DN/CN date", DateRange, "DebitCreditDate"), F("entered", "Invoice entered", DateRange, "INVEnteredDate"), F("receipt", "Receipt date", DateRange, "ReceiptDate")],
+            [T("CASNumber", "Case No"), N("ClaimVersion", "Ver"), T("DebitCreditRefNo", "DN/CN ref"), D("DebitCreditDate", "DN/CN date"), M("CLMTotalActual", "Total actual"), M("CLMTotalApproved", "Total approved"),
+                M("CLMPayableByMedix2M", "Payable to member"), T("PatientName", "Patient"), T("PAYCode", "Payor"), T("INVEnteredBy", "Entered by"), D("INVEnteredDate", "Entered"),
+                D("ReceiptDate", "Receipt date"), M("ReceiptAmt", "Receipt amount"), T("CaseOpenBy", "Case opened by"), T("ClaimOpenBy", "Claim opened by")]),
+
+        new("print-bordx", "Bordx Listing (Print Bordx)", "Claim Bordx", 32, GenesisDb.Worksheet, "View_PrintBordx", "BordxDate DESC, BordxRefNo, CASNumber",
+            [F("bordxRef", "Bordx ref", Prefix, "BordxRefNo"), F("payor", "Payor", Exact, "PAYCode"), F("insurer", "Insurer", Exact, "INSCode"), F("plan", "Plan", Exact, "PLNCode"),
+                F("caseNo", "Case No", Prefix, "CASNumber"), F("policyNo", "Policy No", Contains, "MBMPolicyNo"), F("hospital", "Hospital", Contains, "HOSName"), F("bordxDate", "Bordx date", DateRange, "BordxDate")],
+            [T("BordxRefNo", "Bordx ref"), D("BordxDate", "Bordx date"), T("CASNumber", "Case No"), N("ClaimVersion", "Ver"), T("MBMNumber", "Member No"), T("PatientName", "Patient"),
+                T("MBMPolicyNo", "Policy No"), T("PAYCode", "Payor"), T("HOSName", "Hospital"), D("CASDateAdmitted", "Admitted"), D("CASDischargeDate", "Discharged"),
+                M("CLMTotalActual", "Total actual"), M("CLMTotalApproved", "Total approved"), M("CLMPayableByMedix2H", "Payable to hospital"), M("CLMPayableByMedix2M", "Payable to member"),
+                M("CLMCaseMgmtFees", "Case mgmt fees"), T("DebitCreditRefNo", "DN/CN ref"), T("ClaimID", "Claim ID")],
+            RequiresFilter: true),
+
+        new("recovery-report", "Recovery Report", "Claim Bordx", 32, GenesisDb.Worksheet, "VIEW_NEWCLMReport", "BordxDate DESC, CASNumber",
+            [F("caseNo", "Case No", TextRange, "CASNumber"), F("payor", "Payor", Exact, "PAYCode"), F("hospital", "Hospital", Contains, "HOSName"), F("bordxRef", "Bordx ref", Exact, "BordxRefNo"),
+                F("bordxDate", "Bordx date", DateRange, "BordxDate"), F("admitted", "Admitted", DateRange, "CASDateAdmitted")],
+            [T("CASNumber", "Case No"), N("ClaimVersion", "Ver"), T("PatientName", "Patient"), T("PAYCode", "Payor"), T("HOSName", "Hospital"), D("CASDateAdmitted", "Admitted"),
+                M("CLMTotalApproved", "Total approved"), M("CLMRecoveryPaidByM", "Recovery"), T("BordxRefNo", "Bordx ref"), D("BordxDate", "Bordx date")],
+            RequiresFilter: true, FixedWhere: "CLMRecoveryPaidByM <> 0"),
+
+        new("panel-hospitals", "Panel Hospitals", "Case", 3, GenesisDb.Main, "HOS INNER JOIN PanelHospitals ON HOS.HOSCode = PanelHospitals.HOSCode", "HOS.HOSName",
+            [F("panel", "Panel code", Prefix, "PanelHospitals.HosPanelCode"), F("hospital", "Hospital name", Contains, "HOS.HOSName"), F("code", "Hospital code", Prefix, "HOS.HOSCode"),
+                F("state", "State", Contains, "HOS.HOSState"), F("town", "Town", Contains, "HOS.HOSTown")],
+            [T("PanelHospitals.HosPanelCode", "Panel code"), T("HOS.HOSCode", "Hospital code"), T("HOS.HOSName", "Hospital"), T("HOS.HOSTelNo", "Telephone"), T("HOS.HOSFaxNo", "Fax"),
+                T("HOS.HOSAdd1", "Address 1"), T("HOS.HOSAdd2", "Address 2"), T("HOS.HOSAdd3", "Address 3"), T("HOS.HOSTown", "Town"), T("HOS.HOSState", "State")]),
         new("member-tracking", "Membership Tracking", "Membership", 6, GenesisDb.Main, "VIEW_MBM_Search2", "MBMNumber",
             [
                 F("memberNo", "Member No", Prefix, "MBMNumber"), F("policyNo", "Policy No", Contains, "MBMPolicyNo"), F("ic", "IC / BC / Passport", Exact, "MBMIcBcPp"),
@@ -242,6 +278,8 @@ public static class TrackingCatalog
 
     public static TrackingDefinition? Find(string id) => All.FirstOrDefault(d => string.Equals(d.Id, id, StringComparison.OrdinalIgnoreCase));
 }
+
+
 
 
 

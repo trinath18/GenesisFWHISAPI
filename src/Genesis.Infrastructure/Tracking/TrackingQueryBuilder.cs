@@ -6,9 +6,13 @@ namespace Genesis.Infrastructure.Tracking;
 
 public sealed record BuiltQuery(string Sql, IReadOnlyDictionary<string, object?> Parameters);
 
+/// <summary>A compiled WHERE fragment (" AND col = @p0 ...") plus its parameters; the first parameter index to use is passed in.</summary>
+public sealed record CompiledFilters(string Where, Dictionary<string, object?> Parameters, int Count);
+
 /// <summary>
-/// Turns a tracking definition plus user filters into a parameterised SELECT. Only whitelisted columns from the definition are ever
+/// Turns a definition plus user filters into a parameterised SELECT. Only whitelisted columns from the definition are ever
 /// put into the SQL text; every user value travels as a parameter. Filter keys the definition does not know are rejected.
+/// The filter compiler is shared by the tracking (row listing) and summary (group-by) engines.
 /// </summary>
 public static class TrackingQueryBuilder
 {
@@ -16,9 +20,24 @@ public static class TrackingQueryBuilder
 
     public static BuiltQuery Build(TrackingDefinition def, IReadOnlyDictionary<string, string> filters, int maxRows)
     {
-        filters = new Dictionary<string, string>(filters, StringComparer.OrdinalIgnoreCase);
         var errors = new List<TrackingFilterError>();
-        var known = def.Filters.ToDictionary(f => f.Key, StringComparer.OrdinalIgnoreCase);
+        var compiled = CompileFilters(def.Filters, filters, errors);
+        if (def.RequiresFilter && compiled.Count == 0 && errors.Count == 0)
+            errors.Add(new("", "This screen reads a very large table: enter at least one filter."));
+        if (errors.Count > 0) throw new TrackingFilterException(errors);
+
+        var select = string.Join(", ", def.Columns.Select(c => c.Column));
+        compiled.Parameters["take"] = maxRows + 1;
+        var fixedWhere = string.IsNullOrWhiteSpace(def.FixedWhere) ? "" : $" AND ({def.FixedWhere})";
+        var sql = $"SELECT TOP (@take) {select} FROM {def.Source} WHERE 1 = 1{fixedWhere}{compiled.Where} ORDER BY {def.OrderBy}";
+        return new BuiltQuery(sql, compiled.Parameters);
+    }
+
+    /// <summary>Validates the user's filters against the definitions and compiles them. Problems are added to <paramref name="errors"/>.</summary>
+    public static CompiledFilters CompileFilters(IReadOnlyList<TrackingFilter> definitions, IReadOnlyDictionary<string, string> userFilters, List<TrackingFilterError> errors)
+    {
+        var filters = new Dictionary<string, string>(userFilters, StringComparer.OrdinalIgnoreCase);
+        var known = definitions.ToDictionary(f => f.Key, StringComparer.OrdinalIgnoreCase);
         foreach (var key in filters.Keys)
         {
             var baseKey = key.EndsWith(".from", StringComparison.OrdinalIgnoreCase) || key.EndsWith(".to", StringComparison.OrdinalIgnoreCase) ? key[..key.LastIndexOf('.')] : key;
@@ -32,7 +51,7 @@ public static class TrackingQueryBuilder
         string P(object? value) { var name = $"p{n++}"; args[name] = value; return "@" + name; }
         void Add(string clause) => where.Append(" AND ").Append(clause);
 
-        foreach (var f in def.Filters)
+        foreach (var f in definitions)
         {
             string? Get(string suffix = "") => filters.TryGetValue(f.Key + suffix, out var v) && !string.IsNullOrWhiteSpace(v) ? v.Trim() : null;
             string? Text(string? raw, string key)
@@ -76,14 +95,7 @@ public static class TrackingQueryBuilder
             }
         }
 
-        if (def.RequiresFilter && n == 0 && errors.Count == 0)
-            errors.Add(new("", "This screen reads a very large table: enter at least one filter."));
-        if (errors.Count > 0) throw new TrackingFilterException(errors);
-
-        var select = string.Join(", ", def.Columns.Select(c => c.Column));
-        args["take"] = maxRows + 1;
-        var sql = $"SELECT TOP (@take) {select} FROM {def.Source} WHERE 1 = 1{where} ORDER BY {def.OrderBy}";
-        return new BuiltQuery(sql, args);
+        return new CompiledFilters(where.ToString(), args, n);
     }
 
     private static bool TryDate(string value, out DateTime date) =>
@@ -91,7 +103,3 @@ public static class TrackingQueryBuilder
 
     private static string Like(string v) => v.Replace("[", "[[]").Replace("%", "[%]").Replace("_", "[_]");
 }
-
-
-
-

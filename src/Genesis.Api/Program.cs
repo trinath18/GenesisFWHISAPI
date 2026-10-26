@@ -63,10 +63,12 @@ app.MapReports();
 app.MapMembership();
 app.MapCases();
 app.MapTracking();
+app.MapSummaries();
 
 app.Run();
 
 public partial class Program;
+
 
 
 

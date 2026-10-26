@@ -69,3 +69,10 @@ Most read-only legacy screens are "criteria -> dynamic SQL -> grid -> export" fo
 | Documents (scanned, internal, e-mails, policy wording) | `ICaseDocumentStore`, `IPolicyWordingStore` |
 | Print outputs | `Genesis.Reports` (QuestPDF, ClosedXML) |
 | UI tables, fields, print buttons, downloads | `src/components/DataTables.tsx`, `PrintButton.tsx`, `src/lib/download.ts`, `format.ts` |
+
+## Summary reports (group-by engine)
+`Genesis.Core/Tracking/SummaryCatalog.cs` describes reports where the user picks grouping columns and measures (counts, sums) from whitelists, with the same
+filters as tracking screens. One definition replaces the ~120 hard-coded aggregate branches of the legacy ClaimReport/DCUReport/BordxTracking procedures.
+`SummaryQueryBuilder` only emits expressions from the catalog and parameterises every filter value. API: `/api/summary`, `/{id}`, `/{id}/run`, `/{id}/export.xlsx`
+(`dims=` absent = defaults, `dims=` empty = grand total, `top=N` = biggest N groups).
+Note: in the restored snapshot `VIEW_ClaimRpt_Simple` has no case numbers, so claim reports use `VIEW_NEWCLMReport` / `VIEW_CLMReportDCU`, which hold the data.

@@ -1,4 +1,4 @@
-using Genesis.Core.Data;
+﻿using Genesis.Core.Data;
 using Genesis.Core.Tracking;
 using Genesis.Infrastructure.Data;
 
@@ -11,7 +11,7 @@ internal sealed class TrackingService(IDbConnectionFactory connections) : SqlRep
         var query = TrackingQueryBuilder.Build(def, filters, maxRows);
         var rows = await QueryAsync(def.Database, query.Sql, query.Parameters, ct);
         var truncated = rows.Count > maxRows;
-        var data = rows.Take(maxRows).Select(r => def.Columns.Select(c => Convert(RowReader.Get(r, c.Column), c.Type)).ToArray()).ToList();
+        var data = rows.Take(maxRows).Select(r => def.Columns.Select(c => Convert(RowReader.Get(r, c.Column[(c.Column.LastIndexOf('.') + 1)..]), c.Type)).ToArray()).ToList();
         return new TrackingResult(def.Columns.Select(c => new TrackingResultColumn(c.Column, c.Header, c.Type.ToString().ToLowerInvariant())).ToList(), data, truncated);
     }
 
@@ -26,3 +26,4 @@ internal sealed class TrackingService(IDbConnectionFactory connections) : SqlRep
         _ => System.Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture)?.Trim(),
     };
 }
+

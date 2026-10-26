@@ -34,7 +34,7 @@ public sealed record TrackingColumn(string Column, string Header, TrackingColumn
 /// </summary>
 public sealed record TrackingDefinition(
     string Id, string Title, string Module, int ScreenPosition, GenesisDb Database, string Source, string OrderBy,
-    IReadOnlyList<TrackingFilter> Filters, IReadOnlyList<TrackingColumn> Columns, string? Description = null, bool RequiresFilter = false)
+    IReadOnlyList<TrackingFilter> Filters, IReadOnlyList<TrackingColumn> Columns, string? Description = null, bool RequiresFilter = false, string? FixedWhere = null)
 {
     public const int DefaultMaxRows = 500;
     public const int ExportMaxRows = 50_000;
@@ -58,6 +58,7 @@ public sealed class TrackingFilterException(IReadOnlyList<TrackingFilterError> e
 {
     public IReadOnlyList<TrackingFilterError> Errors { get; } = errors;
 }
+
 
 
 

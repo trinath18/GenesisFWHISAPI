@@ -26,10 +26,12 @@ public static class DependencyInjection
         services.AddSingleton<IPolicyWordingStore, FileSystemPolicyWordingStore>();
         services.AddScoped<ICaseInquiryRepository, CaseInquiryRepository>();
         services.AddScoped<ITrackingService, TrackingService>();
+        services.AddScoped<ISummaryService, SummaryService>();
         services.AddSingleton<ICaseDocumentStore, FileSystemCaseDocumentStore>();
         return services;
     }
 }
+
 
 
 
