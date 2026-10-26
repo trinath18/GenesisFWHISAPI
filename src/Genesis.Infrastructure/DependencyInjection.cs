@@ -48,12 +48,14 @@ public static class DependencyInjection
         services.AddScoped<IStatusEndorsementRepository, StatusEndorsementRepository>();
         services.AddScoped<ISupplementaryRepository, SupplementaryRepository>();
         services.AddScoped<ISupplementaryCancelRepository, SupplementaryCancelRepository>();
+        services.AddScoped<ISupplementaryDeleteRepository, SupplementaryDeleteRepository>();
         services.AddScoped<IValidDateRangeRepository, ValidDateRangeRepository>();
         services.AddScoped<ISummaryService, SummaryService>();
         services.AddSingleton<ICaseDocumentStore, FileSystemCaseDocumentStore>();
         return services;
     }
 }
+
 
 
 

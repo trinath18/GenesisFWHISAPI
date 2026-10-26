@@ -29,10 +29,14 @@ public static class AdjustmentEndpoints
         g.MapPost("/supplementary/cancel/quote", async (SupplementaryCancelRequest request, ISupplementaryCancelRepository repo, CancellationToken ct) => Results.Ok(await repo.QuoteAsync(request, ct)));
         g.MapPost("/supplementary/cancel", async (SupplementaryCancelRequest request, ClaimsPrincipal user, ISupplementaryCancelRepository repo, CancellationToken ct) =>
             Results.Ok(await repo.CancelAsync(request, user.UserCode(), ct)));
+        g.MapPost("/supplementary/delete/quote", async (SupplementaryDeleteRequest request, ISupplementaryDeleteRepository repo, CancellationToken ct) => Results.Ok(await repo.QuoteAsync(request, ct)));
+        g.MapPost("/supplementary/delete", async (SupplementaryDeleteRequest request, ClaimsPrincipal user, ISupplementaryDeleteRepository repo, CancellationToken ct) =>
+            Results.Ok(await repo.DeleteAsync(request, user.UserCode(), ct)));
         g.MapPut("/amendment", async (PrincipalAmendment amendment, ClaimsPrincipal user, IAdjustmentRepository repo, CancellationToken ct) =>
             Results.Ok(await repo.AmendAsync(amendment, user.UserCode(), ct)));
     }
 }
+
 
 
 
