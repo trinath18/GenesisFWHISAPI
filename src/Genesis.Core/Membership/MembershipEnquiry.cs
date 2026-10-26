@@ -61,10 +61,10 @@ public interface IMembershipEnquiryRepository
     Task<MemberDetail?> GetAsync(string number, CancellationToken ct = default);
     Task<IReadOnlyList<MemberAmendment>> GetAmendmentsAsync(string number, CancellationToken ct = default);
     Task<IReadOnlyList<MemberCase>> GetCasesAsync(string number, CancellationToken ct = default);
-    Task<IReadOnlyList<MemberCase>> GetCaseHistoryAsync(string number, CancellationToken ct = default);
     Task<IReadOnlyList<MemberAccountSummary>> GetAccountSummaryAsync(string number, CancellationToken ct = default);
     Task<IReadOnlyList<MemberAccountHistoryItem>> GetAccountHistoryAsync(string number, CancellationToken ct = default);
     Task<IReadOnlyList<MemberNote>> GetExclusionsAsync(string number, CancellationToken ct = default);
     Task<IReadOnlyList<MemberNote>> GetRemarksAsync(string number, CancellationToken ct = default);
 }
+
 

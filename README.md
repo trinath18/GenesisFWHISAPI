@@ -1,4 +1,4 @@
-# Genesis API
+﻿# Genesis API
 
 ASP.NET Core (.NET 10) API for the Genesis FIS migration. Talks to the existing SQL Server databases unchanged.
 
@@ -33,6 +33,12 @@ reports, menu-to-form map with `USRAccess` positions, clone groups, `summary.md`
 ## Migrated screens
 | Legacy screen | API | Status |
 |---|---|---|
-| Membership > Enquiry (`frmNewMBMEnquiry`) | `/api/membership/members` | Search, details, cases, case history, adjust history, account summary/history, exclusions, remarks. Remaining tabs: benefits, policy terms/wording, fees, LT limit, non-disclosure, T/O claims, printing. |
+| Membership > Enquiry (`frmNewMBMEnquiry`) | `/api/membership/members` | Complete: search and all 16 tabs (details, supplementary, adjust history, benefits, current/historic cases, member history, accounts, fees, non-disclosure, policy terms, lifetime limit, policy wording, takeover claims, notes) plus the three print outputs. |
 
 Integration tests (`DatabaseFact`) run against the local restored databases and skip themselves when SQL Server is unavailable.
+
+### Membership Enquiry notes
+- Print outputs are built in code (no Crystal or Office): `print/enquiry.pdf` (replaces `RptMbmEnquiry1.rpt`), `print/exclusion-form.xlsx` (replaces `MBMExclusion.xlt`), `print/history.xlsx` (replaces `PrintHistory.xlt`).
+- The legacy form passed raw SQL fragments to `SearchMBMHistory06`, `Case_SearchIllness`, `SP_SearchLTLmt` and `Case_Registration`. Those are replaced by parameterised queries on the same views/tables.
+- Policy wording documents are read from `FileStore:PolicyWordingRoot` (one sub-folder per plan, taken from `PLN.PLNPolicyWording`). Leave it unset to disable; swap `IPolicyWordingStore` for blob storage in the cloud.
+- The restored 2021 snapshot has no rows for covered persons, lifetime-limit views, non-disclosure or most account views, so those tabs are covered by "empty state" tests only.

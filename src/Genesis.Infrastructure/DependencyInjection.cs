@@ -18,7 +18,10 @@ public static class DependencyInjection
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IHospitalRepository, HospitalRepository>();
         services.AddScoped<IMembershipEnquiryRepository, MembershipEnquiryRepository>();
+        services.AddScoped<IMembershipTabsRepository, MembershipTabsRepository>();
+        services.AddSingleton<IPolicyWordingStore, FileSystemPolicyWordingStore>();
         return services;
     }
 }
+
 

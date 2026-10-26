@@ -1,4 +1,4 @@
-using System.Data;
+﻿using System.Data;
 using Dapper;
 using Genesis.Core.Data;
 using Genesis.Core.Membership;
@@ -97,12 +97,6 @@ internal sealed class MembershipEnquiryRepository(IDbConnectionFactory db) : IMe
 
     public async Task<IReadOnlyList<MemberCase>> GetCasesAsync(string number, CancellationToken ct = default) =>
         await RunCaseProcAsync("SearchCas", new { MBMNumber = number.Trim() }, ct);
-
-    public async Task<IReadOnlyList<MemberCase>> GetCaseHistoryAsync(string number, CancellationToken ct = default)
-    {
-        var ic = await ScalarIcAsync(number, ct);
-        return ic is null || ic.Length <= 5 ? [] : await RunCaseProcAsync("SearchCASHistory", new { ICNumber = ic }, ct);
-    }
 
     public async Task<IReadOnlyList<MemberAccountSummary>> GetAccountSummaryAsync(string number, CancellationToken ct = default)
     {
@@ -213,3 +207,4 @@ internal sealed class MembershipEnquiryRepository(IDbConnectionFactory db) : IMe
     private static DateTime? D(IDictionary<string, object?> r, string key) => Get(r, key) is DateTime d ? d : null;
     private static decimal? Dec(IDictionary<string, object?> r, string key) => Get(r, key) is null or DBNull ? null : Convert.ToDecimal(Get(r, key));
 }
+
