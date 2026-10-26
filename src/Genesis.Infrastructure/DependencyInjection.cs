@@ -42,12 +42,14 @@ public static class DependencyInjection
         services.AddScoped<IFeeRateSource, FeeRateSource>();
         services.AddScoped<FeeService>();
         services.AddScoped<IReinstatementRepository, ReinstatementRepository>();
+        services.AddScoped<IAdjustmentRepository, AdjustmentRepository>();
         services.AddScoped<IValidDateRangeRepository, ValidDateRangeRepository>();
         services.AddScoped<ISummaryService, SummaryService>();
         services.AddSingleton<ICaseDocumentStore, FileSystemCaseDocumentStore>();
         return services;
     }
 }
+
 
 
 
