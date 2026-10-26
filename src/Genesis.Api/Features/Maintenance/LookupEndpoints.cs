@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using Genesis.Api.Infrastructure;
 using Genesis.Core.Maintenance;
 using Genesis.Core.Tracking;
@@ -20,8 +20,8 @@ public static class LookupEndpoints
 
         g.MapGet("/{id}", (string id, ClaimsPrincipal user) => With(id, user, def => Results.Ok(new
         {
-            def.Id, def.Title, def.Module, def.AllowDelete,
-            fields = def.Fields.Select(f => new { f.Key, f.Label, f.MaxLength, f.Required, f.IsKey }),
+            def.Id, def.Title, def.Module, def.AllowDelete, def.KeyIsIdentity,
+            fields = def.Fields.Select(f => new { f.Key, f.Label, f.MaxLength, f.Required, f.IsKey, kind = f.Kind.ToString(), f.Choices, f.Multiline }),
         })));
 
         g.MapGet("/{id}/rows", (string id, string? q, ClaimsPrincipal user, ILookupRepository repo, CancellationToken ct) =>
@@ -56,3 +56,4 @@ public static class LookupEndpoints
         return user.CanAccess(def.ScreenPosition) ? null : Results.Forbid();
     }
 }
+

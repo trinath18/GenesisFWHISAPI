@@ -245,3 +245,114 @@ public class ValidDateRangeTests(WriteApiFactory factory) : IClassFixture<WriteA
     }
 }
 
+
+public class MmaTests(WriteApiFactory factory) : IClassFixture<WriteApiFactory>, IAsyncLifetime
+{
+    private const string Proc = "/api/lookups/mma-procedure/rows";
+    private const string Fee = "/api/lookups/mma-fee/rows";
+    private HttpClient Client() => factory.ClientFor(WriteApiFactory.Access(147));
+
+    public Task InitializeAsync() => Task.CompletedTask;
+    public Task DisposeAsync() => factory.ResetAsync();
+
+    private async Task<T> Scalar<T>(string sql, object? args = null)
+    {
+        await using var conn = await factory.Db.OpenAsync(GenesisDb.Maintenance);
+        return await conn.ExecuteScalarAsync<T>(sql, args) ?? throw new InvalidOperationException("no value");
+    }
+
+    [Fact]
+    public async Task Requires_the_mma_permission()
+    {
+        Assert.Equal(HttpStatusCode.Unauthorized, (await factory.CreateClient().GetAsync(Proc)).StatusCode);
+        var other = factory.ClientFor(WriteApiFactory.Access(3));
+        Assert.Equal(HttpStatusCode.Forbidden, (await other.GetAsync(Proc)).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await other.PostAsJsonAsync(Fee, new { surgeonFee = "1" })).StatusCode);
+    }
+
+    [DatabaseFact]
+    public async Task Procedure_is_created_with_a_generated_index_nulls_for_empty_fields_and_stamps()
+    {
+        var c = Client();
+        var res = await c.PostAsJsonAsync(Proc, new { mainBp = "TESTBP", narrative = "Test procedure\r\nsecond line", page = "9", part = "B" });
+        Assert.Equal(HttpStatusCode.Created, res.StatusCode);
+        var row = (await res.Content.ReadFromJsonAsync<LookupRow>())!;
+        Assert.True(int.Parse(row.Key) > 0);
+        Assert.Null(row.Values["opcs"]);
+        Assert.Equal("B", row.Values["part"]);
+        Assert.Equal(1, await Scalar<int>("SELECT COUNT(*) FROM MMAProcedures WHERE ProcIndex = @k AND OPCSCode IS NULL AND ProcSurgCat IS NULL AND ProcPart = 'B' AND ProcLastUpdateUser = 'TEST' AND ProcLastUpdateDate = CAST(GETDATE() AS date)", new { k = row.Key }));
+        Assert.Equal(1, await Scalar<int>("SELECT COUNT(*) FROM MMAProcedures WHERE ProcIndex = @k AND OPCSNarrative LIKE '%second line'", new { k = row.Key }));
+        Assert.Equal("Lookup.Create", Assert.Single(factory.Audit.Entries).Action);
+    }
+
+    [DatabaseFact]
+    public async Task Procedure_edit_changes_only_the_form_columns_and_delete_removes_one_row()
+    {
+        var c = Client();
+        var total = await Scalar<int>("SELECT COUNT(*) FROM MMAProcedures");
+        var key = (await (await c.PostAsJsonAsync(Proc, new { mainBp = "TESTBP", narrative = "n", page = "1" })).Content.ReadFromJsonAsync<LookupRow>())!.Key;
+        await using (var conn = await factory.Db.OpenAsync(GenesisDb.Maintenance))
+            await conn.ExecuteAsync("UPDATE MMAProcedures SET CPTCode = 'KEEP', MedixNarrative = 'KEEP2' WHERE ProcIndex = @key", new { key });
+
+        var upd = await c.PutAsJsonAsync($"{Proc}?key={key}", new { mainBp = "TESTBP2", narrative = "n2", page = "2", part = "C", opcs = "12345" });
+        Assert.Equal(HttpStatusCode.OK, upd.StatusCode);
+        Assert.Equal(1, await Scalar<int>("SELECT COUNT(*) FROM MMAProcedures WHERE ProcIndex = @key AND ProcMainBPCode = 'TESTBP2' AND OPCSCode = '12345' AND ProcPart = 'C' AND CPTCode = 'KEEP' AND MedixNarrative = 'KEEP2'", new { key }));
+
+        Assert.Equal(HttpStatusCode.OK, (await c.DeleteAsync($"{Proc}?key={key}")).StatusCode);
+        Assert.Equal(total, await Scalar<int>("SELECT COUNT(*) FROM MMAProcedures"));
+    }
+
+    [DatabaseFact]
+    public async Task Procedure_validation()
+    {
+        var c = Client();
+        async Task<HttpStatusCode> Post(object body) => (await c.PostAsJsonAsync(Proc, body)).StatusCode;
+        Assert.Equal(HttpStatusCode.BadRequest, await Post(new { narrative = "n", page = "1" }));
+        Assert.Equal(HttpStatusCode.BadRequest, await Post(new { mainBp = "x", page = "1" }));
+        Assert.Equal(HttpStatusCode.BadRequest, await Post(new { mainBp = "x", narrative = "n" }));
+        Assert.Equal(HttpStatusCode.BadRequest, await Post(new { mainBp = "x", narrative = "n", page = "1", part = "Z" }));
+        Assert.Equal(HttpStatusCode.BadRequest, await Post(new { mainBp = "x", narrative = "n", page = "1", opcs = new string('1', 11) }));
+        Assert.Equal(HttpStatusCode.BadRequest, await Post(new { mainBp = "x", narrative = new string('n', 3001), page = "1" }));
+        Assert.Equal(HttpStatusCode.BadRequest, await Post(new { index = "5", mainBp = "x", narrative = "n", page = "1" }));
+        Assert.Equal(HttpStatusCode.BadRequest, (await c.PutAsJsonAsync($"{Proc}?key=abc", new { mainBp = "x", narrative = "n", page = "1" })).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await c.PutAsJsonAsync($"{Proc}?key=999999999", new { mainBp = "x", narrative = "n", page = "1" })).StatusCode);
+        Assert.Empty(factory.Audit.Entries);
+    }
+
+    [DatabaseFact]
+    public async Task Search_finds_procedures_by_text_and_treats_wildcards_literally()
+    {
+        var c = Client();
+        Assert.NotEmpty((await c.GetFromJsonAsync<List<LookupRow>>($"{Proc}?q=SPLANCHNIC"))!);
+        Assert.Empty((await c.GetFromJsonAsync<List<LookupRow>>($"{Proc}?q=%25%25%25zzz"))!);
+        Assert.True((await c.GetFromJsonAsync<List<LookupRow>>(Proc))!.Count <= LookupDefinition.MaxRows);
+    }
+
+    [DatabaseFact]
+    public async Task Fee_amounts_are_validated_and_stored_as_money()
+    {
+        var c = Client();
+        var key = (await (await c.PostAsJsonAsync(Fee, new { surgeonCat = "SX", surgeonFee = "1,250.5", anaesCat = "AX", anaesFee = "230" })).Content.ReadFromJsonAsync<LookupRow>())!;
+        Assert.Equal("1250.50", key.Values["surgeonFee"]);
+        Assert.Equal(1, await Scalar<int>("SELECT COUNT(*) FROM MMAFees WHERE FeeIndex = @k AND SurgeonsFees = 1250.5 AND AnaesthetistsFees = 230 AND FeeLastUpdateUser = 'TEST'", new { k = key.Key }));
+
+        Assert.Equal(HttpStatusCode.BadRequest, (await c.PostAsJsonAsync(Fee, new { surgeonFee = "abc" })).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await c.PostAsJsonAsync(Fee, new { surgeonFee = "-5" })).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await c.PostAsJsonAsync(Fee, new { surgeonFee = "1e5" })).StatusCode);
+        var empty = await c.PostAsJsonAsync(Fee, new { surgeonCat = "ONLY" });
+        Assert.Equal(HttpStatusCode.Created, empty.StatusCode);
+        Assert.Null((await empty.Content.ReadFromJsonAsync<LookupRow>())!.Values["surgeonFee"]);
+    }
+
+    [DatabaseFact]
+    public async Task Fees_can_be_listed_edited_and_deleted_and_the_seeded_rows_read_back()
+    {
+        var c = Client();
+        var all = await c.GetFromJsonAsync<List<LookupRow>>(Fee);
+        Assert.Contains(all!, r => r.Values["surgeonCat"] == "SMINOR1" && r.Values["surgeonFee"] == "275.00");
+        var k = (await (await c.PostAsJsonAsync(Fee, new { surgeonCat = "T1", surgeonFee = "1" })).Content.ReadFromJsonAsync<LookupRow>())!.Key;
+        Assert.Equal("2.00", (await (await c.PutAsJsonAsync($"{Fee}?key={k}", new { surgeonCat = "T1", surgeonFee = "2" })).Content.ReadFromJsonAsync<LookupRow>())!.Values["surgeonFee"]);
+        Assert.Equal(HttpStatusCode.OK, (await c.DeleteAsync($"{Fee}?key={k}")).StatusCode);
+        Assert.Equal(0, await Scalar<int>("SELECT COUNT(*) FROM MMAFees WHERE FeeIndex = @k", new { k }));
+    }
+}

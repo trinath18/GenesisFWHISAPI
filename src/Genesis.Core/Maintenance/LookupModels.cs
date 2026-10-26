@@ -1,9 +1,15 @@
-using Genesis.Core.Data;
+﻿using Genesis.Core.Data;
 
 namespace Genesis.Core.Maintenance;
 
-/// <summary>One editable column. The key field identifies the row and cannot be changed after creation.</summary>
-public sealed record LookupField(string Key, string Column, string Label, int MaxLength, bool Required = false, bool IsKey = false);
+public enum LookupFieldKind { Text, Money, Choice }
+
+/// <summary>
+/// One editable column. The key field identifies the row and cannot be changed after creation. Optional fields are stored as NULL when left empty
+/// (as the legacy forms did). <see cref="Choices"/> restricts a Choice field to the listed values; Money fields hold a non-negative amount.
+/// </summary>
+public sealed record LookupField(string Key, string Column, string Label, int MaxLength, bool Required = false, bool IsKey = false,
+    LookupFieldKind Kind = LookupFieldKind.Text, IReadOnlyList<string>? Choices = null, bool Multiline = false);
 
 /// <summary>A place that points at a lookup row; deleting a referenced row is refused.</summary>
 public sealed record LookupReference(GenesisDb Database, string Table, string Column, string Description);
@@ -15,9 +21,10 @@ public sealed record LookupReference(GenesisDb Database, string Table, string Co
 public sealed record LookupDefinition(
     string Id, string Title, string Module, int ScreenPosition, GenesisDb Database, string Table, string OrderBy,
     IReadOnlyList<LookupField> Fields, IReadOnlyList<LookupReference> References,
-    string? UpdatedByColumn = null, string? UpdatedDateColumn = null, bool AllowDelete = true)
+    string? UpdatedByColumn = null, string? UpdatedDateColumn = null, bool AllowDelete = true, bool KeyIsIdentity = false)
 {
     public const int MaxRows = 2000;
+    public const decimal MaxMoney = 922337203685477m;
     public LookupField KeyField => Fields.Single(f => f.IsKey);
 }
 
@@ -30,3 +37,4 @@ public interface ILookupRepository
     Task<LookupRow> UpdateAsync(LookupDefinition def, string key, IReadOnlyDictionary<string, string?> values, string user, CancellationToken ct = default);
     Task DeleteAsync(LookupDefinition def, string key, string user, CancellationToken ct = default);
 }
+
