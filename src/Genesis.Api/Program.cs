@@ -73,10 +73,12 @@ app.MapTracking();
 app.MapSummaries();
 app.MapPanelHospitals();
 app.MapLookups();
+app.MapSuspensions();
 
 app.Run();
 
 public partial class Program;
+
 
 
 
