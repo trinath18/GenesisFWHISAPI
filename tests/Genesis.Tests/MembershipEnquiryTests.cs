@@ -54,6 +54,11 @@ public sealed class DatabaseFactAttribute : FactAttribute
     public DatabaseFactAttribute() { if (Reason.Value is { } r) Skip = r; }
 }
 
+public sealed class DatabaseTheoryAttribute : TheoryAttribute
+{
+    public DatabaseTheoryAttribute() { var probe = new DatabaseFactAttribute(); if (probe.Skip is { } r) Skip = r; }
+}
+
 internal static class TestHost
 {
     public static IConfiguration Config() => new ConfigurationBuilder()
@@ -262,5 +267,6 @@ public class PolicyWordingStoreTests : IDisposable
         Assert.Empty(empty.List("PLAN1"));
     }
 }
+
 
 
