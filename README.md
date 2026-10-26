@@ -87,3 +87,6 @@ Write screens follow one pattern so each new one is small and safe:
 6. **Tests** use `WriteApiFactory`: every database gets one connection inside an open transaction, sessions use savepoints, and `ResetAsync()` (call it in `DisposeAsync`) rolls everything back. Real data is never changed; `Test_changes_are_rolled_back_and_the_real_database_is_untouched` proves it with a row-level checksum.
 7. **UI**: `ConfirmDialog` before saving, `useMutation` + invalidate queries, success/error `Alert`.
 Browser write tests against the restored database must snapshot the touched table (count + CHECKSUM_AGG) before and after, and undo their own changes.
+
+### Code-table engine (`LookupCatalog`)
+Simple maintained tables are described once in `Genesis.Core/Maintenance/LookupCatalog.cs` (table, fields with lengths/required/choices/money, legacy update-stamp columns, references that block deletion, generated keys). The generic repository, API (`/api/lookups`), audit and UI page (`/lookups/:id`) come for free; a schema test checks every column name and length against the real databases. Use it for the many small legacy maintenance forms.
