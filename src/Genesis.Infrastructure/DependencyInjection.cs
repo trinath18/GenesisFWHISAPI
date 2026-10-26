@@ -47,12 +47,14 @@ public static class DependencyInjection
         services.AddScoped<IPlanChangeRepository, PlanChangeRepository>();
         services.AddScoped<IStatusEndorsementRepository, StatusEndorsementRepository>();
         services.AddScoped<ISupplementaryRepository, SupplementaryRepository>();
+        services.AddScoped<ISupplementaryCancelRepository, SupplementaryCancelRepository>();
         services.AddScoped<IValidDateRangeRepository, ValidDateRangeRepository>();
         services.AddScoped<ISummaryService, SummaryService>();
         services.AddSingleton<ICaseDocumentStore, FileSystemCaseDocumentStore>();
         return services;
     }
 }
+
 
 
 

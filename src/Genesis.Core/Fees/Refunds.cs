@@ -1,4 +1,4 @@
-namespace Genesis.Core.Fees;
+﻿namespace Genesis.Core.Fees;
 
 public sealed record RefundAmounts(decimal PremiumEffective, decimal PremiumReduction, decimal McoEffective, decimal McoRefund);
 
@@ -27,10 +27,9 @@ public static class RefundMath
     /// The legacy form passes the stored premium and MCO fee through CInt (whole numbers, halves to even) before refunding, formats every value to two decimals
     /// and, for plans with round-up, rounds each result to a whole number.
     /// </summary>
-    public static RefundAmounts Compute(DateOnly expiry, DateOnly cancel, DateOnly effective, decimal premium, decimal mco, bool roundUp)
+    public static RefundAmounts Compute(DateOnly expiry, DateOnly cancel, DateOnly effective, decimal premium, decimal mco, bool roundUp, bool wholeInputs = true)
     {
-        premium = FeeMath.WholeEven(premium);
-        mco = FeeMath.WholeEven(mco);
+        if (wholeInputs) { premium = FeeMath.WholeEven(premium); mco = FeeMath.WholeEven(mco); }
         decimal R(decimal v) => roundUp ? FeeMath.WholeEven(v) : v;
 
         var mcoRefund = R(FeeMath.Money(McoRefund(expiry, cancel, effective, mco)));
@@ -40,3 +39,4 @@ public static class RefundMath
         return new RefundAmounts(premiumEffective, reduction, mcoEffective, mcoRefund);
     }
 }
+
