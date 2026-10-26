@@ -1,6 +1,7 @@
 ﻿using Genesis.Core.Cases;
 using Genesis.Core.Data;
 using Genesis.Core.Hospitals;
+using Genesis.Core.Fees;
 using Genesis.Core.Maintenance;
 using Genesis.Core.Membership;
 using Genesis.Core.Writes;
@@ -9,6 +10,7 @@ using Genesis.Core.Users;
 using Genesis.Infrastructure.Cases;
 using Genesis.Infrastructure.Data;
 using Genesis.Infrastructure.Hospitals;
+using Genesis.Infrastructure.Fees;
 using Genesis.Infrastructure.Maintenance;
 using Genesis.Infrastructure.Membership;
 using Genesis.Infrastructure.Writes;
@@ -37,12 +39,17 @@ public static class DependencyInjection
         services.AddScoped<ICardSendingRepository, CardSendingRepository>();
         services.AddScoped<IMcoPendingRepository, McoPendingRepository>();
         services.AddScoped<IMemberDeletionRepository, MemberDeletionRepository>();
+        services.AddScoped<IFeeRateSource, FeeRateSource>();
+        services.AddScoped<FeeService>();
+        services.AddScoped<IReinstatementRepository, ReinstatementRepository>();
         services.AddScoped<IValidDateRangeRepository, ValidDateRangeRepository>();
         services.AddScoped<ISummaryService, SummaryService>();
         services.AddSingleton<ICaseDocumentStore, FileSystemCaseDocumentStore>();
         return services;
     }
 }
+
+
 
 
 

@@ -77,10 +77,12 @@ app.MapSuspensions();
 app.MapCardSending();
 app.MapMcoPending();
 app.MapMemberDeletion();
+app.MapReinstatement();
 
 app.Run();
 
 public partial class Program;
+
 
 
 
