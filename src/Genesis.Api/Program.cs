@@ -1,6 +1,7 @@
 ﻿using Genesis.Api.Features.Auth;
 using Genesis.Api.Features.Cases;
 using Genesis.Api.Features.Health;
+using Genesis.Api.Features.Maintenance;
 using Genesis.Api.Features.Membership;
 using Genesis.Api.Features.Reports;
 using Genesis.Api.Features.Tracking;
@@ -10,10 +11,15 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Scalar.AspNetCore;
 using Serilog;
+using Serilog.Filters;
+using Serilog.Formatting.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Host.UseSerilog((ctx, cfg) => cfg.ReadFrom.Configuration(ctx.Configuration).WriteTo.Console());
+builder.Host.UseSerilog((ctx, cfg) => cfg.ReadFrom.Configuration(ctx.Configuration).WriteTo.Console()
+    // Audit trail of every write: its own append-only JSON file (one per day), separate from the application log.
+    .WriteTo.Logger(audit => audit.Filter.ByIncludingOnly(Matching.FromSource("Genesis.Audit"))
+        .WriteTo.File(new JsonFormatter(renderMessage: true), ctx.Configuration["Audit:Path"] ?? "logs/audit-.jsonl", rollingInterval: RollingInterval.Day, shared: true)));
 
 var jwt = builder.Configuration.GetSection("Jwt").Get<JwtOptions>() ?? new JwtOptions();
 if (string.IsNullOrWhiteSpace(jwt.Key) || jwt.Key.Length < 32)
@@ -56,6 +62,7 @@ if (app.Environment.IsDevelopment())
 if (origins.Length > 0) app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseBusinessRuleErrors();
 
 app.MapHealth();
 app.MapAuth();
@@ -64,10 +71,12 @@ app.MapMembership();
 app.MapCases();
 app.MapTracking();
 app.MapSummaries();
+app.MapPanelHospitals();
 
 app.Run();
 
 public partial class Program;
+
 
 
 

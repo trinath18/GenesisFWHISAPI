@@ -1,4 +1,4 @@
-using System.Data.Common;
+﻿using System.Data.Common;
 using Genesis.Core.Data;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
@@ -15,4 +15,8 @@ internal sealed class SqlConnectionFactory(IConfiguration configuration) : IDbCo
         await connection.OpenAsync(ct);
         return connection;
     }
+
+    public async Task<IDbSession> BeginSessionAsync(GenesisDb db, CancellationToken ct = default) =>
+        await DbSession.BeginAsync(await OpenAsync(db, ct), ct);
 }
+

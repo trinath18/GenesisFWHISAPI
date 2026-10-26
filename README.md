@@ -76,3 +76,14 @@ filters as tracking screens. One definition replaces the ~120 hard-coded aggrega
 `SummaryQueryBuilder` only emits expressions from the catalog and parameterises every filter value. API: `/api/summary`, `/{id}`, `/{id}/run`, `/{id}/export.xlsx`
 (`dims=` absent = defaults, `dims=` empty = grand total, `top=N` = biggest N groups).
 Note: in the restored snapshot `VIEW_ClaimRpt_Simple` has no case numbers, so claim reports use `VIEW_NEWCLMReport` / `VIEW_CLMReportDCU`, which hold the data.
+
+## Write flows: conventions
+Write screens follow one pattern so each new one is small and safe:
+1. **Contract in `Genesis.Core`**: request/response records, validation rules, a repository interface.
+2. **Repository in `Genesis.Infrastructure`** derived from `SqlRepository`. Reads use `QueryAsync`; every write goes through `Db.BeginSessionAsync(db)` which returns an `IDbSession` (one transaction; disposing without `CommitAsync` rolls back). All values are parameters.
+3. **Rules throw `BusinessRuleException`** (`Invalid` 400, `NotFound` 404, `Conflict` 409); `UseBusinessRuleErrors` turns them into `{ error, field }` JSON.
+4. **Audit**: after a successful commit call `IAuditLog.Record(...)` with action, entity, key, user and details. Entries go to `logs/audit-YYYYMMDD.jsonl` (set `Audit:Path`), an append-only JSON file, so no table is added to the legacy databases. Legacy "last updated by/on" columns are still stamped with `user.UserCode()` exactly as before.
+5. **Endpoint** uses `.RequireScreen(position)` with the legacy USRAccess position, and `user.UserCode()` for stamps.
+6. **Tests** use `WriteApiFactory`: every database gets one connection inside an open transaction, sessions use savepoints, and `ResetAsync()` (call it in `DisposeAsync`) rolls everything back. Real data is never changed; `Test_changes_are_rolled_back_and_the_real_database_is_untouched` proves it with a row-level checksum.
+7. **UI**: `ConfirmDialog` before saving, `useMutation` + invalidate queries, success/error `Alert`.
+Browser write tests against the restored database must snapshot the touched table (count + CHECKSUM_AGG) before and after, and undo their own changes.
