@@ -1,7 +1,8 @@
-using System.Data;
+﻿using System.Data;
 using System.Data.Common;
 using Dapper;
 using Genesis.Core.Data;
+using Genesis.Infrastructure.Data;
 using Genesis.Core.Membership;
 using static Genesis.Infrastructure.Data.RowReader;
 
@@ -12,7 +13,7 @@ namespace Genesis.Infrastructure.Membership;
 /// (SearchMBMHistory06, Case_SearchIllness, SP_SearchLTLmt, Case_Registration); those are replaced here by
 /// parameterised queries against the same views/tables the procedures used.
 /// </summary>
-internal sealed class MembershipTabsRepository(IDbConnectionFactory db) : IMembershipTabsRepository
+internal sealed class MembershipTabsRepository(IDbConnectionFactory connections) : SqlRepository(connections), IMembershipTabsRepository
 {
     private const int Timeout = 120;
 
@@ -21,7 +22,7 @@ internal sealed class MembershipTabsRepository(IDbConnectionFactory db) : IMembe
 
     private async Task<Key?> LoadKeyAsync(string number, CancellationToken ct)
     {
-        await using var conn = await db.OpenAsync(GenesisDb.Main, ct);
+        await using var conn = await Db.OpenAsync(GenesisDb.Main, ct);
         var row = (await conn.QueryAsync(new CommandDefinition(
             "SELECT MBMNumber, MBMIcBcPp, MBMName, MBMDOB, INSCode, PLNCode, HLTCode, PAYCode, MBMPayorEffDate, MBMPolicyNo FROM MBM WHERE MBMNumber = @number",
             new { number = number.Trim() }, commandTimeout: Timeout, cancellationToken: ct))).FirstOrDefault();
@@ -29,14 +30,6 @@ internal sealed class MembershipTabsRepository(IDbConnectionFactory db) : IMembe
         var r = (IDictionary<string, object?>)row;
         return new Key(S(r, "MBMNumber") ?? number, S(r, "MBMIcBcPp"), S(r, "MBMName"), D(r, "MBMDOB"), S(r, "INSCode"),
             S(r, "PLNCode"), S(r, "HLTCode"), S(r, "PAYCode"), D(r, "MBMPayorEffDate"), S(r, "MBMPolicyNo"));
-    }
-
-    private async Task<List<IDictionary<string, object?>>> QueryAsync(GenesisDb database, string sql, object args, CancellationToken ct,
-        CommandType type = CommandType.Text)
-    {
-        await using var conn = await db.OpenAsync(database, ct);
-        var rows = await conn.QueryAsync(new CommandDefinition(sql, args, commandType: type, commandTimeout: Timeout, cancellationToken: ct));
-        return rows.Select(r => (IDictionary<string, object?>)r).ToList();
     }
 
     public async Task<IReadOnlyList<CoveredPerson>> GetCoveredPersonsAsync(string number, CancellationToken ct = default)
@@ -265,3 +258,5 @@ internal sealed class MembershipTabsRepository(IDbConnectionFactory db) : IMembe
         return rows.Count == 0 ? null : S(rows[0], "PLNPolicyWording");
     }
 }
+
+

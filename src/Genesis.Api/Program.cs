@@ -3,6 +3,7 @@ using Genesis.Api.Features.Cases;
 using Genesis.Api.Features.Health;
 using Genesis.Api.Features.Membership;
 using Genesis.Api.Features.Reports;
+using Genesis.Api.Features.Tracking;
 using Genesis.Api.Infrastructure;
 using Genesis.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -61,9 +62,11 @@ app.MapAuth();
 app.MapReports();
 app.MapMembership();
 app.MapCases();
+app.MapTracking();
 
 app.Run();
 
 public partial class Program;
+
 
 

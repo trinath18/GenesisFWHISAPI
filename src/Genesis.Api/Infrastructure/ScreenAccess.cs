@@ -1,4 +1,4 @@
-using Genesis.Core.Security;
+﻿using Genesis.Core.Security;
 using Microsoft.AspNetCore.Authorization;
 
 namespace Genesis.Api.Infrastructure;
@@ -18,6 +18,11 @@ public sealed class ScreenAccessHandler : AuthorizationHandler<ScreenAccessRequi
 
 public static class ScreenAccessExtensions
 {
+    /// <summary>True when the signed-in user has the legacy USRAccess flag at the given 1-based position.</summary>
+    public static bool CanAccess(this System.Security.Claims.ClaimsPrincipal user, int position) =>
+        new AccessString(user.FindFirst(GenesisClaims.Access)?.Value ?? "").IsAllowed(position);
+
     public static TBuilder RequireScreen<TBuilder>(this TBuilder builder, int position) where TBuilder : IEndpointConventionBuilder =>
         builder.RequireAuthorization(policy => policy.AddRequirements(new ScreenAccessRequirement(position)));
 }
+

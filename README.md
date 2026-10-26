@@ -50,3 +50,22 @@ Integration tests (`DatabaseFact`) run against the local restored databases and 
 - Benefits: the legacy form listed every effective-date version of the plan; this port shows the latest version on or before the admission date (same rule as Membership Enquiry).
 - Documents (scanned, internal, e-mails, policy wording) come from `FileStore:ScannedDocsRoot`, `InternalDocsRoot`, `EmailsRoot`, `PolicyWordingRoot` (one sub-folder per case or plan). Unset = tab says "not configured". Swap `ICaseDocumentStore` for blob storage in the cloud.
 - Print outputs replace `CaseEnq.xlt`, `CasePayment.xlt` and `CaseRemark.DOT`: `print/enquiry.xlsx`, `print/payments.xlsx`, `print/notes.pdf[?kind=internal]`.
+
+## Tracking screens (generic framework)
+Most read-only legacy screens are "criteria -> dynamic SQL -> grid -> export" forms. They are described once in `Genesis.Core/Tracking/TrackingCatalog.cs`
+(view, whitelisted columns, filters, legacy `USRAccess` position) and served by generic code:
+- `TrackingQueryBuilder` builds a parameterised query (column names only from the definition, values always parameters, wildcards escaped, unknown filter keys rejected).
+- `/api/tracking`, `/api/tracking/{id}`, `/search`, `/export.xlsx`; the UI page and the sidebar menu are generated from the definition.
+- To add a screen, add one `TrackingDefinition`. `Every_definition_matches_the_real_schema` fails if a column or view name is wrong.
+- `RequiresFilter: true` guards very large views (membership tracking, claim report).
+
+## Building blocks for write flows (reuse these)
+| Need | Use |
+|---|---|
+| Run SQL / procedures against the right database | `SqlRepository` base class (`QueryAsync`, `ScalarAsync`), `IDbConnectionFactory`, `RowReader` |
+| Screen permission | `.RequireScreen(position)` (endpoint) and `ClaimsPrincipal.CanAccess(position)` |
+| Input validation | `MemberNumber`, `CaseNumber`, and the tracking filter validation pattern |
+| Search + grid + Excel export | Tracking framework |
+| Documents (scanned, internal, e-mails, policy wording) | `ICaseDocumentStore`, `IPolicyWordingStore` |
+| Print outputs | `Genesis.Reports` (QuestPDF, ClosedXML) |
+| UI tables, fields, print buttons, downloads | `src/components/DataTables.tsx`, `PrintButton.tsx`, `src/lib/download.ts`, `format.ts` |

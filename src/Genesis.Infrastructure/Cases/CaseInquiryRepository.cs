@@ -1,7 +1,8 @@
-using System.Data;
+﻿using System.Data;
 using Dapper;
 using Genesis.Core.Cases;
 using Genesis.Core.Data;
+using Genesis.Infrastructure.Data;
 using static Genesis.Infrastructure.Data.RowReader;
 
 namespace Genesis.Infrastructure.Cases;
@@ -11,17 +12,9 @@ namespace Genesis.Infrastructure.Cases;
 /// Case_SearchIllness; those calls are replaced by parameterised queries on the same tables and views. The case record itself
 /// still comes from SearchCasAdjustment (parameterised by case number).
 /// </summary>
-internal sealed class CaseInquiryRepository(IDbConnectionFactory db) : ICaseInquiryRepository
+internal sealed class CaseInquiryRepository(IDbConnectionFactory connections) : SqlRepository(connections), ICaseInquiryRepository
 {
     private const int Timeout = 120;
-
-    private async Task<List<IDictionary<string, object?>>> QueryAsync(GenesisDb database, string sql, object args, CancellationToken ct,
-        CommandType type = CommandType.Text)
-    {
-        await using var conn = await db.OpenAsync(database, ct);
-        var rows = await conn.QueryAsync(new CommandDefinition(sql, args, commandType: type, commandTimeout: Timeout, cancellationToken: ct));
-        return rows.Select(r => (IDictionary<string, object?>)r).ToList();
-    }
 
     private static string Like(string v) => v.Replace("[", "[[]").Replace("%", "[%]").Replace("_", "[_]");
 
@@ -297,3 +290,5 @@ internal sealed class CaseInquiryRepository(IDbConnectionFactory db) : ICaseInqu
             S(r, "SurgSubCat"), I(r, "SurgPerc"))).ToList();
     }
 }
+
+

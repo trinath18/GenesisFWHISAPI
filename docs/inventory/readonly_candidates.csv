@@ -1,0 +1,352 @@
+﻿name,caption,module,menus,reachable,size,loc,write_ops,write_samples,file_export,excel,word,crystal,tables,sps,class
+debit note,Form1,Worksheet,,via frmGenerateCNNote,S,185,0,,,0,0,,,,READ-ONLY
+Events,,,,NO,M,896,0,,,0,0,,,,READ-ONLY
+Form1,Form1,,,NO,S,244,3,.AddNew; .Delete; .Update,,0,0,,ICD;ICDOriginal,,WRITE
+Form2,Search For MCO Fee,,,NO,S,362,0,,,0,0,,MBM;PAY,,READ-ONLY
+FormTest,Form1,,,NO,S,657,0,,,0,0,,,,READ-ONLY
+FrmACPeriod,Bordx A/C Period,Claim Bordx,Claim Bordx > Bor Acc Period,direct,M,1158,1,update Bordx set,,0,0,,BORDX;Bordx,SearchPayor,WRITE
+frmAdjustment,Frame8,Worksheet,,via frmWorksheetEnq,L,4734,4,.AddNew; .Update; .beginTrans; Delete from,,0,0,,BRN;CAS;CTY;HLT;INS;LGN;MBM;MBMAmendHistory;MBMCoveredPersons;MBMOthers;MBMRefund;MBMValidDateRange;NAT;OCP;PAY;PLN;RAC;REL;SRV;STA;View_MBM_MBMOthers;WorkNatur,,WRITE
+frmAgentMaintenance,Agent,,,NO,S,554,3,.AddNew; .Update; Delete From,,0,0,,Agent;PAY,,WRITE
+FrmAllocBankContra,Medix Bank Contra,Payment,Payment > PayAllocation > Bank Contra,direct,M,1346,3,.AddNew; .Update; Delete From,,0,0,,PaymentBankContra,,WRITE
+FrmAllocHospAdj,Hospital Adjustment,Payment,Payment > PayAllocation > Hosp Adj,direct,M,1433,3,.AddNew; .Update; Delete From,,0,0,,CLAIM;RecHospAdj,,WRITE
+FrmAllocMedixBankChrg,Medix Bank Charges,Payment,Payment > PayAllocation > Medix Bank Chrg,direct,M,1358,3,.AddNew; .Update; Delete From,,0,0,,PaymentMedixBankCharges;PaymentMEdixBankCharges,,WRITE
+FrmAllocMedixFloat,Medix Float,Payment,Payment > PayAllocation > Medix Float,direct,M,1349,3,.AddNew; .Update; Delete From,,0,0,,PaymentMEdixFloat;PaymentMedixFloat,,WRITE
+frmAllocMedixGainLoss,MedixAllocGainLoss,Payment,Payment > PayAllocation > MedixGainLoss,direct,M,1612,2,.AddNew; .Update,,0,0,,PaymentMedixGL;VIEW_Medix_GL,SearchHLTType;SearchPayor,WRITE
+FrmAllocMedixGuarantee,Medix Guarantee,Payment,Payment > PayAllocation > Medix Guarantee,direct,M,1313,3,.AddNew; .Update; Delete From,,0,0,,PaymentMedixGuarantee;PaymentMEdixGuarantee,,WRITE
+FrmAnalysisReport,Analysis Reports,,,NO,L,4744,0,,,0,0,,ClaimNature;HOS;HOSGRP;INS;OCP;PAY;PolicyStatus;VIEW_AnalysisReport1;VIEW_AnalysisReport4;VIEW_AnalysisReport5;VIEW_AnalysisReport6;View_PAYGrpCom;VIEW_PrinNDep,,READ-ONLY
+frmAnalysisReports,Analysis Reports,,,NO,L,4610,0,,,0,0,,HOS;HOSGRP;INS;OCP;PAY;PolicyStatus;VIEW_AnalysisReport1;VIEW_AnalysisReport4;VIEW_AnalysisReport5;VIEW_AnalysisReport6;View_PAYGrpCom;VIEW_PrinNDep,,READ-ONLY
+FrmARRecFrCLM,Date Send to Audit Review,Worksheet,Worksheet > Worksheet Send to A/R,direct,M,771,1,update CASOthers set,,0,0,,CASOthers;ClaimInvoice,,WRITE
+FrmAuditReviewReport,Audit Review Tracking,Case,Case > Audit Review Tracking,direct,L,3921,0,,,4,0,,VIEW_ARReport,Case_AuditReviewRpt;SearchHOS;SearchPayor,READ-ONLY
+frmBeginScan,frmBeginScan,Worksheet,,via frmWorksheetEnq,S,49,0,,,0,0,,,,READ-ONLY
+frmBNFListing,Benefit Listing,,,NO,S,208,0,,,0,0,,,,READ-ONLY
+FrmBordxApproval,Bordx Approval,Claim Bordx,Claim Bordx > Bordx Approval,direct,M,996,1,update Bordx set,,0,0,,BORDX;Bordx,SearchPayor,WRITE
+FrmBordxControl,Bordx Control,Claim Bordx,Claim Bordx > Monitoring > Bordx Control,direct,M,2086,0,,,0,0,,VIEW_Bordx_ControlN2;VIEW_Bordx_ControlS2,BordxControl;SearchPayor,READ-ONLY
+FrmBordxDelivery,Bordx Delivery,,,NO,M,1249,1,.Update,,0,0,,BORDX;Bordx;Date;PAY,,WRITE
+FrmBordxRevise,Bordereaux Revise,Claim Bordx,Claim Bordx > Worksheet > Remove Worksheet,direct,M,659,3,.AddNew; .Update; update bordx set,,0,0,,bordx;Bordx;Claim;ClaimInvoice,BordxRevise,WRITE
+FrmBordxTracking,Bordx & Worksheet,Claim Bordx,Claim Bordx > Monitoring > Bordx  Worksheet,direct,M,1499,0,,,0,0,,VIEW_Bordx_Wks2,BordxWorksheet;SearchPayor,READ-ONLY
+FrmBordxTracking2,Bordx Tracking,Claim Bordx,Claim Bordx > Bor Tracking,direct,M,2845,0,,,0,0,,,BordxTracking;SearchHOS;SearchPayor,READ-ONLY
+frmCASDailyRpt,Daily Claim Statistic,Statistic,,via frmDateSelection,S,308,0,,,0,0,,VIEW_CLMReport,,READ-ONLY
+frmCaseAdjustment,Case Adjustment,,,NO,XL,11446,32,.Update; EXEC Case_AdjInsertCASLG; EXEC Case_AdjInsertCASOthers; EXEC Case_AdjInsertCASOthers2,,2,19,,CAS;CASLG;CASRemarksTwo;claim;Claim;Claimability;view_account_summary;View_BNF;VIEW_MMA_Schedule;VIEW_WS_Listing,Case_AdjInsertCASLG;Case_AdjInsertCASOthers;Case_AdjInsertCASOthers2;Case_AdjInsertCASRef;Case_AdjInsertCASRemark;Case_AdjInsertCASRemark2;Case_AdjInsertCASRep;,WRITE
+frmCaseAdjustmentNew,frmCaseAdjustment,Case,Case > Case Adjustment,direct,XL,14461,26,.Update; EXEC Case_AdjInsertCASLG; EXEC Case_AdjInsertCASOthers; EXEC Case_AdjInsertCASOthers2,Y,2,31,,AnnualLimit;CAS;CASLG;CASRemarksTwo;CASRemarkThree;CASRepudiation;claim;Claim;Claimability;HOS;MBM;MBMCrossReference;MBMLifeTime;view_account_summary;View_BNF;V,Case_AdjInsertCASLG;Case_AdjInsertCASOthers;Case_AdjInsertCASOthers2;Case_AdjInsertCASRemark;Case_AdjInsertCASRemark2;Case_AdjInsertCASRemark3;Case_AdjInsertCAS,WRITE
+frmCaseAdmission,Case Admission,Case,Case > Case Registration,direct,XL,11271,20,.beginTrans; EXEC Case_AdjInsertCASLG; EXEC Case_RegInsertCAS; EXEC Case_RegInsertCAS1,Y,2,14,,AnnualLimit;MBM;MBMCoveredPersons;MBMCoveredPersonsTwo;MBMCrossReference;MBMLifeTime;PLN;view_account_summary;View_BNF;View_Claim_GetLifetime_Limit;View_Claim_G,Case_AdjInsertCASLG;Case_RegInsertCAS;Case_RegInsertCAS1;Case_RegInsertCAS2;Case_RegInsertCAS3;Case_RegInsertCASOthers;Case_RegInsertCASOthers2;Case_RegInsertCA,WRITE
+frmCaseASCII,Case ASCII,Case,Case > Case ASCII,direct,S,758,1,EXEC Case_AscUpdate,Y,0,0,,,Case_ClaimAscii;SearchPayor,WRITE
+frmCaseAuditReview,Audit Review,Case,Case > Case Audit Review,direct,L,4030,2,EXEC Case_AuditInsert; EXEC Case_AuditUpdate,,0,0,,MBMCoveredPersons,Case_AuditInsert;Case_AuditReview;Case_AuditUpdate,WRITE
+frmCaseInquiry,Case Inquiry,Case,Case > Case Inquiry,direct,XL,10060,0,,Y,4,3,,CASLG;Payment2HOS;Payment2MBM;Payment2MBMReissue;ReceiptFrMBM;view_account_summary;View_Get_MemberExclusion;VIEW_INV_Listing;VIEW_MMA_Schedule;VIEW_NEW_CAS_REPO,Case_Adjustment;Case_Inquiry;Case_SearchIllness;SearchCasAdjustment;SearchCLMReminder;SearchFollowUpLG;SearchMBMCas;SP_SearchLTLmt,READ-ONLY
+FrmCaseTracking,Case Tracking,Case,Case > Case Tracking,direct,L,7472,0,,,2,0,,CompanyGrp;VIEW_CAS_TRACKING;VIEW_CAS_TRACKING2;VIEW_CAS_TRACKING3;VIEW_CAS_TRACKINGSUM,CaseTracking;SearchCASToken;SearchCASUserOpen;SearchGrpCompanyPay;SearchHOS;SearchPayor;SearchPolStatus;SearchSpecApp,READ-ONLY
+FrmCaseTracking2,Case Tracking,,,NO,M,2216,1,.Update,,0,0,,CAS;HOS;OCP;PAY;PAYTYPE;VIEW_CAS_TRACKING;View_PAYGrpCom,,WRITE
+FrmCaseTracking3,Case Tracking,,,NO,M,2324,1,.Update,,0,0,,CAS;HOS;OCP;PAY;PAYTYPE;VIEW_CAS_TRACKING;View_PAYGrpCom,,WRITE
+FrmCaseTrackingNep,Case Tracking (Jupiter),Case,Case > Case Tracking (Jupiter),direct,L,7460,0,,,2,0,,CompanyGrp;VIEW_CAS_TRACKING;VIEW_CAS_TRACKING2;VIEW_CAS_TRACKING3;VIEW_CAS_TRACKINGSUM,CaseTracking;SearchCASToken;SearchCASUserOpen;SearchGrpCompanyPay;SearchHOS;SearchPayor;SearchPolStatus;SearchSpecApp,READ-ONLY
+frmCaseTransferMBMNo,Case - Transfer of Membership ,Case,Case > Case Transfer,direct,M,1276,2,.Update; .beginTrans,,0,0,,AnnualLimit;BnfAnnLmt;CAS;CASCrossReference;Claim;ClaimApprove;Date;MBM;MBMBnfLmt;MBMCoveredPersons;status,Case_Transfer,WRITE
+frmCASExcessLetter,Excess Letter,,,NO,L,2311,2,.AddNew; .Update,,0,3,,CAS_Excess;HOS;View_CAS_Adjustment,,WRITE
+frmCASKIVAdmisiion,KIV - Case Entry,,,NO,L,3662,3,.AddNew; .Update; .beginTrans,,0,4,,CAS;CASOthers;CASRepudiation;ClaimNature;DIAFinal;HOS;ICD;ICDCAtegory;MBM;MBMCoveredPersons;PAYType;PolicyStatus;RepCode;SRV;TreatmentModality;View_BNF;View_MBM,,WRITE
+frmCASKIVList,KIV List,,,NO,M,794,0,,,0,0,,HOS;PAY;VIEW_CAS_KIV,,READ-ONLY
+frmCASList,List of Cases,Worksheet,,via frmWorksheetEnq,M,637,0,,,0,0,,MBM;VIEW_Claim_MBM_Case_worksheetAdjustment;View_FWCase_Search,,READ-ONLY
+frmCASNonDisclosure,Record of Non-Disclosure,,,NO,S,525,2,.Update; .beginTrans,,0,0,,CASOthersTwo,,WRITE
+frmCASPayClaim,Pay & Claim,Case,Case > Case PayClaim,direct,M,1065,3,.beginTrans; EXEC Case_SavePayClaim; EXEC Case_UpdatePayClaim,,0,3,,,Case_CASPayClaim;Case_SavePayClaim;Case_UpdatePayClaim;Search_CAS_PayClaim;SearchCasAdjustment;SearchHISDBComboListing,WRITE
+frmCASReminder,Case Reminder,,,NO,M,1256,3,.beginTrans; EXEC Case_SAVEReminder; EXEC Case_UPDATEReminder,,0,3,,,Case_CASReminder;Case_SAVEReminder;Case_UPDATEReminder,WRITE
+frmCASTracking,Case Tracking,,,NO,S,644,0,,,0,0,,USR,,READ-ONLY
+frmChartReport,Chart Report,,,NO,L,1074,1,.Delete,,4,0,,MBM;PAY;View_ChartReport;VIEW_MBM_MBMOthers,,WRITE
+frmChequesnedtoHOS,Cheque to Hospital,,,NO,M,2627,0,,,0,0,,,,READ-ONLY
+FrmChkTable,Check Claim Table,,,NO,S,208,2,.AddNew; .Update,,0,0,,Claim;ClaimInvoice;PAY,,WRITE
+frmClaimAdjustment,Worksheet Adjustment,,,NO,L,5322,3,.AddNew; .Update; .beginTrans,,0,0,,BNF;Claim;HOS;MBMCoveredPersons;VIEW_Cas_MBM_Claims,,WRITE
+frmClaimAdmission,Open New Worksheet,,,NO,L,6436,3,.AddNew; .Update; .beginTrans,,0,0,,claim;Claim;DIAFinal;DIAFirst;HOS;PolicyStatus;View_BNF;View_CAS_Invoice;VIEW_Cas_MBM_Claims,,WRITE
+FrmClaimAnalysis,Claim Analysis,,,NO,L,3445,0,,,0,0,,HOS;ICD;INS;OCP;PAY;PAYTYPE;PolicyStatus;STA;Status;View_PAY_PLN,,READ-ONLY
+frmClaimAscii,Claim Ascii,,,NO,M,939,1,EXEC Case_CLMAscUpdate,Y,0,0,,,Case_ClaimAscii;Case_CLMAscUpdate;SearchPayor,WRITE
+frmClaimASCIIMedGen,Generate Claims ASCII,Case,Case > Claim ASCII(MedGen),direct,M,1053,0,,Y,0,0,,,Case_ClaimAsciiMedGen_New;SearchPayor,READ-ONLY
+frmClaimASCIIZurich,Form1,,,NO,M,1766,0,,Y,2,0,,BNF,Case_ClaimAscii;Case_ClaimAsciiMedGen_New;SearchPayor,READ-ONLY
+frmClaimHistory,Claims'  History,,,NO,S,330,0,,,0,0,,VIEW_Cas_MBM_Claims,,READ-ONLY
+frmClaimInvoice,Claim Invoices,,,NO,S,580,0,,,0,0,,,,READ-ONLY
+frmClaimNotification,Claim Notification,Claim,Claim > Claim Notification,direct,M,805,2,.AddNew; .Update,,0,3,,CLMNotification,CLM_CLMReminder,WRITE
+frmClaimReminder,frmClaimReminder,Claim,Claim > Claim Reminder,direct,M,1375,3,.beginTrans; EXEC CLM_SAVEReminder; EXEC CLM_UPDATEReminder,,0,3,,Claim,CLM_CLMReminder;CLM_SAVEReminder;CLM_UPDATEReminder,WRITE
+FrmClaimRpt,Claim Reports,Claim,Claim > Claim Tracking (Sat.) > Claim Report 1,direct,XL,23993,0,,,0,0,,Claim;CompanyGrp;RepCode;VIEW_NEWCLMReport,ClaimReport;ClaimReport1;SearchHOS;SearchHospGrp;SearchINS;SearchPayor;SearchPayorHLTType;SearchProductCategory;SearchState,READ-ONLY
+FrmClaimRpt2,Claim Report 2,Claim,Claim > Claim Tracking (Sat.) > Claim Report 2,direct,XL,23579,0,,,2,0,,CompanyGrp;VIEW_CLMReport_Act;VIEW_CLMReport_App;VIEW_CLMReport_Hos;VIEW_CLMReport_MBM,ClaimReport;ClaimReport2;SearchHOS;SearchHospGrp;SearchINS;SearchPayor;SearchPayorHLTType;SearchPolStatus;SearchState,READ-ONLY
+FrmClaimRpt3,voon,Claim,Claim > Claim Tracking (Sat.) > Claim Report 3,direct,L,4642,0,,,0,0,,CompanyGrp;RepCode,ClaimReport3;SearchHOS;SearchHospGrp;SearchINS;SearchPayor;SearchPayorHLTType;SearchPolStatus,READ-ONLY
+FrmClaimRpt4,Claim Report 4,Claim,Claim > Claim Tracking (Sat.) > Claim Report 4,direct,L,4138,0,,,0,0,,CompanyGrp;RepCode,ClaimReport;ClaimReport4;SearchHOS;SearchHospGrp;SearchINS;SearchPayor;SearchPayorHLTType;SearchPolStatus,READ-ONLY
+FrmClaimRpt5,Claim Report 5,,,NO,XL,15489,0,,,2,0,,Claim;HOS;HOSGRP;ICD;INS;PAY;PolicyStatus;RepCode;STA;VIEW_CLMReport;VIEW_CLMReport2;VIEW_CLMReport2_1;View_PAYGrpCom,,READ-ONLY
+FrmClaimRptNep,Claim Reports 1 (Jupiter),Claim,Claim > Claim Tracking (Jup.) > Claim Report 1,direct,XL,23918,0,,,0,0,,Claim;CompanyGrp;RepCode;VIEW_NEWCLMReport,ClaimReport;ClaimReport1;SearchHOS;SearchHospGrp;SearchINS;SearchPayor;SearchPayorHLTType;SearchProductCategory;SearchState,READ-ONLY
+FrmClaimRptNep2,Claim Report 2 (Jupiter),Claim,Claim > Claim Tracking (Jup.) > Claim Report 2,direct,XL,23861,0,,,2,0,,CompanyGrp;VIEW_CLMReport_Act;VIEW_CLMReport_App;VIEW_CLMReport_Hos;VIEW_CLMReport_MBM,ClaimReport;ClaimReport2;SearchHOS;SearchHospGrp;SearchINS;SearchPayor;SearchPayorHLTType;SearchPolStatus;SearchState,READ-ONLY
+FrmClaimRptNep3,Claim Report 3 (Jupiter),Claim,Claim > Claim Tracking (Jup.) > Claim Report 3,direct,L,4641,0,,,0,0,,CompanyGrp;RepCode,ClaimReport3;SearchHOS;SearchHospGrp;SearchINS;SearchPayor;SearchPayorHLTType;SearchPolStatus,READ-ONLY
+FrmClaimRptNep4,Claim Report 4 (Jupiter),Claim,Claim > Claim Tracking (Jup.) > Claim Report 4,direct,L,4223,0,,,0,0,,CompanyGrp;RepCode,ClaimReport;ClaimReport4;SearchHOS;SearchHospGrp;SearchINS;SearchPayor;SearchPayorHLTType;SearchPolStatus,READ-ONLY
+frmClaimRptSimple,Claim Report - Simple,Claim,Claim > Claim Tracking (Sat.) > Claim Report (Simple),direct,XL,22970,0,,,0,0,,Claim;CompanyGrp;VIEW_NEWCLMReport,ClaimReport;ClaimReport_Simple;SearchHOS;SearchINS;SearchPayor;SearchPayorHLTType;SearchProductCategory;SearchState,READ-ONLY
+frmClaimRptSimpleREP,Claim Report - Simple (Jupiter),Claim,Claim > Claim Tracking (Jup.) > Claim Report (Simple),direct,XL,22970,0,,,0,0,,Claim;CompanyGrp;VIEW_NEWCLMReport,ClaimReport;ClaimReport_Simple;SearchHOS;SearchINS;SearchPayor;SearchPayorHLTType;SearchProductCategory;SearchState,READ-ONLY
+frmClaimsASCIIZurichGen,General Claims ASCII Zurich (General Insurance),Case,Case > Claims ASCII (Zurich),direct,L,4993,0,,Y,6,0,,BNF;ClaimInvoice,Case_ClaimAscii;Case_ClaimAsciiFW;SearchPayor,READ-ONLY
+frmClaimsESPUpload,Form1,Case,Case > Claims ASCII (ESP - Upload),direct,M,423,4,.beginTrans; Execute strsqlupdate; Insert Into; Update Claim set,,2,0,,Claim;CLMCaseNotice,,WRITE
+frmClaimsKurnia,Claims ASCII - Kurnia,Case,Case > Claims ASCII (Kurnia),direct,S,594,0,,Y,0,0,,,Case_ClaimAsciiKurnia;SearchPayor,READ-ONLY
+frmClaimUpdateOIR,Original Invoice Update,Invoice,Invoice > Original Invoice Update,direct,S,299,2,.beginTrans; update ClaimInvoice set,,0,0,,ClaimInvoice,,WRITE
+frmCLMASCIIEtiqa,Claim ASCII to SPPA,,,NO,M,1839,0,,Y,0,0,,View_Claims_ASCII_FWHSAD;View_Claims_ASCII_FWHSAH;View_Claims_ASCII_FWHSPD,Case_ClaimAscii_FWHS;SearchPayor,READ-ONLY
+frmCLMASCIISPPA2012,Claim ASCII to SPPA,Case,Case > Claims ASCII (To SPPA),direct,M,1852,0,,Y,0,0,,View_Claims_ASCII_FWHSAD;View_Claims_ASCII_FWHSAH;View_Claims_ASCII_FWHSPD,Case_ClaimAscii_FWHS;SearchPayor,READ-ONLY
+frmCLMASCIISPPAPymt,Generate Claims ASCII - Payment Date,Case,Case > Claims ASCII Pymt(To SPPA),direct,M,1954,0,,Y,0,0,,View_Claims_ASCII_FWHSAD;View_Claims_ASCII_FWHSAH;View_Claims_ASCII_FWHSPD,Case_ClaimAscii_FWHS;SearchPayor,READ-ONLY
+frmCLMASCIIUpload,Upload Claims File,,,NO,M,557,14,.beginTrans; EXEC Case_RegFWHSCAS; EXEC Case_RegFWHSDiagFinal; EXEC Case_RegFWHSDiagFirst,,0,0,,CAS;Claim;ClaimInvoice;MBM,Case_RegFWHSCAS;Case_RegFWHSDiagFinal;Case_RegFWHSDiagFirst;Insert_ClaimInvActual2010;Insert_ClaimInvoice_WO;Insert_ClaimInvoiceActOthers_New;Insert_ClaimInvoic,WRITE
+frmCLMASCIIUpload2012,Upload Claims File,Case,Case > Claims ASCII (From SPPA),direct,M,610,14,.beginTrans; EXEC Case_RegFWHSCAS; EXEC Case_RegFWHSDiagFinal; EXEC Case_RegFWHSDiagFirst,,0,0,,CAS;Claim;ClaimInvoice;hos;MBM,Case_RegFWHSCAS;Case_RegFWHSDiagFinal;Case_RegFWHSDiagFirst;Insert_ClaimInvActual2010;Insert_ClaimInvoice_WO;Insert_ClaimInvoiceActOthers_New;Insert_ClaimInvoic,WRITE
+frmCLMCrpd,Claim Correspondence,Claim,Claim > Correspondence,direct,L,3497,1,.Delete,,0,4,,Agent,CC_SaveCLMCrpdHospital;CC_SaveCLMCrpdMember;CC_SaveCLMCrpdPayor;CC_SaveNewCLMCrpdPayor;CC_SearchActionsHospital;CC_SearchActionsMember;CC_SearchActionsPayor;CC_,WRITE
+frmCLMFloatReceipt,Claim Float Receipt,Receipt,Receipt > Claim Float Receipt,direct,M,2166,7,.AddNew; .Update; .beginTrans; Insert Into,,0,0,,Bordx;CasRemarks;CASRemarks;CASRemarksTwo;CASRemarkThree;CLMFloatAmt;CLMFloatTransfer;PAY;ReceiptfrPay;View_Float_Receipt_Update,,WRITE
+frmCLMFloatTopup,Claim Float Topup,Receipt,Receipt > Claim Float Topup,direct,M,1565,4,.AddNew; .Update; .beginTrans; Insert Into,,0,0,,CLMFloatAmt;CLMFloatTopupAmt;CLMFloatTransfer;PAY,SP_ClaimFloatTransfer,WRITE
+frmCLMFloatTopupReq,Claim Float Topup Request,Receipt,Receipt > Claim Float Request,direct,M,1688,3,.AddNew; .Update; .beginTrans,,2,0,,CLMFloatAmt;CLMFloatTransfer;PAY;View_TU_Listing,,WRITE
+frmCLMFloatTransfer,Claim Float Transfer,Receipt,Receipt > Claim Float Transfer,direct,L,2857,7,.AddNew; .Update; .beginTrans; Insert Into,,2,0,,Bordx;CasRemarks;CASRemarks;CASRemarksTwo;CASRemarkThree;CLMFloatAmt;CLMFloatTransfer;PAY;ReceiptfrPay;View_CLMFloatTransfer,SP_ClaimFloatTransfer,WRITE
+frmCLMNotificationZurich,General Claims Notification Zurich (General Insurance),Case,Case > Case ASCII Notice (Zurich),direct,M,1899,0,,Y,2,0,,BNF,Case_ClaimAscii;Case_ClaimAsciiFW;Case_ClaimAsciiMedGen_New;SearchPayor,READ-ONLY
+frmCLMWriteOff,Claim Write Off,Worksheet,Worksheet > Claim Write Off,direct,M,800,1,.Update,,0,0,,Claim;VIEW_WKSTrackingNew,SearchPayor,WRITE
+frmContraAllocation,Contra Allocation,Payment,Payment > Contra Allocation,direct,M,907,1,.Update,,0,0,,ContraAllocation,,WRITE
+FrmCRUPassOut,CRU Send to Claims,Case,Case > CRU Send to Claims,direct,M,1654,4,.beginTrans; EXEC CRU_PassOutInsert; EXEC CRU_PassOutUpdate; EXEC CRU_Send2Claim,,0,0,,,CRU_PassOutInsert;CRU_PassOutUpdate;CRU_Send2Claim,WRITE
+FrmCSRepSendtoClaim,Case Send to Claims (Repudiate),Case,Case > Send to Claims (Rep),direct,M,1471,4,.beginTrans; EXEC Case_Send2ClaimRep; EXEC Case_SendRep2InsertRec; EXEC Case_SendRep2UpdateRec,,0,0,,,Case_Send2Claim;Case_Send2ClaimRep;Case_SendRep2InsertRec;Case_SendRep2UpdateRec;SearchCASToken,WRITE
+FrmCSSendtoClaim,Send to Bordx Unit,Case,Case > Send to Bordx Unit,direct,M,2470,5,.Update; .beginTrans; EXEC Case_Send2Claim; EXEC Case_Send2InsertRec,,0,0,,ClaimOthersTwo;VIEW_CAS_2_CLM,Case_Send2Claim;Case_Send2InsertRec;Case_Send2UpdateRec;SearchCASToken;SearchPayor,WRITE
+frmDailyCensus,Daily Census,Statistic,,via frmDateSelection,M,550,0,,,2,0,,,,READ-ONLY
+frmDailyMBMCASByIns,MBM'ship & Claims Daily Statistic Report (By Ins Type),Statistic,,via frmDateSelection,S,162,0,,,0,0,,,,READ-ONLY
+FrmDailyMBMCASByPayor,FrmDailyMBMCASByPayor,Statistic,,via frmDateSelection,S,145,0,,,0,0,,,,READ-ONLY
+frmDataTransferCAS,Data Transfer - CASE,,,NO,S,633,0,,Y,0,0,,,CntHisCasebyPayor;DataTransferSelectCASE;SearchHISTableRec,READ-ONLY
+frmDataTransferCAS1,Data Transfer - CASE,Maintenance,Maintenance > Data Transfer > Case,direct,S,737,0,,Y,0,0,,,DataTransferSelectCASENew;DataTransferSelectWS;SearchHISTableRec;SP_CASRemarks,READ-ONLY
+frmDataTransferMBM,Data Transfer - MBM,,,NO,M,844,0,,Y,0,0,,MBM;MBMCoveredPersons,DataTransferSelectMBM;SearchHISTableRec,READ-ONLY
+frmDataTransferMBM1,Data Transfer - MBM,Maintenance,Maintenance > Data Transfer > Member,direct,S,628,0,,Y,0,0,,MBMCoveredPersons,DataTransferSelectMBM;SearchHISTableRec,READ-ONLY
+FrmDate,Please Enter Date,,,NO,S,82,0,,,0,0,,,,READ-ONLY
+frmDateSelection,Date Selection,Statistic,Statistic > Date Selection,direct,M,1051,0,,,0,0,,PAY;VIEW_Admission;VIEW_CLMReport;VIEW_MBMInsStatistic;VIEW_MBMStatistic;VIEW_MBMSUPP_STATISTIC;VIEW_MBMSuppInsStatistic,,READ-ONLY
+FrmDCUReport1,DCU Reports,Claim,Claim > DCU Tracking > Claim Report,direct,XL,15351,0,,,0,0,,Claim;ICDOriginal;INS;PAY;PolicyStatus;VIEW_CLMReportDCU;VIEW_CLMReportDCU2;VIEW_CLMReportDCUNew,DCUReport;SearchGrpCompanyPay,READ-ONLY
+FrmDCUReport2,DCU Reports (Jupiter),Claim,Claim > DCU Tracking > Claim Report (Jup.),direct,XL,15349,0,,,0,0,,Claim;ICDOriginal;INS;PAY;PolicyStatus;VIEW_CLMReportDCU;VIEW_CLMReportDCU2;VIEW_CLMReportDCUNew,DCUReport;SearchGrpCompanyPay,READ-ONLY
+frmDeleteMembers,Membership Deletion,Membership,Membership > Deletion,direct,M,1203,3,.AddNew; .Update; Delete from,,0,0,,MBM;MBMCoveredPersons;MBMOthers;MBMothers,,WRITE
+frmDentalWorksheet,DentalWorksheet,,,NO,S,188,0,,,0,0,,,,READ-ONLY
+FrmDrCrTracking,Debit Credit Note Tracking,,,NO,L,3053,0,,Y,0,0,CreditTracking.rpt;DebitTracking.rpt,HOS;HOSGRP;INS;PAY;PolicyStatus;RepCode;REpCode;RepCodeCategory;STA;VIEW_Credit_Tracking;VIEW_Debit_Tracking;View_PAYGrpCom,,READ-ONLY
+frmEndorsement,Upload Bordx,,,NO,L,5157,3,.AddNew; .Update; Delete from,Y,0,0,,AnnualLimit;ASCII;MBM;MBMCoveredPersons;MBMOthers;MBMRefund;PAY;PLN,,WRITE
+FrmEnquiryPayMember,Enquiry Payment to Member,Payment,Payment > Enquiry > Payment To Member,direct,M,2315,0,,,0,0,,Payment2MBM;ReceiptfrMNRB,SearchHLTType;SearchPayor;SP_Payment,READ-ONLY
+FrmEnquiryPaymentHospital,Enquiry Payment to Hospital,Payment,Payment > Enquiry > Payment To Hospital,direct,M,1662,0,,,0,0,,Payment2HOS,SearchHISTableRec;SearchHLTType;SP_Payment,READ-ONLY
+frmErrList,Error Listing Information,,,NO,S,303,0,,,0,0,,ERR,,READ-ONLY
+frmExpired,HealthCare Information System,,,NO,S,72,0,,,0,0,,,,READ-ONLY
+frmFWHSMCOFee,FWHS MCO Fee,MCOFees,MCOFees > MCO Inv/Listing,direct,L,1726,4,.AddNew; .Update; .beginTrans; update FWHSTPAFee set,,3,0,,Date;FWHSTPAFee;MBMMCOINVQ;Pay;Status;VIEW_FWHS_MCO_Pol_NBBatch;VIEW_FWHS_MCO_PolDate_EB;VIEW_FWHS_MCO_PolDate_NB;VIEW_FWHS_MCO_Sub_NBBatch;VIEW_FWHS_MCO_SubDat,SearchPayor,WRITE
+frmFWHSMCOFeeGST,FWHS MCO Fee (GST),MCOFees,MCOFees > MCO Inv/Listing GST,direct,L,1758,4,.AddNew; .Update; .beginTrans; update FWHSTPAFee set,,3,0,,Date;FWHSTPAFee;MBMMCOINVQ;Pay;Status;VIEW_FWHS_MCO_Pol_NBBatch;VIEW_FWHS_MCO_PolDate_EB;VIEW_FWHS_MCO_PolDate_NB;VIEW_FWHS_MCO_Sub_NBBatch;VIEW_FWHS_MCO_SubDat,SearchPayor,WRITE
+frmFWHSMCOFeeSST,FWHS MCO Fee (GST),MCOFees,MCOFees > MCO Inv/Listing SST,direct,L,1766,4,.AddNew; .Update; .beginTrans; update FWHSTPAFee set,,3,0,,Date;FWHSTPAFee;MBMMCOINVQ;Pay;Status;VIEW_FWHS_MCO_Pol_NBBatch;VIEW_FWHS_MCO_PolDate_EB;VIEW_FWHS_MCO_PolDate_NB;VIEW_FWHS_MCO_Sub_NBBatch;VIEW_FWHS_MCO_SubDat,SearchPayor,WRITE
+frmGenerateCNNote,Generate Credit/Debit Note,Worksheet,Worksheet > Generate Credit/Debit Note,direct,S,384,1,.Update,,0,0,,Claim,,WRITE
+FrmGenerateDCNote,Generate Debit/Credit Note Listing,,,NO,M,1274,1,.Update,,0,0,CreditNote.rpt;CreditNote1.rpt;DebitNote.rpt;DebitNote1.rpt,Claim;VIEW_CreditListing;VIEW_CreditListing1;VIEW_DebitListing;VIEW_DebitListing1,SearchPayor,WRITE
+frmGenerateEtiqaCLM,Claims Data,Claim,Claim > Etiqa Report,direct,L,2858,0,,,14,6,,Bordx;HOS;MBMCoveredPersons,CLM_EtiqaClaims;CLM_PayAdviceHOS;Print_Bordx;SearchHISTableRec,READ-ONLY
+frmGenerateRecovery,Generate Recovery Listing,Claim Bordx,Claim Bordx > Print Recovery,direct,M,774,0,,,2,0,,CompanyGrp,ClaimReport1,READ-ONLY
+frmGroupMaintenance,Security Maintenance ,Maintenance,Maintenance > Security > Department,direct,S,460,3,.AddNew; .Update; Delete From,,0,0,,GRP,,WRITE
+frmHOSInvC2MBM,Hosp Invoice Credit To Member,Invoice,Invoice > Invoice HOS (CR to MBM),direct,M,930,1,.Update,,0,0,,ClaimInvoice;Status;VIEW_InvoiceAccount,SearchPayor,WRITE
+frmHOSInvD2MBM,Hosp Invoice Debit To Member,Invoice,Invoice > Invoice HOS (DR to MBM),direct,M,1434,1,.Update,Y,0,0,,ClaimInvoice;Status;VIEW_InvoiceAccount,SearchPayor,WRITE
+frmHospInvoicePosting,Hospital Invoice Posting,,,NO,M,760,2,.Update; .beginTrans,,0,0,,ClaimInvoice;MBMCoveredPersons;MBMCrossReference;Pay;View_HospInv_Posting,,WRITE
+FrmHospitalInv,Hospital Invoice Details,,,NO,S,17,0,,,0,0,,,,READ-ONLY
+frmHSSDetails,HSS Breakdowns Entry,Invoice,,via frmInvoice,S,461,0,,,0,0,,,,READ-ONLY
+frmInvoice,Invoice Processing,Invoice,Invoice > Invoice Processing,direct,XL,9616,20,.AddNew; .Update; .beginTrans; EXEC Insert_ClaimInvActual2010,Y,0,3,,BNF;claim;Claim;ClaimInvoice;ClaimInvoiceActual;ClaimInvoiceNotCover;ClaimInvoiceRemarks;ClaimLimit;ClaimSameLimit;HOS;PAY;Pay;PAYType;VIEW_MMA_Schedule,Case_AdjInvCASOthers;Case_AdjInvCASOthersTwo;Insert_ClaimInvActual2010;Insert_ClaimInvoice;Insert_ClaimInvoice_WO;Insert_ClaimInvoice_WODIR;Insert_ClaimInvoice_,WRITE
+FrmInvoiceAC,Invoice Accounting,,,NO,M,1354,1,.Update,,0,0,,ClaimInvoice;HOS;VIEW_InvoiceAccount,SearchPayor,WRITE
+FrmInvoiceHOSAC,Invoice Hospital Accounting,Invoice,Invoice > Invoice HOS Accounting,direct,M,1116,1,.Update,,0,0,,ClaimInvoice;Status;VIEW_HOSInvoice;VIEW_InvoiceAccount,SearchHOS,WRITE
+FrmInvoiceMBMAC,Member Invoice Accounting,Invoice,Invoice > Invoice MBM Accounting,direct,M,1385,1,.Update,Y,0,0,,ClaimInvoice;Status;VIEW_InvoiceAccount;VIEW_MBMInvoice1,SearchPayor,WRITE
+frmInvoicePostingHosp,Hospital Invoice Posting,,,NO,M,757,2,.Update; .beginTrans,,0,0,,ClaimInvoice;MBMCoveredPersons;MBMCrossReference;Pay;View_HospInv_Posting,,WRITE
+frmInvoicePostingMBM,Form1,,,NO,M,753,2,.Update; .beginTrans,,0,0,,ClaimInvoice;MBMCoveredPersons;MBMCrossReference;Pay;View_HospInv_Posting,,WRITE
+FrmInvoiceTracking,Invoice Tracking,,,NO,L,2537,1,.Update,,0,0,,ClaimInvoice;HOS;INS;PAY;PAYTYPE;PAYType;VIEW_Invoice_Tracking,,WRITE
+FrmInvoiceTracking2,Invoice Tracking,Invoice,Invoice > Invoice Tracking,direct,M,2538,0,,,0,0,,VIEW_Invoice_Tracking,InvoiceTracking;SearchHOS;SearchPayor,READ-ONLY
+FrmInvoiceTrackNep,Invoice Tracking (Jupiter),Invoice,Invoice > Invoice Tracking (Jupiter),direct,M,2538,0,,,0,0,,VIEW_Invoice_Tracking,InvoiceTracking;SearchHOS;SearchPayor,READ-ONLY
+frmINVPosting,Invoice Posting,,,NO,S,346,0,,,0,0,,,,READ-ONLY
+frmITDevelopment,IT Development Activities,Maintenance,,via FrmITPasswordEntry,M,877,3,Delete from; Insert Into; Update ITDevelopment set,,0,0,,ITCategory;ITDevelopment;USR,,WRITE
+frmITMaintainCLMDel,Worksheet deletion (only for IT dept),Maintenance,,via FrmITPasswordEntry,S,313,0,,,0,0,,,,READ-ONLY
+FrmITMaintainMBMDel,Membership Maintenance - Deletion (IT Dept Only),Maintenance,,via FrmITPasswordEntry,M,657,4,.Delete; .Update; .beginTrans; Delete From,,0,0,,MBM;MBMBnfLmt;MBMCLNOthers;MBMCoveredPersons;MBMCoveredPersonsCLN;MBMCoveredPersonsTwo;MBMCrossReference;MBMLifeTime;MBMOthers;MBMOthersTWo;MBMSEQ05;MBMSEQRenew,CntHisCasebyMBMNo,WRITE
+FrmITPasswordEntry,Password Entry,Maintenance,Maintenance > Security > Claim Del | Maintenance > Security > LG Del | Maintenance > Security > MBM Del,direct,S,115,0,,,0,0,,,,READ-ONLY
+FrmLGCancellation,LG CAncellation,Maintenance,,via FrmITPasswordEntry,S,331,3,.Update; .beginTrans; Delete From,,0,0,,CASLG;LGSeq,,WRITE
+frmLGTracking,Letter of Gurantee Tracking,Case,Case > LG Tracking,direct,M,784,0,,,0,0,,VIEW_LG_TRACKING,LG_Tracking;SearchHOS;SearchPayor,READ-ONLY
+frmLog,Form1,,,NO,S,17,0,,,0,0,,,,READ-ONLY
+frmLogin,Cancel,File,File > Logout,direct,S,583,2,.Update; UPDATE USR SET,Y,0,0,,USR,,WRITE
+frmMAAASCII,MAA ASCII,Membership,Membership > Generate MAA ASCII,direct,M,820,1,.Update,Y,0,0,,View_MAA_Prin_ASCII,SearchPayor,WRITE
+FrmMainDC,Main DCN Checking,Invoice,Invoice > Main DCN Checking,direct,S,730,0,,,0,0,,Claim;VIEW_MainDCN,SearchPayor,READ-ONLY
+frmMainReport,Report,,,NO,M,1859,2,.AddNew; .Update,,2,0,InvoicesReport.rpt;Leaflet.rpt;MBMCardPrinting.rpt;MCOListing.rpt,Date;MBM;MBMMCOINVQ;PAY;VIEW_CardPrinting,,WRITE
+frmMaintenanceBenefits,Benefits Maintenance ,Maintenance,Maintenance > Benefits,direct,L,2769,3,.AddNew; .Update; Delete From,,0,0,,BNF;BNFCategory;BNFSUBCAT;BNFsubcat;BNFSubCAt;PLN;View_BNF_CAT_subcat;VIEW_BNF_MBM_CodeChecking;VIEW_BNF_PLN_SubCat,SearchBNFCategory;SearchBNFSubCat;SearchGrpCompany;SearchHLTType;SearchINS;SearchPayor;SearchPlan,WRITE
+frmMaintenanceCase,Case Maintenance,Maintenance,Maintenance > Case,direct,L,4509,4,.AddNew; .Delete; .Update; Delete from,,0,0,,CAS;ClaimNature;DIAFinal;DIAFirst;ICD;ICDCategory;ICDOriginal;PayType;RepCode;RepCodeCategory;TreatmentModality;View_ICD_tracking,SearchICDCategory;SearchRepCodeCategory,WRITE
+FrmMaintenanceComInfo,Company Information,Maintenance,Maintenance > Company Info,direct,S,475,2,.AddNew; .Update,,0,0,,,,WRITE
+frmMaintenanceGeneral,Entity Maintenance,Maintenance,Maintenance > Entity,direct,XL,10627,4,.AddNew; .Update; Delete From; Delete from,,0,0,,Agent;BRN;CAS;CasOthers;ClaimInvoice;CLN;CompanyGRP;HOS;HOSGrp;InvRecMode;MBM;MBMOthers;MCO;PAY;PAYGRP;PRM;PRV;SpecApprove;SRV;USR;VIEW_GRPCompany,SearchCity;SearchClinicGrp;SearchHLTType;SearchHospGrp;SearchINS;SearchPayGrp;SearchPayor;SearchSRV;SearchState,WRITE
+frmMaintenanceMembers,Members Maintenance,Maintenance,Maintenance > Date,direct,S,556,2,.AddNew; .Update,,0,0,,MBMValidDateRange,,WRITE
+frmMaintenanceOthers,Member Maintenance,Maintenance,Maintenance > Member,direct,L,5386,4,.AddNew; .Update; Delete From; Delete from,,0,0,,Age;AGE;CPT;CTY;LGN;MBM;MBMOthers;MBMOthersTwo;NAT;OCP;PolicyStatus;PRM;RAC;ReceiptType;REL;STA;Status;WorkNature,SearchLifeTimePlan,WRITE
+FrmMaintenancePanelHos,Panel Hospital Maintenance,Maintenance,Maintenance > Panel Hospital Maintenance,direct,M,578,4,.AddNew; .Update; .beginTrans; Delete From,,0,0,,HosPanelCode;PanelHospitals,Search_PanelHospitals2;SearchHOS2,WRITE
+frmMaintenanceUD,&Refresh,,,NO,M,823,3,.AddNew; .Update; Delete From,,0,0,,CAS,,WRITE
+frmMaintenencePlan,Plan Maintenance,,,NO,XL,10736,3,.AddNew; .Update; Delete From,,0,0,,Age;AGE;AnnualLimit;BNF;BnfAnnLmt;CaseMgmtFee;HLT;INS;MBM;MBMSEQ;MCO;PAY;PLN;PRM;ProductCategory;PRV;SuppMCOStatus;VIEW_ANN_LMT_BNF,,WRITE
+FrmMBMAccAmt,Form1,,,NO,S,98,0,,,0,0,,,,READ-ONLY
+FrmMBMAccount,Member Account,,,NO,S,169,0,,,0,0,,USR,,READ-ONLY
+frmMBMAdjustment,Member Adjustment,Worksheet,,via frmWorksheetEnq,L,7119,4,.AddNew; .Update; .beginTrans; Delete from,,0,0,,AnnualLimit;BAT;CAS;DiscPlan;HLT;MBM;MBMAmendHistory;MBMCoveredPersons;MBMOthers;MBMRefund;MBMValidDateRange;NAT;PAY;PRM;RAC;REL;SRV;STA;View_MBM_MBMOthers,,WRITE
+frmMBMAnalysisRpt,frmMemberReports,,,NO,XL,9494,0,,,0,0,,HOS;HOSGRP;ICD;INS;OCP;PAY;PolicyStatus;REL;STA;VIEW_Admit_Discharge_Report;VIEW_Daily_Report;View_PAYGrpCom,,READ-ONLY
+FrmMBMAscii,Generate ASCII,Membership,Membership > Generate Ascii,direct,M,783,1,.Update,Y,0,0,,,SearchPayor,WRITE
+frmMBMClinical,Member Clinic,Worksheet,,via frmWorksheetEnq,M,731,0,,,0,0,,MBMValidDateRange;PLN,SearchINS;SearchPlan,READ-ONLY
+frmMBMDailyRpt,Membership Daily Statistic,Statistic,,via frmDateSelection,S,272,0,,,0,0,,MBM;MBMCoveredPersons;MBMOthers,,READ-ONLY
+frmMBMEndorsement,Form1,,,NO,S,17,0,,,0,0,,,,READ-ONLY
+frmMBMEnquiry,Member Enquiry,Worksheet,,via frmWorksheetEnq,L,4834,0,,,0,0,RptMbmEnquiry.rpt,MBM;MBMAmendHistory;MBMCoveredPersons;MBMCoveredPersonsArchive;MBMRefund;PolicyStatus;SGCProcCode;View_BNF;VIEW_MBM_Limitation;View_MBM_MBMOthers;View_MBM_Membe,,READ-ONLY
+frmMBMExpiredPolicy,Member Expired Policy,Membership,Membership > MBM Expired Policy,direct,M,1667,3,.Update; insert into; update MBMExpSpecialNote set,,0,3,,Date;MBM;MBMCoveredPersons;MBMExpRepudiation;MBMExpSpecialNote;MBMEXPSpecialNOte;MBMOthersTwo;PAY,Case_Adjustment;Case_Registration;SearchHISTableRec;SearchMBMCrossRef,WRITE
+frmMBMInquiry,Member Inquiry,,,NO,L,3498,2,.AddNew; .Update,,0,0,,MBM;MBMAmendHistory;MBMCoveredPersons;MBMCoveredPersonsArchive;MBMRefund;PolicyStatus;View_BNF;View_MBM_MBMOthers;View_MBM_MemberType;View_MBM_MemTypeArc;VIEW_M,,WRITE
+frmMBMInvoicePosting,Member Invoice Posting,,,NO,M,760,2,.Update; .beginTrans,,0,0,,ClaimInvoice;MBMCoveredPersons;MBMCrossReference;Pay;View_MBMInv_Posting,,WRITE
+frmMBMListBranch,List of Branch,Worksheet,,via frmWorksheetEnq,S,114,0,,,0,0,,BRN,,READ-ONLY
+frmMBMListCity,List of City,Worksheet,,via frmWorksheetEnq,S,114,0,,,0,0,,CTY,,READ-ONLY
+frmMBMListState,Form1,Worksheet,,via frmWorksheetEnq,S,114,0,,,0,0,,STA,,READ-ONLY
+frmMBMMCOPending,Membership MCO Pending,Membership,Membership > MCO Pending,direct,S,584,3,.AddNew; .Delete; .Update,,0,0,,MCOPending;status;Status;VIEW_MCOPending,,WRITE
+FrmMBMOthers,Member Others,Worksheet,,via frmWorksheetEnq,M,1281,0,,,0,0,,LGN;OCP;View_MBM_MBMOthers;WorkNature,,READ-ONLY
+frmMBMOthers2,Member Others,,,NO,S,671,0,,,0,0,,,,READ-ONLY
+frmMBMReintstatement,Membership Reinstatement,Membership,Membership > Member Reinstatement,direct,M,732,4,Update MBM set; Update MBMCoveredPersons set; Update MBMCrossReference set; insert into,,0,0,,MBM;MBMAmendHistory;MBMCoveredPersons;MBMCrossReference;MBMReinstatement;MBMTwo;PLN,Search_MBM,WRITE
+FrmMBMTracking,Membership Tracking,,,NO,XL,32235,0,,,0,0,,Date;STA;View_MBM_Search2;VIEW_MBM_Search2;VIEW_MBM_Search3;VIEW_MBM_Search4;View_MBM_Supp2OldPLN;VIEW_MBM_Supp2OldPLN;View_MBM_Supplementary2;VIEW_MBM_Suppleme,SearchINS;SearchPayorHLTType,READ-ONLY
+FrmMBMTracking2,Member Tracking (Jupiter),Membership,Membership > Tracking (Jupiter),direct,XL,41745,0,,,0,0,,CompanyGrp;Date;VIEW_MBM_Search2;VIEW_MBM_Search3;VIEW_MBM_Search4;View_MBM_Supp2OldPLN;VIEW_MBM_Supp2OldPLN;View_MBM_Supplementary2;VIEW_MBM_Supplementary2;Vie,MBMTracking;SearchComboListing;SearchProductCategory;SearchState,READ-ONLY
+frmMBMTrackingRepSimple,Membership Tracking (Jupiter - Simple),Membership,Membership > Tracking (Simple - Jupiter),direct,XL,38685,0,,,0,0,,CompanyGrp;Date;VIEW_MBM_Search2;VIEW_MBM_Search3;VIEW_MBM_Search4;View_MBM_Supp2OldPLN;VIEW_MBM_Supp2OldPLN;View_MBM_Supplementary2;VIEW_MBM_Supplementary2;Vie,MBMTrackingSimple;SearchComboListing;SearchProductCategory;SearchState,READ-ONLY
+frmMCOCorrection,MCO Fee Correction,MCOFees,MCOFees > MCO Correction,direct,M,843,3,.beginTrans; Update MBMCoveredPersons set; Update MBMOthers set,,0,0,,MBMCoveredPersons;MBMOthers,Search_MBM;SearchPayor,WRITE
+frmMCOFeesListing,Fee Listing,,,NO,L,2909,2,.AddNew; .Update,,0,0,MCOListing_Premium.rpt;MCOListing_Premium_All.rpt;MCOListing_Premium_GrpCo_SubTotal.rpt;MCOListing_Premium_GrpCo_SubTotal_All.rpt;MCOListing_Premium_GrpCo_SubTotal_Printed.rpt;MCOListing_Premium_Printed.rpt;MCOListing_WP_GrpCo_SubTotal.rpt;MCOListing_WP_GrpCo_SubTotal_All.rpt;MCOListing_WP_GrpCo_SubTotal_Printed.rpt;MCOListing_WithoutPremium.rpt;MCOListing_WithoutPremium_All.rpt;MCOListing_WithoutPremium_Printed.rpt,MBMMCOINVQ;PAY,,WRITE
+frmMCOFeesListingNep,Fee Listing (Neptune),,,NO,M,1127,0,,,0,0,MCOListing_Premium_AllNep.rpt;MCOListing_WithoutPremium_AllNep.rpt,PAY;VIEW_MCO_ReportSearch2;VIEW_MCO_SuppReportSearch,,READ-ONLY
+frmMCOFeesListingNew,Member MCO Fees ,,,NO,M,1716,10,.AddNew; .Update; .beginTrans; Delete from,,0,0,MCOInvoice.rpt;MCOInvoice_Dept.rpt;MCOListing_Premium.rpt;MCOListing_Premium_Dept.rpt;MCOListing_WithoutPremium.rpt;MCOListing_WithoutPremium_Dept.rpt,Broker;Date;DATE;MBMCoveredPersons;MBMMCOInvoice;MBMMCOINVQ;MBMOthers;MCOPending;PAY;Pay;Status;VIEW_MCO_LISTING_All2,SearchComboListing;SearchPayor;SP_MCOFeesNew;SP_MCOPluto,WRITE
+frmMCOInvCRNote,MCO Invoice Credit Note,,,NO,S,602,1,.Update,,0,0,,MBMCoveredPersons;MBMOthers;VIEW_MBM_MBMOthers,,WRITE
+frmMCOInvoice,MCO Invoice,,,NO,M,1998,2,.AddNew; .Update,,0,0,InvoicesReport.rpt;InvoicesReportBatch.rpt;InvoicesReport_Range.rpt;InvoicesReport_Reprint.rpt;InvoicesReport_View_Range.rpt,Bordx;MBMMCOINVQ;PAY,,WRITE
+frmMCOInvoiceASCII,MCO Invoice ASCII,MCOFees,MCOFees > MCO Invoice (ASCII),direct,M,1305,5,.Update; .beginTrans; update MBMOthers set; update MBMRefund set,Y,0,0,,MBMMCOINVQ;MBMOthers;MBMRefund;MBMReinstatement,SearchPayor,WRITE
+frmMCOInvoiceCorrection,MCO Invoice Correction,MCOFees,MCOFees > Date Correction,direct,M,1034,5,.beginTrans; Delete from; Update MBM set; Update MBMCoveredPersons set,,0,0,,MBM;MBMCoveredPersons;MBMOthers,Search_MBM;SearchPayor,WRITE
+frmMCOInvoiceNep,MCO Invoice (Neptune),,,NO,L,1468,2,.AddNew; .Update,,6,0,,Bordx;MBMCoveredPersons;MBMMCOINVQ;MBMOthers;PAY;VIEW_Invoice_CP_ReportNew;VIEW_Invoice_GetEffAmountNew3;VIEW_Invoice_ReportSearch2;VIEW_Invoice_SuppReportSearc,,WRITE
+frmMCOInvoiceNew,MCO Invoice,,,NO,M,1568,7,.AddNew; .Update; .beginTrans; Insert Into,,2,0,,Bordx;MBMCoveredPersons;MBMMCOInvoice;MBMMCOINVQ;MBMOthers;MCOPending;PAY;Status,SearchComboListing;SearchPayor;SP_MCOFees,WRITE
+frmMCOInvoiceReinstatement,MCO Reinstatement Invoice ,MCOFees,MCOFees > MCO Reinstatement,direct,L,1358,4,.AddNew; .Update; .beginTrans; update MBMReinstatement set,,4,0,,MBMMCOINVQ;MBMReinstatement;Pay;View_MBM_MCOReinstatement;View_MCOReinstatement_Invoice_CP;View_MCOReinstatement_Invoice_P,SearchPayor;SP_MCOFeesReinstatement,WRITE
+frmMCOManualUpd,MCO Invoice Update,MCOFees,MCOFees > Invoice Manual Upd,direct,M,788,1,.Update,,0,0,,MBMCoveredPersons;MBMOthers;PAY;View_MBM_MBMOthers,,WRITE
+frmMCORecFrPay,MCO Receipt From Payor,,,NO,M,1145,0,,,0,0,,PAY,,READ-ONLY
+frmMCORefundInvoice,MCO Refund Invoice,,,NO,M,1994,2,.AddNew; .Update,,0,0,InvoicesRefundReport.rpt;InvoicesRefundReport_Range.rpt;InvoicesRefundReport_Reprint.rpt;InvoicesRefundReport_View_Range.rpt,Bordx;MBMMCOINVQ;MBMRefund;PAY;VIEW_InvoiceRef_SearchRpt,,WRITE
+frmMCORefundListing,MCO Refund Listing,,,NO,L,2818,2,.AddNew; .Update,,0,0,MCOListing_Premium.rpt;MCOListing_Premium_All.rpt;MCOListing_Premium_GrpCo_SubTotal.rpt;MCOListing_Premium_GrpCo_SubTotal_All.rpt;MCOListing_Premium_GrpCo_SubTotal_Printed.rpt;MCOListing_Premium_Printed.rpt;MCOListing_WP_GrpCo_SubTotal.rpt;MCOListing_WP_GrpCo_SubTotal_All.rpt;MCOListing_WP_GrpCo_SubTotal_Printed.rpt;MCOListing_WithoutPremium.rpt;MCOListing_WithoutPremium_All.rpt;MCOListing_WithoutPremium_Printed.rpt,MBMMCOINVQ;PAY;VIEW_MCORefund_ReportSearch,,WRITE
+frmMCORefundListing2,MCO Refund Listing,MCOFees,MCOFees > Refund Listing,direct,M,1604,2,update MBMCoveredPersonsTwo set; update MBMOthers set,,2,0,,Date;MBM;MBMCoveredPersonsTwo;MBMOthers;PAY;VIEW_MBM_MCORefund_Inv;VIEW_MBM_Refund_Search;View_MBM_Supplementary_Refund,MBMRefundListing;SearchPayor,WRITE
+FrmMCOTracking,MCO Fees Tracking,,,NO,M,2607,0,,,0,0,,,,READ-ONLY
+frmMemberEntry,Member Registration,Membership,Membership > Registration,direct,S,479,0,,,0,0,,BAT,SearchHLTType;SearchPayor;SearchPayorHLTType,READ-ONLY
+frmMemberRegistration,Member Registration,Worksheet,,via frmWorksheetEnq,L,4928,4,.AddNew; .Update; .beginTrans; Delete from,,0,0,,AnnualLimit;BAT;BRN;CTY;DiscPlan;INS;LGN;MBM;MBMCLNOthers;MBMCoveredPersons;MBMCoveredPersonsArchive;MBMValidDateRange;NAT;OCP;PLN;PRM;RAC;REL;SRV;STA;View_MBM_,,WRITE
+frmMembershipASCIIPluto,Membership ASCII,Membership,Membership > Generate Membership ASCII(Pluto),direct,S,555,0,,Y,0,0,,MBMExcellUploadShelly,SearchPayorHLTType,READ-ONLY
+frmMembershipBordxControl,Form1,,,NO,S,680,0,,,0,0,,,,READ-ONLY
+frmMembershipCardControl,Membership Card Control,Membership,Membership > Card Sending Mode,direct,M,1180,3,.beginTrans; Update MBMCoveredPersonsTwo set; Update MBMTwo set,,0,0,,MBMCoveredPersons;MBMCoveredPersonsTwo;MBMTwo,Search_MBM_CardSent;SearchPayor,WRITE
+frmMembershipLifetimeLmt,Lifetime Limit Upgrade,Case,Case > Lifetime Lmt Upgrade,direct,M,827,3,.beginTrans; Insert Into; update MBMOthers set,,0,0,,AnnualLimit;MBMCoveredPersons;MBMCrossReference;MBMLifeTime;MBMOthers;View_Case_Search,Search_MBM,WRITE
+frmMMA,MMA,Maintenance,Maintenance > MMA,direct,M,1333,3,.AddNew; .Update; Delete From,,0,0,,MMAFees;MMAProcedures,,WRITE
+frmMMA13thSchDesc,MMA and 13th Schedule Description,Invoice,,via frmInvoice,S,449,0,,,0,0,,VIEW_MMA_Schedule,,READ-ONLY
+frmMMAEntry,Procedures/OPCS,Invoice,,via frmInvoice,L,3778,0,,,0,0,,VIEW_MMA_Schedule,,READ-ONLY
+frmMMASchedule,MMA Schedule of Fees,Case,Case > MMA/CPT,direct,S,527,0,,,0,0,,VIEW_MMA_Schedule,,READ-ONLY
+FrmMonthlyDNRpt,Monthly Debit Note Report,Claim Bordx,Claim Bordx > Storage > Monthly DN Report,direct,M,1454,0,,,0,0,,,MonthlyDNRpt;SearchCASUserOpen;SearchInvUser;SearchPayor,READ-ONLY
+frmNewClaimAscii,Claim Ascii,Case,Case > Claim ASCII,direct,M,1105,1,EXEC Case_CLMAscUpdate,Y,0,0,,,Case_ClaimAscii;Case_CLMAscUpdate;SearchPayor,WRITE
+frmNewEndorsement,Upload MBM,,,NO,L,4944,6,.AddNew; .Update; .beginTrans; Delete from,Y,0,0,,AnnualLimit;ASCII;CASCrossReference;MBM;MBMCLNOthers;MBMCoveredPersons;MBMCoveredPersonsCLN;MBMCoveredPersonsTwo;MBMCrossReference;MBMOthers;MBMOthersTwo;MBMRef,,WRITE
+FrmNewEndt,Upload Member,,,NO,L,4742,8,.AddNew; .Update; .beginTrans; Delete from,Y,0,0,,AnnualLimit;ASCII;Bordx;MBM;MBMAmendHistory;MBMBnfLmt;MBMCoveredPersons;MBMCoveredPersonsTwo;MBMCrossReference;MBMLifeTime;MBMOthers;MBMOthersTwo;MBMTwo;MCO;PLN,SearchAccAppAmt;SearchHISDBComboListing;SearchHISTableRec;SearchMaintTableRec;SearchMBMCrossRef;Upload_MBM_HIS;Upload_MBMClnOthers;Upload_MBMCovPersonsCis;Uploa,WRITE
+frmNewMBMAdjustment,Member Adjustment,Membership,Membership > Adjustment,direct,L,7287,12,.AddNew; .Update; .beginTrans; Delete From,,0,0,,AnnualLimit;AnnualLimitType;BAT;CASCrossReference;DiscPlan;MBM;MBMAmendHistory;MBMBnfLmt;MBMCLNOthers;MBMCoveredPersons;MBMCoveredPersonsCLN;MBMCoveredPersonsTw,SearchMBMCovPersonsProc;SearchMBMHistory06;Upload_MBMCovPersonsCis;Upload_MBMMcoRefund,WRITE
+FrmNewMBMEndt,Upload Member,,,NO,L,4207,8,.AddNew; .Update; .beginTrans; Delete from,Y,0,0,,ASCII;Bordx;MBM;MBMAmendHistory;MBMBnfLmt;MBMCoveredPersons;MBMCoveredPersonsTwo;MBMCrossReference;MBMLifeTime;MBMOthers;MBMOthersTwo;MBMTwo;PLN,SearchAccAppAmt;SearchHISTableRec;SearchMaintTableRec;SearchMBMCrossRef;Upload_MBM_HIS;Upload_MBMAmendHistory;Upload_MBMClnOthers;Upload_MBMCovPersonsCis;Upload,WRITE
+FrmNewMBMEndt05,Member Uploading Form,,,NO,L,4710,8,.AddNew; .Update; .beginTrans; Delete from,Y,0,0,,ASCII;Bordx;MBM;MBMAmendHistory;MBMBnfLmt;MBMCoveredPersons;MBMCoveredPersonsTwo;MBMCrossReference;MBMLifeTime;MBMOthers;MBMOthersTwo;MBMTwo;PAY;PLN,SearchHISTableRec;SearchMaintTableRec;SearchMBMCrossRef;Upload_MBM_HIS;Upload_MBMAmendHistory;Upload_MBMClnOthers;Upload_MBMCovPersonsCis;Upload_MBMCovPersonsNe,WRITE
+FrmNewMBMEndt08,Member Uploading Form,Membership,Membership > Upload Bordx 08 | Membership > Upload Bordx Etiqa,direct,L,6111,10,.AddNew; .Update; .beginTrans; Delete from,Y,0,0,,ASCII;Bordx;FWHSEndorsementMBM;FWHSTPAFEE;GroupCompanyFW;MBM;MBMAmendHistory;MBMBnfLmt;MBMCoveredPersons;MBMCoveredPersonsTwo;MBMCrossReference;MBMLifeTime;MBMO,SearchHISTableRec;SearchMaintTableRec;SearchMBMCrossRef;Update_FW_Policy;Update_MBM_FWHS;Upload_FW_CanTPAFee;Upload_FW_EndtTPAFee;Upload_FW_Policy;Upload_FW_TPA,WRITE
+FrmNewMBMEndt10,Member Uploading Form,Membership,Membership > Upload Bordx 2010,direct,L,5098,10,.AddNew; .Update; .beginTrans; Delete from,Y,0,0,,ASCII;Bordx;MBM;MBMAmendHistory;MBMBnfLmt;MBMBnfLTLmt;MBMCoveredPersons;MBMCoveredPersonsTwo;MBMCrossReference;MBMLifeTime;MBMOthers;MBMOthersTwo;MBMReinstateme,SearchHISTableRec;SearchMaintTableRec;SearchMBMCrossRef;Upload_MBM_HIS;Upload_MBMAmendHistory;Upload_MBMClnOthers;Upload_MBMCovPersonsCis;Upload_MBMCovPersonsNe,WRITE
+FrmNewMBMEndt2012,Member Uploading Form,Membership,Membership > Upload Bordx,direct,L,6225,10,.AddNew; .Update; .beginTrans; Delete from,Y,0,0,,ASCII;Bordx;FWHSEndorsementMBM;FWHSTPAFEE;GroupCompanyFW;MBM;MBMAmendHistory;MBMBnfLmt;MBMCoveredPersons;MBMCoveredPersonsTwo;MBMCrossReference;MBMLifeTime;MBMO,SearchHISDBComboListing;SearchHISTableRec;SearchMaintTableRec;SearchMBMCrossRef;Update_FW_Policy2012;Update_MBM_FWHS2012;Upload_FW_CanTPAFee2012;Upload_FW_EndtT,WRITE
+frmNewMBMEnquiry,Member Enquiry,Membership,Membership > Enquiry,direct,XL,10034,0,,Y,4,2,RptMbmEnquiry1.rpt,Claim;CLMMAATakaful;MBM;MBMAmendHistory;MBMBnfLmt;MBMCoveredPersons;MBMCrossReference;MBMRefund;PLN;VIEW_Account_History;View_BNF;VIEW_BNF;View_Get_MemberExclus,Case_SearchIllness;SearchCas;SearchCASHistory;SearchCasHistorySupp;SearchCasHistorySuppTwo;SearchCASHistoryTwo;SearchMBMCovPersonsProc;SearchMBMHistory06;SP_Sea,READ-ONLY
+frmNewMBMOthers,Member Others,Worksheet,,via frmWorksheetEnq,M,1286,0,,,0,0,,,SearchHISTableRec;SearchMaintTableRec,READ-ONLY
+frmNewMBMReg05,Member Registration,Worksheet,,via frmWorksheetEnq,L,6519,6,.AddNew; .Update; .beginTrans; Delete from,,0,0,,AnnualLimit;BAT;DiscPlan;MBM;MBMBnfLmt;MBMCLNOthers;MBMCoveredPersons;MBMLifeTime;MBMOthers;MBMOthersTwo;MBMTwo;MBMValidDateRange;MCO;PLN;PRM;SuppMCOStatus,SearchHISTableRec;SearchMaintTableRec;SearchMBMCovPersonsProc;Upload_MBM_HIS;Upload_MBMCovPersonsCis;Upload_MBMCovPersonsNew;Upload_MBMCovPersonsTwo;Upload_MBMX,WRITE
+FrmNewMBMTracking,Membership Tracking,Membership,Membership > Tracking,direct,XL,41741,0,,,0,0,,CompanyGrp;Date;VIEW_MBM_Search2;VIEW_MBM_Search3;VIEW_MBM_Search4;View_MBM_Supp2OldPLN;VIEW_MBM_Supp2OldPLN;View_MBM_Supplementary2;VIEW_MBM_Supplementary2;Vie,MBMTracking;SearchComboListing;SearchProductCategory;SearchState,READ-ONLY
+frmNewMBMTrackingSimple,Membership Tracking (Simple),Membership,Membership > Tracking (Simple),direct,XL,38685,0,,,0,0,,CompanyGrp;Date;VIEW_MBM_Search2;VIEW_MBM_Search3;VIEW_MBM_Search4;View_MBM_Supp2OldPLN;VIEW_MBM_Supp2OldPLN;View_MBM_Supplementary2;VIEW_MBM_Supplementary2;Vie,MBMTrackingSimple;SearchComboListing;SearchProductCategory;SearchState,READ-ONLY
+frmNewMemberRegistration,Member Registration,,,NO,L,5606,6,.AddNew; .Update; .beginTrans; Delete from,,0,0,,AnnualLimit;BAT;DiscPlan;INS;MBM;MBMBnfLmt;MBMCLNOthers;MBMCOveredPersons;MBMCoveredPersons;MBMCOveredPersonsTwo;MBMCrossReference;MBMLifeTime;MBMOthers;MBMOthe,SearchAccAppAmt;SearchCity;SearchMBMCovPersonsProc;SearchNAT;SearchRace;SearchREL;SearchState;Upload_MBMCovPersonsCis,WRITE
+frmNewWorksheet,Register New Worksheet,Worksheet,,via frmWorksheetEnq,XL,19150,26,.AddNew; .Update; .beginTrans; EXEC Case_RegInsertCAS,,6,5,,AnnualLimit;BankAccounts;BNF;CAS;CAS_Excess;CAS_UD;CASCrossReference;CASOthers;CASOthersTwo;CASRemarksInt;claim;Claim;ClaimInvoice;ClaimPayMBMStatus;ClaimSameLi,Case_RegInsertCAS;Case_RegInsertCASOthers;Case_RegInsertCASOthers2;Case_RegInsertCASRef;Case_RegInsertCASRemark;Case_RegInsertCASRemark2;Case_RegInsertCASRemark,WRITE
+frmNewWorksheet2010,Register New Worksheet,Worksheet,Worksheet > Worksheet Registration,direct,XL,19372,26,.AddNew; .Update; .beginTrans; EXEC Case_RegInsertCAS,,6,5,,AnnualLimit;BankAccounts;BNF;CAS;CAS_Excess;CAS_UD;CASCrossReference;CASOthers;CASOthersTwo;CASRemarksInt;claim;Claim;ClaimInvoice;ClaimPayMBMStatus;ClaimSameLi,Case_RegInsertCAS;Case_RegInsertCASOthers;Case_RegInsertCASOthers2;Case_RegInsertCASRef;Case_RegInsertCASRemark;Case_RegInsertCASRemark2;Case_RegInsertCASRemark,WRITE
+frmNewWorksheet2010V2,Register New Worksheet,,,NO,M,2666,0,,,0,0,,,,READ-ONLY
+frmNewWSAdjust,WorkSheet Adjustment,Worksheet,,via frmWorksheetEnq,XL,15616,7,.AddNew; .Update; .beginTrans; EXEC Case_AdjInsertCASLG,,6,21,,AnnualLimit;BankAccounts;BNF;CAS;CAS_Excess;CASLG;claim;Claim;ClaimActual;ClaimApprove;CLaimHos;ClaimInvoice;ClaimLimit;CLaimMember;ClaimOthers;ClaimPayMBMStatu,Case_AdjInsertCASLG;Case_Adjustment;SearchCasMBMClaim;SearchState,WRITE
+frmNewWSAdjust2010,WorkSheet Adjustment,Worksheet,Worksheet > WorkSheet Adjustment,direct,XL,15942,7,.AddNew; .Update; .beginTrans; EXEC Case_AdjInsertCASLG,,6,22,,AnnualLimit;BankAccounts;BNF;CAS;CAS_Excess;CASLG;claim;Claim;ClaimActual;ClaimApprove;CLaimHos;ClaimInvoice;ClaimLimit;CLaimMember;ClaimOthers;ClaimPayMBMStatu,Case_AdjInsertCASLG;Case_Adjustment;SearchCasMBMClaim;SearchState;SearchWSInvoice,WRITE
+frmNewWSAdjust2010V2,WorkSheet Adjustment,,,NO,M,2736,0,,,0,0,,,,READ-ONLY
+frmNewWSAdjustment,Form2,,,NO,S,17,0,,,0,0,,,,READ-ONLY
+FrmNiamReport,NIAM Report,Membership,Membership > NIAM Report,direct,XL,20315,0,,,0,0,,VIEW_NIAM_Claim3;VIEW_NIAMMBMNew2;VIEW_NIAMSuppNew2,NIAMReport;SearchComboListing;SearchINS;SearchState,READ-ONLY
+FrmNiamReport2,Niam Report 2,Membership,Membership > NIAM Report 2,direct,L,5606,0,,,2,0,,VIEW_NIAM_ClaimNew2;VIEW_NIAMMBMNew,NIAMReport;SearchComboListing,READ-ONLY
+FrmNiamReport3,Niam Report 3,,,NO,L,3595,0,,,0,0,,PAY;VIEW_NIAM_Claim2;VIEW_NIAMMBM;VIEW_NIAMSUPP,,READ-ONLY
+FrmOldReport,Form1,,,NO,L,2675,0,,,0,0,,HOS;HOSGRP;INS;OCP;PAY;VIEW_AnalysisReport1;VIEW_AnalysisReport4;VIEW_AnalysisReport5;VIEW_AnalysisReport6;VIEW_PrinNDep,,READ-ONLY
+FrmOldReport2,Form1,,,NO,L,5843,0,,,0,0,,PAY;VIEW_Admit_Discharge_Report;VIEW_Admit_Year_Report;VIEW_AnalysisReport1;VIEW_AnalysisReport2;VIEW_AnalysisReport3;VIEW_AnalysisReport6;VIEW_Daily_Report;VIE,,READ-ONLY
+FrmOSBordx,Outstanding Bordx,Claim Bordx,Claim Bordx > Monitoring > Outstanding Bordx,direct,M,2341,0,,,0,0,,VIEW_OS_Bordx,OSBordx;SearchPayor,READ-ONLY
+frmPanelHospital,Panel Hospitals,Case,Case > Panel Hospitals,direct,S,382,0,,,0,0,,HosPanelCode,Search_PanelHospitals2,READ-ONLY
+frmPanelHospitals,Panel Hospital,Worksheet,,via frmWorksheetEnq,S,394,0,,,0,0,,HOS;PAY,,READ-ONLY
+frmPanelHospMaintenance,Panel Hospital Maintenance,Case,,via frmPanelHospital,S,534,2,.AddNew; .Update,,0,0,,HOS;PAY;PLNPanelHospitals,,WRITE
+frmPayableAmtAdj,Payable Amount Adjustment,Payment,Payment > Payable Amt Adjustment,direct,S,532,1,.Update,,0,0,,Claim,,WRITE
+frmPayAdviceHosp,Payment Advice - Generate Bordx,Claim Bordx,Claim Bordx > Payment Advice > Generate Bordx No,direct,L,2156,9,.beginTrans; insert into; update CAS set; update CASCrossReference set,,0,0,,Bordx;CAS;CASCrossReference;CasRemarks;CASRemarks;CASRemarksTwo;CASRemarkThree;Claim;ClaimInvoice;PAY;VIEW_WS_PendingBordx2,SearchHISTableRec,WRITE
+frmPayAdviceHosRpt,Payment Advice- By Hospital,Claim Bordx,Claim Bordx > Payment Advice > Hospital Report,direct,L,3001,0,,,14,7,,Bordx;HOS;MBMCoveredPersons,CLM_PayAdviceHOS;Print_Bordx;SearchHISTableRec,READ-ONLY
+FrmPAYDetail,Payment Detail,,,NO,S,123,0,,,0,0,,,,READ-ONLY
+FrmPayMember,Payment to Member,Payment,Payment > To Member > Pay2MBM,direct,L,4817,5,.AddNew; .Update; .beginTrans; Delete from,,4,3,,Claim;ContraAllocation;MBMCoveredPersons;Payment2MBM;PAyment2MBM;REceiptFrMNRB;ReceiptfrMNRB;REceiptFrPay;Status;View_Payment2MBM_Checking;VIEW_Payment2MBM_Chq,SearchClaimTables;SearchHISTableRec;SearchHLTType;SearchUSRAuthStatus;SP_PaymentJul08,WRITE
+frmPayMemberJul08,Payment to Member (Auto),Payment,Payment > To Member > Pay2MBM(Auto),direct,L,4779,8,.AddNew; .Update; .beginTrans; Delete from,,2,3,,CasRemarks;CASRemarks;CASRemarksTwo;CASRemarkThree;Claim;ContraAllocation;MBMCoveredPersons;Payment2MBM;PAyment2MBM;Status;View_Payment2MBM_Checking;VIEW_Paymen,SearchClaimTables;SearchHISTableRec;SearchHLTType;SearchUSRAuthStatus;SP_PaymentJul08,WRITE
+FrmPayment,Payment,,,NO,M,911,3,.AddNew; .Update; .beginTrans,,0,0,,ClaimActual;ClaimApprove;HOS;VIEW_CAS_Patient,,WRITE
+FrmPaymentHospital,Payment to Hospital,Payment,Payment > To Hospital,direct,L,4106,6,.AddNew; .Update; Delete from; update CASRemarkThree set,,6,0,,Bordx;CAS;CasRemarks;CASRemarks;CASRemarksTwo;CASRemarkThree;ContraAllocation;Date;HOS;MBM;PAyment2HOS;Payment2HOS;REceiptFrMNRB;REceiptFrPAY;VIEW_Payment2HOS_C,SearchHISTableRec;SearchHLTType;SearchUSRAuthStatus;SP_Payment,WRITE
+FrmPaymentManual,PV Update,Payment,Payment > PV Update (Manual),direct,L,3398,3,.AddNew; .Update; Delete from,,2,0,,CAS;ContraAllocation;HOS;PAyment2HOS;Payment2HOS;Payment2MBM;PAyment2MBM;ReceiptfrMNRB;View_Pay2HOSPv;View_Pay2MBMPv_Manual;VIEW_Payment2HOS_manual;VIEW_Payment,SearchHOS;SearchPayor;SearchUSRAuthStatus,WRITE
+frmPaymentMBMReissue,Payment 2 MBM (Reissue),Payment,Payment > To Member > Chq. Reissue,direct,L,2843,2,.AddNew; .Update,,2,0,,Bordx;CASCrossReference;Claim;MBM;MBMCoveredPersons;Payment2MBM;ReceiptfrMNRB;View_Payment2MBMNew,SearchHISTableRec;SearchHLTType,WRITE
+FrmPaymentMBMReverse,Payment to MBM - Reverse,Payment,Payment > To Member > Chq. Cancellation,direct,M,1947,3,.beginTrans; Delete From; Insert Into,,0,0,,Payment2MBM;PaymentMBMReverse,,WRITE
+FrmPaymentOthers,Payment Others,Payment,Payment > Others,direct,M,2391,2,.AddNew; .Update,,2,0,,PAymentOthers;PaymentOthers,SearchHLTType,WRITE
+FrmPaymentPayor,Payment to Payor,Payment,Payment > Payor,direct,L,2830,2,.AddNew; .Update,,2,0,,PAY;Payment2PAY;View_Payment_Payor,SearchComboListing;SearchPayor;SearchUSRAuthStatus,WRITE
+FrmPaymentSubAmtPaid,Payment - Amount Paying,,,NO,S,264,0,,,0,0,,,,READ-ONLY
+FrmPaymentTracking,Payment Tracking,Payment,Payment > Payment Tracking,direct,L,4357,0,,,0,0,,,PaymentTracking;SearchHOS;SearchPayor,READ-ONLY
+frmPostingBordxInv2MNRB,Posting - Bordx Invoice to MNRB,A/C Export,A/C Export > Bordx > MNRB,direct,M,1827,2,.beginTrans; Insert Into,,0,0,,AccPeriod;Bordx;CASCrossReference;Claim;ClaimInvoice;HLT;HOS;MBMCoveredPersons;MBMCrossReference;PAY;Pay;Status;SUNPosting;TimeMain;VIEW_Sun_Posting_BordxMNRB_D,SUN_HIS_Posting,WRITE
+frmPostingBordxInv2Pay,Posting - Bordx Invoice to Payor,A/C Export,A/C Export > Bordx > Payor,direct,M,1879,2,.beginTrans; Insert Into,,0,0,,AccPeriod;Bordx;CAS;Claim;ClaimInvoice;CompanyGrp;CompanyGRP;HLT;HOS;MBMCoveredPersons;MBMCrossReference;MBMOthers;PAY;Pay;Status;SUNPosting;TimeMain;VIEW_Sun_P,SUN_HIS_Posting,WRITE
+frmPostingBTBG,Posting BTBG,A/C Export,A/C Export > BTBG,direct,M,1745,2,.beginTrans; Insert Into,,0,0,,AccPeriod;HLT;MBMCoveredPersons;Pay;SUNPosting;TimeMain,SUN_HIS_Posting,WRITE
+frmPostingInvoiceHosp,Posting - HospInv,A/C Export,A/C Export > Invoice > Hospital | Posting > Invoice > Hospital,direct,M,1808,2,.beginTrans; Insert Into,,0,0,,AccPeriod;HLT;MBMCoveredPersons;SUNPosting;TimeMain,SearchHISTableRec;SUN_HIS_Posting,WRITE
+frmPostingInvoiceMBM,Posting - MBMInv,A/C Export,A/C Export > Invoice > Member | Posting > Invoice > Member,direct,M,1762,2,.beginTrans; Insert Into,,0,0,,AccPeriod;HLT;MBMCoveredPersons;Pay;SUNPosting;TimeMain,SUN_HIS_Posting,WRITE
+frmPostingPay2Hosp,Posting - Pay2Hosp,A/C Export,A/C Export > Payment > Hospital,direct,M,1602,2,.beginTrans; Insert Into,,0,0,,AccPeriod;HLT;Pay;SUNPosting;TimeMain,SearchHISTableRec;SUN_HIS_Posting,WRITE
+frmPostingPay2MBM,Posting - Pay2MBM,A/C Export,A/C Export > Payment > Member,direct,M,1791,2,.beginTrans; Insert Into,,0,0,,AccPeriod;HLT;Pay;Payment2MBM;SUNPosting;TimeMain;VIEW_SUN_Posting_Pay2MBM_NoCase,SUN_HIS_Posting,WRITE
+frmPostingRecMNRB,Receipt MNRB Export,A/C Export,A/C Export > Receipt > MNRB,direct,M,1571,2,.beginTrans; Insert Into,,0,0,,AccPeriod;Pay;Status;SUNPosting;TimeMain,SUN_HIS_Posting,WRITE
+frmPostingRecPayor,Receipt Payor Export,A/C Export,A/C Export > Receipt > Payor,direct,M,1592,2,.beginTrans; Insert Into,,0,0,,AccPeriod;Pay;SUNPosting;TimeMain,SUN_HIS_Posting,WRITE
+frmPostingSalesInvoice,Posting - Sales Invoice,A/C Export,A/C Export > Sales > Invoice,direct,S,565,0,,,0,0,,,,READ-ONLY
+FrmPrintBordx,Print Bordx,Claim Bordx,Claim Bordx > Print Bordx,direct,M,1640,0,,,2,0,ClaimBordx_Summ_NS.rpt;ClaimBordx_Summ_NS_BTB.rpt;ClaimBordx_Summ_Sihat.rpt;ClaimBordx_Summ_Sihat_BTB.rpt,Pay;PLN;ProductCategory;View_PrintBordx;VIEW_PrintClaimBordx_06,Print_Bordx;SearchPayor,READ-ONLY
+FrmPrintBordxEx,Print Bordx (Group Company Excess),Claim Bordx,Claim Bordx > Print Bordx Excess,direct,M,1453,1,.Update,,0,0,ClaimBordx_NSihat_Above.rpt;ClaimBordx_NSihat_All.rpt;ClaimBordx_NSihat_Below.rpt;ClaimBordx_Sihat_Above.rpt;ClaimBordx_Sihat_All.rpt;ClaimBordx_Sihat_Below.rpt;ClaimBordx_Sihat_Detail.rpt;ClaimBordx_Sihat_Detail_Above.rpt;ClaimBordx_Sihat_Detail_Above_NS.rpt;ClaimBordx_Sihat_Detail_All.rpt;ClaimBordx_Sihat_Detail_All_NS.rpt;ClaimBordx_Sihat_Detail_NS.rpt,Bordx;View_PrintBordxExcess,SearchPayor,WRITE
+frmPrintBordxFW,Print Bordx,,,NO,M,1537,0,,,2,0,ClaimBordx_Summ_NS.rpt;ClaimBordx_Summ_NS_BTB.rpt;ClaimBordx_Summ_Sihat.rpt;ClaimBordx_Summ_Sihat_BTB.rpt,Pay;PLN;ProductCategory;View_PrintBordx;VIEW_PrintClaimBordx_06,Print_Bordx;SearchPayor,READ-ONLY
+frmPrintBordxFWHS,Form1,,,NO,M,1537,0,,,2,0,ClaimBordx_Summ_NS.rpt;ClaimBordx_Summ_NS_BTB.rpt;ClaimBordx_Summ_Sihat.rpt;ClaimBordx_Summ_Sihat_BTB.rpt,Pay;PLN;ProductCategory;View_PrintBordx;VIEW_PrintClaimBordx_06,Print_Bordx;SearchPayor,READ-ONLY
+frmPrintBordxTimeDotcom,Print Bordx - Time Dotcom,,,NO,M,1457,3,Execute sqlinsert; Insert into; update Bordx set,,3,0,ClaimBordx_Summary.rpt;ClaimBordx_Summary_DeptNew.rpt;ClaimBordx_Summary_Dept_FFS.rpt;ClaimBordx_Summary_Dept_Medix.rpt;ClaimBordx_Summary_FFS.rpt;ClaimBordx_Summary_Medix.rpt,Bordx,,WRITE
+frmPrintChequeRange,Print Cheque Range,Payment,,via FrmPaymentHospital,M,643,2,Update Payment2HOS set; Update Payment2MBM set,,5,0,,ChequeType;Payment2HOS;Payment2MBM;VIEW_Payment2HOS_Chq;VIEW_Payment2MBM_Chq,,WRITE
+frmPrintCN,Print CN Range,Payment,,via frmPayMemberJul08,M,549,0,,,2,0,,,SP_PaymentJul08,READ-ONLY
+frmPrintPVRange,Print PV Range,Payment,,via frmPayMemberJul08,M,565,0,,,3,1,,MBMCoveredPersons;REceiptFrMNRB;ReceiptfrMNRB;REceiptFrPay,SP_Payment,READ-ONLY
+frmPrintScreen,Form1,,,NO,S,37,0,,,0,0,,,,READ-ONLY
+frmPVSunHISFlag,SunHISPVChecking,Payment,Payment > SunHIS PV Check,direct,S,630,1,.Update,,0,0,,Date,,WRITE
+frmRecAllocMedixGainLoss,MedixAllocGainLoss(Receipt),Receipt,Receipt > RecAllocation > MedixGainLoss,direct,M,1597,2,.AddNew; .Update,,0,0,,ReceiptMedixGL;VIEW_RecMedix_GL,SearchHLTType;SearchPayor,WRITE
+FrmRecBankCharges,Medix Bank Charges,Receipt,Receipt > RecAllocation > Medix Bank Charge,direct,M,1469,3,.AddNew; .Update; Delete From,,0,0,,RecBankCharge,,WRITE
+FrmRecBankContra,Bank Contra,Receipt,Receipt > RecAllocation > Medix Bank Contra,direct,M,1574,3,.AddNew; .Update; Delete From,,0,0,,RecBankContra,,WRITE
+FrmReceipt,Receipt from MNRB/PAYOR,,,NO,M,1057,2,.AddNew; .Update,,0,0,,Bordx;PAY;PLN;ReceiptfrMNRB;VIEW_BordxReceipt,,WRITE
+FrmReceiptHOS,Receipt (Others),,,NO,M,1246,3,.AddNew; .Update; Delete from,,0,0,,ReceiptFrHOS;VIEW_ReceiptFrOthers,SearchHOS,WRITE
+FrmReceiptMember,Receipt From Member,Receipt,Receipt > From Member,direct,L,3009,2,.AddNew; .Update,,2,0,,ContraAllocation;ReceiptfrMBM;ReceiptFrMBM;USR;VIEW_ReceiptFrMBM;View_ReceiptFrMBMRec2,SearchPayor,WRITE
+FrmReceiptMNRB,Receipt From MNRB,Receipt,Receipt > MNRB,direct,L,3852,9,.AddNew; .Update; Insert Into; UPdate ReceiptfrMNRB SET,,2,0,,Bordx;CasRemarks;CASRemarks;CASRemarksTwo;CASRemarkThree;Claim;ContraAllocation;ReceiptfrMNRB;USR;View_ReceiptFrMNRBRec,SearchPayor;SP_Receipt,WRITE
+FrmReceiptMNRBManual,Receipt From MNRB (Manual),Receipt,Receipt > MNRB (Manual),direct,L,3287,6,.AddNew; .Update; Insert Into; UPdate ReceiptfrMNRB SET,,2,0,,Bordx;Claim;ContraAllocation;ReceiptfrMNRB;USR;View_ReceiptFrMNRBRec,SearchPayor;SP_Receipt,WRITE
+FrmReceiptPayor,Receipt From Payor,Receipt,Receipt > Payor,direct,L,5021,12,.AddNew; .Update; Delete from; Insert Into,,2,0,,BankAccounts;Bordx;CasRemarks;CASRemarks;CASRemarksTwo;CASRemarkThree;Claim;CompanyGrp;ContraAllocation;Payment2HOS;ReceiptfrPay;ReceiptfrPAY;USR;View_Print_PV,Print_PaymentVoucher;SearchHOS;SearchPayor;SP_Receipt,WRITE
+FrmReceiptPayorManual,Receipt From Payor (Manual),Receipt,Receipt > Payor (Manual),direct,L,3307,6,.AddNew; .Update; Insert Into; UPdate ReceiptfrPay SET,,2,0,,Bordx;Claim;ContraAllocation;ReceiptfrPay;ReceiptfrPAY;USR;View_ReceiptFrPayorRec,SearchPayor;SP_Receipt,WRITE
+FrmReceiptTracking,Receipt Tracking,Receipt,Receipt > Receipt Tracking,direct,L,3136,0,,,0,0,,VIEW_ReceiptfrMBMTracking;VIEW_ReceiptfrMNRBTracking;VIEW_ReceiptfrPayorTracking,ReceiptTracking;SearchPayor,READ-ONLY
+FrmRecHospAdj,Hospital Adj,Receipt,Receipt > RecAllocation > Medix Hosp Adj,direct,M,1577,3,.AddNew; .Update; Delete From,,0,0,,RecBankContra;RecHospAdj,,WRITE
+FrmRecMCO,Receipt MCO/Others,MCOFees,MCOFees > Receipt MCO/Others,direct,M,2202,3,.AddNew; .Update; Delete from,,0,0,,RECMCO;RECOthers;VIEW_Receipt_MCO;VIEW_SearchMBM_Refund,SearchPayor;SearchRecType,WRITE
+frmRecMCOManual,Receipt MCO/Others Manual,MCOFees,MCOFees > Receipt MCO/Others (Manual),direct,M,2190,3,.AddNew; .Update; Delete from,,0,0,,RECMCO;RECOthers;VIEW_Receipt_MCO;VIEW_SearchMBM_Refund,SearchPayor;SearchRecType,WRITE
+frmRECNonDisclosure,Record Of Non-Disclosure,Case,Case > Non-Disclousre Info,direct,M,872,2,.Update; .beginTrans,,0,0,,MBM;MBMCoveredPersonsTwo;MBMTwo,SearchMBMCovPersonsProc,WRITE
+frmReport,Report,,,NO,S,148,0,,,0,0,,,,READ-ONLY
+frmReportMain,Report,Membership,Membership > Leaflet  Card,direct,L,2241,2,.AddNew; .Update,,0,0,Leaflet.rpt,MBM;PAY,,WRITE
+frmReportMain1,Report,,,NO,L,4399,6,Execute sqlinsert; Insert into; update MBMCLNOthers set; update MBMCoveredPersonsCLN set,,2,0,Leaflet.rpt;LeafletRE.rpt;LeafletRE_Ricoh.rpt;LeafletSpecial.rpt;Leaflet_Branch.rpt;Leaflet_BranchRE.rpt;Leaflet_BranchRE_Ricoh.rpt;Leaflet_Branch_Ricoh.rpt;Leaflet_Dept.rpt;Leaflet_DeptRE.rpt;Leaflet_DeptRE_Ricoh.rpt;Leaflet_Dept_Ricoh.rpt;Leaflet_Edymium.rpt;Leaflet_Edymium_Ricoh.rpt;Leaflet_GrpCo.rpt;Leaflet_GrpCoRE.rpt;Leaflet_GrpCoRE_Ricoh.rpt;Leaflet_GrpCo_EmpNo.rpt;Leaflet_GrpCo_EmpNoRE.rpt;Leaflet_GrpCo_EmpNoRE_Ricoh.rpt;Leaflet_GrpCo_EmpNoSpecial.rpt;Leaflet_GrpCo_EmpNo_Ricoh.rpt;Leaflet_GrpCo_Ricoh.rpt;Leaflet_Ricoh.rpt;Leaflet_WithoutAddress.rpt,MBM;MBMCLNOthers;MBMCoveredPersons;MBMCoveredPersonsCLN;MBMCoveredPersonsTwo;MBMCrossReference;MBMOthers;MBMTwo;PLN;VIEW_CLN_CardExport;VIEW_Leaflet;View_Leafle,CardSentList;SearchPayor,WRITE
+frmReprintLetters,Reprint Letters,,,NO,S,204,0,,,0,0,,,,READ-ONLY
+frmRepudiation,Repudiation Letter,,,NO,M,603,0,,,0,4,,repcode,,READ-ONLY
+frmRepudiationOthers,RC6-Others (Specify),,,NO,M,340,0,,,0,3,,,,READ-ONLY
+frmRepudiationSelection,frmRepudiationSelection,Case,,via frmCaseAdmission,S,322,0,,,0,0,,REPCode;REPSelection,,READ-ONLY
+frmReturnFrPayor,Return from Payor,Claim Bordx,Claim Bordx > Bor Delivery > Returned From Payor,direct,M,2380,4,update CASRemarkThree set; update CASRemarksTwo set; update CasRemarks set; update Claim set,,0,0,,bordx;CasRemarks;CASRemarks;CASRemarksTwo;CASRemarkThree;Claim;Date;status,Bordx_ReturnPayor;SearchPayor,WRITE
+FrmReturnMNRB,Bordx Returned MNRB,,,NO,M,915,1,update Bordx set,,0,0,,BORDX;Bordx,SearchPayor,WRITE
+FrmReturnPayor,Bordx Delivery,,,NO,M,1210,2,update Bordx set; update Claim set,,0,0,,BORDX;Bordx;Claim,Bordx_ReturnPayor;SearchPayor,WRITE
+FrmReturnPayorCase,Bordx Delivery,Claim Bordx,Claim Bordx > Bor Delivery > Returned Fr Payor(Not App),direct,S,569,1,update Claim set,,0,0,,Claim;VIEW_BORDX_ClaimApp,Bordx_ReturnPayorCase,WRITE
+frmSearch,Retrieve LG,,,NO,S,318,0,,,0,2,,,,READ-ONLY
+frmSearchCase,Search For Member,,,NO,M,1150,0,,,0,0,,View_MBMSearch,,READ-ONLY
+frmSearchCASTracking,Search by Case,,,NO,S,393,0,,,0,0,,,,READ-ONLY
+frmSearchCPT,Search Procedure,Invoice,,via frmInvoice,S,587,0,,,0,0,,MMAProcedures,,READ-ONLY
+frmSearchICD,Search ICD,Membership,,via frmMBMExpiredPolicy,S,390,0,,,0,0,,ICD,,READ-ONLY
+frmSearchInv,Search Investigation,Invoice,,via frmInvoice,S,317,0,,,0,0,,MMAProcedures,,READ-ONLY
+frmSearchMBM,Search For Member,Worksheet,,via frmWorksheetEnq,S,733,0,,,0,0,,MBMCoveredPersons,Search_MBM,READ-ONLY
+frmSearchMBM05,Search for MBM 05 ,Case,,via frmRECNonDisclosure,S,417,0,,,0,0,,,Search_MBM_05,READ-ONLY
+FrmSearchRepudiation,Search Repudiation,Membership,,via frmMBMExpiredPolicy,S,373,0,,,0,0,,RepCode,,READ-ONLY
+frmSendClaimBordx,Send Claim Bordx,,,NO,M,1475,4,update Bordx set; update CASRemarkThree set; update CASRemarks set; update CASRemarksTwo set,,0,0,,Bordx;BORDX;CasRemarks;CASRemarks;CASRemarksTwo;CASRemarkThree;Claim,Bordx_Sent;SearchPayor,WRITE
+frmSendClaimBordxV2,Form1,Claim Bordx,Claim Bordx > Bor Delivery > Bordx Send Date,direct,M,1595,4,update Bordx set; update CASRemarkThree set; update CASRemarks set; update CASRemarksTwo set,,0,0,,Bordx;BORDX;CasRemarks;CASRemarks;CASRemarksTwo;CASRemarkThree;Claim,Bordx_Sent;SearchPayor,WRITE
+FrmSendtoAC,Bordx Sent to A/C,Claim Bordx,Claim Bordx > Bor Delivery > Send to A/C,direct,M,1263,1,update Bordx set,,0,0,,BORDX;Bordx,Bordx_Sent2AC;SearchPayor,WRITE
+FrmSendtoMNRB,Bordx Delivery,Claim Bordx,Claim Bordx > Bor Delivery > Send to MNRB,direct,M,1208,1,update Bordx set,,0,0,,BORDX;Bordx,Bordx_Sent2MNRB;SearchPayor,WRITE
+FrmSendtoPayor,Bordx Delivery,Claim Bordx,Claim Bordx > Bor Delivery > Send to Payor,direct,M,1182,1,update Bordx set,,0,0,,BORDX;Bordx,Bordx_Sent2Payor;SearchPayor,WRITE
+FrmSendtoPayor2,Send To Payor (Scanner),,,NO,S,557,1,.Update,,0,0,,BORDX;Bordx,,WRITE
+FrmShowCPT,Show Procedure,Invoice,,via frmInvoice,S,224,0,,,0,0,,,,READ-ONLY
+FrmShowInv,Show Inv,Invoice,,via frmInvoice,S,153,0,,,0,0,,,,READ-ONLY
+frmShowInvestigation,Investigation,Case,,via frmMMASchedule,S,624,0,,,0,0,,VIEW_MMA_Schedule,Case_MMASchedule,READ-ONLY
+FrmShowMMAList,MMA Schedule,,,NO,S,353,0,,,0,0,,VIEW_MMA_Search,,READ-ONLY
+FrmSpalsh,Version : ,,,NO,S,152,0,,,0,0,,,,READ-ONLY
+frmStaffAttendance,Staff Attendance,File,File > Attendance,direct,S,282,2,.AddNew; .Update,,0,0,,StaffAttendance,,WRITE
+FrmStorage,Storage Maintenance,,,NO,L,2174,3,.AddNew; .Update; Delete From,,2,0,,CARTON;Carton;carton;CAS;STORAGE;Storage;View_Storage,,WRITE
+frmStorageDoc,Form1,Claim Bordx,Claim Bordx > Storage > Document,direct,M,1952,2,.AddNew; .Update,,0,0,,StorageDocument,SearchCarton;SearchDPT;SearchUser;Storage_Documents,WRITE
+frmStorageEnq,Storage Enquiry,Claim Bordx,Claim Bordx > Storage > Enquiry,direct,M,1932,0,,,2,0,,carton;Carton;Storage;View_Storage_CLm,SearchCarton;SearchUser,READ-ONLY
+frmStorageEntry,STORAGE,Claim Bordx,Claim Bordx > Storage > Claim files,direct,L,3048,4,.AddNew; .Update; Delete From; Delete from,,2,0,,CARTON;Carton;carton;CAS;STORAGE;Storage;View_Storage_CLm,SearchCarton;SearchUser,WRITE
+frmStorageRepEnq,Storage - Repudiate Case Enquiry,Claim Bordx,Claim Bordx > Storage > Repudiated Enquiry,direct,M,1523,0,,,2,0,,Carton;StorageRep;View_Storage_CLmRep,SearchCarton;SearchUser,READ-ONLY
+FrmStorageRepEntry,Storage - Repudiated Case,Claim Bordx,Claim Bordx > Storage > Repudiated Case,direct,M,2005,3,.AddNew; .Update; Delete From,,2,0,,Carton;StorageRep;View_Storage_CLmRep,SearchCarton;SearchUser,WRITE
+frmStorageTracking,Storage Tracking,,,NO,S,17,0,,,0,0,,,,READ-ONLY
+frmSuspensionCat,Suspension Category,,,NO,S,38,0,,,0,0,,,,READ-ONLY
+frmSuspensionDetail,Suspension Detail,Maintenance,Maintenance > Suspension,direct,M,1073,3,.AddNew; .Update; Delete From,,0,0,,PAY;SuspensionCat;SuspensionDetail,,WRITE
+FrmTempCaseTransfer,Temporary Case Transfer,Case,Case > Temp Case Transfer,direct,M,1565,3,.Update; .beginTrans; Delete From,,0,0,,AnnualLimit;BnfAnnLmt;CAS;CAS_Excess;CAS_UD;CASAmendHis;CASAuditReview;CASCrossReference;CASLG;CASOthers;CASOthersTwo;CASProcInv;CASRemarks;CASRepudiation;Claim,Case_TempTransfer,WRITE
+frmTempClaimsReg,Temp Worksheet Processing,,,NO,S,38,0,,,0,0,,,,READ-ONLY
+FrmTempMBMAdj,Temporary Membership Adjustment,,,NO,M,2655,0,,,0,0,,,,READ-ONLY
+FrmTempMBMReg,Temporary Membership Registration,,,NO,M,2285,0,,,0,0,,,,READ-ONLY
+frmTrace,Trace Window,,,NO,S,33,0,,,0,0,,,,READ-ONLY
+FrmTrustAC,Reconciliation,Payment,Payment > Reconciliation,direct,M,1072,2,.AddNew; .Update,,0,0,,ReconFlag;VIEW_TrustAC,SearchHLTType;SearchPayor,WRITE
+frmUpdateInvoice,Update Invoice,Payment,Payment > Update Invoice,direct,S,471,1,.Update,,0,0,,ClaimInvoice;HOS,SearchHOS,WRITE
+frmUpdatePolYear,Form1,,,NO,S,149,1,.Update,,0,0,,MBM;MBMCrossReference,SearchPayor,WRITE
+frmUpdateWS2Bordx,Update Bordx,Claim Bordx,Claim Bordx > Update Bordx,direct,M,1599,5,.AddNew; .Update; .beginTrans; update Claim  set,,0,0,,Bordx;Claim;ClaimInvoice;ReceiptFrMNRB;VIEW_WS_PendingBordx,SearchPayor,WRITE
+frmUploadApproval,Upload Approval Code,Claim Bordx,Claim Bordx > Upload Approval/Sent Date,direct,M,1119,9,.beginTrans; Execute strsqlUpdate; Update Claim set; update Bordx set,,2,0,,Bordx;CasRemarks;CASRemarks;CASRemarksTwo;CASRemarkThree;Claim,,WRITE
+frmUploadBordxByIC,Upload Bordx By IC,,,NO,M,1532,2,.AddNew; .Update,,0,0,,MBM;MBMCoveredPersons;MBMOthers;PAY,,WRITE
+frmUploadBordxSentDate,Upload Bordx Sent Date,,,NO,S,167,0,,,0,0,,,,READ-ONLY
+frmUser,Form1,,,NO,M,2318,0,,,0,0,,,,READ-ONLY
+frmUserMaintenance,Security Maintenance ,,,NO,M,701,3,.AddNew; .Update; Delete From,,0,0,,GRP;USR,,WRITE
+frmUserPermissionMaintenance,Security Maintenance,Maintenance,Maintenance > Security > User Permission,direct,L,5803,3,.AddNew; .Update; Delete From,,0,0,,USR;view_USR_GRP,,WRITE
+frmUtalisation,Utalisation,,,NO,S,195,0,,,0,0,,HOS;ICD,,READ-ONLY
+FrmWksBordx,Select Worksheets for Bordx,Claim Bordx,Claim Bordx > Worksheet > Insert Worksheet,direct,M,2061,9,.beginTrans; insert into; update CAS set; update CASCrossReference set,,0,0,,Bordx;CAS;CASCrossReference;CasRemarks;CASRemarks;CASRemarksTwo;CASRemarkThree;Claim;ClaimInvoice;PAY;VIEW_WS_PendingBordx2,,WRITE
+FrmWksSendToAC,Claims Send To A/C,Worksheet,Worksheet > Worksheet Send to A/C,direct,M,1203,4,update CASRemarkThree set; update CASRemarksTwo set; update CasRemarks set; update Claim set,,0,0,,CasRemarks;CASRemarks;CASRemarksTwo;CASRemarkThree;Claim;PAY;VIEW_WKS2AC,,WRITE
+frmWorkSheet,WorkSheet,,,NO,L,3964,0,,,0,0,,,,READ-ONLY
+frmWorksheetEnq,Worksheet Enquiry,Worksheet,Worksheet > Worksheet Enquiry,direct,XL,12231,6,.AddNew; .Update; .beginTrans; update ClaimInvoice set,,6,5,,AnnualLimit;BNF;CAS;CAS_Excess;claim;Claim;ClaimActual;ClaimApprove;CLaimHos;ClaimInvoice;ClaimLimit;CLaimMember;ClaimOthers;ClaimPayMBMStatus;ClaimSameLimit;DI,SearchCasMBMClaim,WRITE
+FrmWorksheetTracking,Worksheets Tracking,Worksheet,Worksheet > Worksheet Tracking,direct,M,2408,4,update CAS set; update CASCrossReference set; update Claim set; update ClaimInvoice set,,0,0,,CAS;CASCrossReference;Claim;ClaimInvoice;VIEW_WKSTrackingNew,SearchINS;SearchPayor;WorksheetTracking,WRITE
+FrmWorksheetTracking2,Worksheet Tracking (Jupiter),Worksheet,Worksheet > Worksheet Tracking (Jupiter),direct,M,1899,0,,,0,0,,VIEW_WKSTrackingNew,SearchINS;SearchPayor;WorksheetTracking,READ-ONLY
+mdiMain,&File,File,,via frmLogin,L,5054,0,,Y,0,0,,TimeMain,,READ-ONLY
+RptSuspendList,Print Suspension List,,,NO,S,17,0,,,0,0,,,,READ-ONLY
+writetoWordfirst,First Letter Of Guarantee,,,NO,M,600,0,,,0,4,,CAS,,READ-ONLY
+writetowordsecond,Second Letter Of Guarantee,,,NO,M,566,0,,,0,4,,CAS,,READ-ONLY
+’,General Claims Notification Zurich (General Insurance),,,NO,M,1899,0,,Y,2,0,,BNF,Case_ClaimAscii;Case_ClaimAsciiFW;Case_ClaimAsciiMedGen_New;SearchPayor,READ-ONLY

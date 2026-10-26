@@ -2,11 +2,13 @@
 using Genesis.Core.Data;
 using Genesis.Core.Hospitals;
 using Genesis.Core.Membership;
+using Genesis.Core.Tracking;
 using Genesis.Core.Users;
 using Genesis.Infrastructure.Cases;
 using Genesis.Infrastructure.Data;
 using Genesis.Infrastructure.Hospitals;
 using Genesis.Infrastructure.Membership;
+using Genesis.Infrastructure.Tracking;
 using Genesis.Infrastructure.Users;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -23,10 +25,12 @@ public static class DependencyInjection
         services.AddScoped<IMembershipTabsRepository, MembershipTabsRepository>();
         services.AddSingleton<IPolicyWordingStore, FileSystemPolicyWordingStore>();
         services.AddScoped<ICaseInquiryRepository, CaseInquiryRepository>();
+        services.AddScoped<ITrackingService, TrackingService>();
         services.AddSingleton<ICaseDocumentStore, FileSystemCaseDocumentStore>();
         return services;
     }
 }
+
 
 
 

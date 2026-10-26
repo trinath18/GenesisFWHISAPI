@@ -1,6 +1,7 @@
 ﻿using System.Data;
 using Dapper;
 using Genesis.Core.Data;
+using Genesis.Infrastructure.Data;
 using Genesis.Core.Membership;
 
 namespace Genesis.Infrastructure.Membership;
@@ -10,7 +11,7 @@ namespace Genesis.Infrastructure.Membership;
 /// with parameters instead of concatenated SQL. Columns are read defensively (dynamic rows) because several
 /// procedures return slightly different column sets.
 /// </summary>
-internal sealed class MembershipEnquiryRepository(IDbConnectionFactory db) : IMembershipEnquiryRepository
+internal sealed class MembershipEnquiryRepository(IDbConnectionFactory connections) : SqlRepository(connections), IMembershipEnquiryRepository
 {
     private const int Timeout = 120;
 
@@ -27,7 +28,7 @@ internal sealed class MembershipEnquiryRepository(IDbConnectionFactory db) : IMe
             WHERE m.MBMNumber LIKE @like
             ORDER BY m.MBMNumber
             """;
-        await using var conn = await db.OpenAsync(GenesisDb.Main, ct);
+        await using var conn = await Db.OpenAsync(GenesisDb.Main, ct);
         var cmd = new CommandDefinition(sql, new { take = MemberNumber.SearchLimit + 1, like = prefix.Trim() + "%" },
             commandTimeout: Timeout, flags: CommandFlags.NoCache, cancellationToken: ct);
         var items = new List<MemberSearchResult>();
@@ -46,7 +47,7 @@ internal sealed class MembershipEnquiryRepository(IDbConnectionFactory db) : IMe
 
     public async Task<MemberDetail?> GetAsync(string number, CancellationToken ct = default)
     {
-        await using var conn = await db.OpenAsync(GenesisDb.Main, ct);
+        await using var conn = await Db.OpenAsync(GenesisDb.Main, ct);
         var row = (await conn.QueryAsync(new CommandDefinition("SearchMBMCovPersonsProc", new { MBMNumber = number.Trim() },
             commandType: CommandType.StoredProcedure, commandTimeout: Timeout, cancellationToken: ct))).FirstOrDefault();
         if (row is null) return null;
@@ -149,7 +150,7 @@ internal sealed class MembershipEnquiryRepository(IDbConnectionFactory db) : IMe
 
     private async Task<string?> ScalarIcAsync(string number, CancellationToken ct)
     {
-        await using var conn = await db.OpenAsync(GenesisDb.Main, ct);
+        await using var conn = await Db.OpenAsync(GenesisDb.Main, ct);
         var ic = await conn.ExecuteScalarAsync<string?>(new CommandDefinition(
             "SELECT MBMIcBcPp FROM MBM WHERE MBMNumber = @number", new { number = number.Trim() }, commandTimeout: Timeout, cancellationToken: ct));
         return ic?.Trim();
@@ -157,7 +158,7 @@ internal sealed class MembershipEnquiryRepository(IDbConnectionFactory db) : IMe
 
     private async Task<IReadOnlyList<MemberCase>> RunCaseProcAsync(string proc, object args, CancellationToken ct)
     {
-        await using var conn = await db.OpenAsync(GenesisDb.Main, ct);
+        await using var conn = await Db.OpenAsync(GenesisDb.Main, ct);
         var rows = await conn.QueryAsync(new CommandDefinition(proc, args, commandType: CommandType.StoredProcedure,
             commandTimeout: Timeout, cancellationToken: ct));
         return rows.Select(x =>
@@ -170,13 +171,6 @@ internal sealed class MembershipEnquiryRepository(IDbConnectionFactory db) : IMe
                 D(r, "CASDateAdmitted"), D(r, "CASDischargeDate"), S(r, "CASClaimability"), S(r, "DIAFinalDiag1"),
                 S(r, "CASStatus"), S(r, "HOSName"), S(r, "PAYCode"));
         }).ToList();
-    }
-
-    private async Task<List<IDictionary<string, object?>>> QueryAsync(GenesisDb database, string sql, object args, CancellationToken ct)
-    {
-        await using var conn = await db.OpenAsync(database, ct);
-        var rows = await conn.QueryAsync(new CommandDefinition(sql, args, commandTimeout: Timeout, cancellationToken: ct));
-        return rows.Select(r => (IDictionary<string, object?>)r).ToList();
     }
 
     private static string? Str(IDataRecord r, string name)
@@ -207,4 +201,6 @@ internal sealed class MembershipEnquiryRepository(IDbConnectionFactory db) : IMe
     private static DateTime? D(IDictionary<string, object?> r, string key) => Get(r, key) is DateTime d ? d : null;
     private static decimal? Dec(IDictionary<string, object?> r, string key) => Get(r, key) is null or DBNull ? null : Convert.ToDecimal(Get(r, key));
 }
+
+
 
