@@ -1,4 +1,4 @@
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 
 namespace Genesis.Core.Membership;
 
@@ -13,6 +13,11 @@ public sealed record PrincipalAmendment(
     string? MemberNumber, string? Name, string? PolicyNo, string? IcBcPp, DateOnly? DateOfBirth, string? Sex, string? Address1, string? Address2, string? Address3,
     string? City, string? State, string? PostCode, string? Race, string? Nationality, string? Salutation, string? Email, string? TelHome, string? TelMobile, string? TelOffice,
     DateOnly? EndorsementBordxDate, DateOnly? EffectiveDate, int? BatchNo);
+
+/// <summary>Everything the legacy Member Adjustment header shows next to the principal details, plus the management note (MBMTwo.MBMMmgtNotes).</summary>
+public sealed record AdjustmentOverview(MemberDetail Detail, string? ManagementNote);
+
+public sealed record MgmtNoteRequest(string? MemberNumber, string? Note);
 
 public sealed record AmendmentResult(AdjustmentMember Member, bool CrossReferenceUpdated, bool RenewalKeyUpdated);
 
@@ -66,4 +71,12 @@ public interface IAdjustmentRepository
 {
     Task<AdjustmentMember?> GetAsync(string memberNumber, CancellationToken ct = default);
     Task<AmendmentResult> AmendAsync(PrincipalAmendment amendment, string user, CancellationToken ct = default);
+
+    /// <summary>Legacy Pre / Next: the neighbouring membership number in sort order, or null at the first / last record.</summary>
+    Task<string?> NeighbourAsync(string memberNumber, bool next, CancellationToken ct = default);
+
+    Task<string?> GetMgmtNoteAsync(string memberNumber, CancellationToken ct = default);
+
+    Task SaveMgmtNoteAsync(string memberNumber, string? note, string user, CancellationToken ct = default);
 }
+

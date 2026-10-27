@@ -1,4 +1,4 @@
-using Genesis.Core.Data;
+﻿using Genesis.Core.Data;
 using Genesis.Core.Membership;
 using Genesis.Core.Writes;
 using Genesis.Infrastructure.Data;
@@ -29,6 +29,34 @@ internal sealed class AdjustmentRepository(IDbConnectionFactory connections, IAu
     {
         if (!AdjustmentRules.IsValidMember(memberNumber)) throw new BusinessRuleException("Please enter a valid membership number.", field: "memberNumber");
         return (await QueryAsync(GenesisDb.Main, Select, new { number = memberNumber.Trim() }, ct)).Select(Map).FirstOrDefault();
+    }
+
+    public async Task<string?> NeighbourAsync(string memberNumber, bool next, CancellationToken ct = default)
+    {
+        if (!AdjustmentRules.IsValidMember(memberNumber)) throw new BusinessRuleException("Please enter a valid membership number.", field: "memberNumber");
+        var sql = next ? "SELECT TOP 1 MBMNumber FROM MBM WHERE MBMNumber > @n ORDER BY MBMNumber" : "SELECT TOP 1 MBMNumber FROM MBM WHERE MBMNumber < @n ORDER BY MBMNumber DESC";
+        return (await QueryAsync(GenesisDb.Main, sql, new { n = memberNumber.Trim() }, ct)).Select(r => S(r, "MBMNumber")?.Trim()).FirstOrDefault();
+    }
+
+    public async Task<string?> GetMgmtNoteAsync(string memberNumber, CancellationToken ct = default) =>
+        (await QueryAsync(GenesisDb.Main, "SELECT MBMMmgtNotes FROM MBMTwo WHERE MBMNumber = @n", new { n = memberNumber.Trim() }, ct)).Select(r => S(r, "MBMMmgtNotes")).FirstOrDefault();
+
+    public async Task SaveMgmtNoteAsync(string memberNumber, string? note, string user, CancellationToken ct = default)
+    {
+        if (!AdjustmentRules.IsValidMember(memberNumber)) throw new BusinessRuleException("Please enter a valid membership number.", field: "memberNumber");
+        if ((note?.Length ?? 0) > 8000) throw new BusinessRuleException("The management note can be at most 8000 characters.", field: "note");
+        var number = memberNumber.Trim();
+        string? before;
+        await using (var session = await Db.BeginSessionAsync(GenesisDb.Main, ct))
+        {
+            if (await session.ScalarAsync<int>("SELECT COUNT(*) FROM MBM WHERE MBMNumber = @number", new { number }, ct) == 0) throw BusinessRuleException.NotFound($"Member '{number}' does not exist.");
+            before = (await session.QueryAsync("SELECT MBMMmgtNotes FROM MBMTwo WHERE MBMNumber = @number", new { number }, ct)).Select(r => S(r, "MBMMmgtNotes")).FirstOrDefault();
+            if (await session.ScalarAsync<int>("SELECT COUNT(*) FROM MBMTwo WHERE MBMNumber = @number", new { number }, ct) == 0)
+                await session.ExecuteAsync("INSERT INTO MBMTwo (MBMNumber) VALUES (@number)", new { number }, ct);
+            await session.ExecuteAsync("UPDATE MBMTwo SET MBMMmgtNotes = @note WHERE MBMNumber = @number", new { number, note = string.IsNullOrWhiteSpace(note) ? null : note.Trim() }, ct);
+            await session.CommitAsync(ct);
+        }
+        audit.Record(new AuditEntry("Member.MgmtNote", "MBMTwo", number, user, new Dictionary<string, object?> { ["before"] = before, ["after"] = note }));
     }
 
     public async Task<AmendmentResult> AmendAsync(PrincipalAmendment a, string user, CancellationToken ct = default)
@@ -98,3 +126,4 @@ internal sealed class AdjustmentRepository(IDbConnectionFactory connections, IAu
         return new AmendmentResult(after, crossOk, renewOk);
     }
 }
+
