@@ -1,4 +1,4 @@
-namespace Genesis.Core.Fees;
+﻿namespace Genesis.Core.Fees;
 
 /// <summary>Plan flags that steer the fee calculation (table PLN). Defaults match the legacy form: round up Y, pro-rata Y, gender premium N.</summary>
 public sealed record PlanFeeFlags(bool RoundUp = true, bool ProRate = true, bool GenderPremium = false);
@@ -13,7 +13,7 @@ public sealed record FeeRequest(
     string Insurer, string Health, string Payor, string Plan, string AgeCode, string AdultChild, string? Sex,
     DateOnly RateDate, DateOnly PeriodFrom, DateOnly PeriodTo, bool ApplyDiscounts);
 
-public sealed record FeeResult(decimal BasicPremium, decimal Premium, decimal McoFee, PlanFeeFlags Flags, DiscountRates Discounts, int PeriodDays);
+public sealed record FeeResult(decimal BasicPremium, decimal Premium, decimal McoFee, PlanFeeFlags Flags, DiscountRates Discounts, int PeriodDays, decimal BasicMco = 0);
 
 /// <summary>Raised when the rate tables have no row for the request (the legacy form showed "Age out of premium range" / "MCO information is not correct").</summary>
 public sealed class FeeRateMissingException(string message) : Exception(message);
@@ -87,12 +87,16 @@ public sealed class FeeService(IFeeRateSource rates)
         var discounts = r.ApplyDiscounts ? await rates.GetDiscountsAsync(r.Plan, ct) : new DiscountRates();
         var (basic, premium) = FeeMath.Premium(rate, discounts, r.PeriodFrom, r.PeriodTo);
 
-        decimal mco = 0;
+        decimal mco = 0, basicMco = 0;
         if (r.AdultChild is "A" or "C")
         {
             var mcoRate = await rates.GetMcoRateAsync(r, ct) ?? throw new FeeRateMissingException("MCO information is not correct. Please check the MCO table.");
-            mco = FeeMath.Mco(r.AdultChild == "A" ? mcoRate.Adult : mcoRate.Child, flags, r.PeriodFrom, r.PeriodTo);
+            var mcoAmount = r.AdultChild == "A" ? mcoRate.Adult : mcoRate.Child;
+            basicMco = FeeMath.Money(mcoAmount);
+            mco = FeeMath.Mco(mcoAmount, flags, r.PeriodFrom, r.PeriodTo);
         }
-        return new FeeResult(basic, premium, mco, flags, discounts, FeeMath.PeriodDays(r.PeriodFrom, r.PeriodTo));
+        return new FeeResult(basic, premium, mco, flags, discounts, FeeMath.PeriodDays(r.PeriodFrom, r.PeriodTo), basicMco);
     }
 }
+
+

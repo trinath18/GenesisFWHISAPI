@@ -79,10 +79,12 @@ app.MapMcoPending();
 app.MapMemberDeletion();
 app.MapReinstatement();
 app.MapAdjustment();
+app.MapRegistration();
 
 app.Run();
 
 public partial class Program;
+
 
 
 
