@@ -26,7 +26,8 @@ internal sealed class RegistrationRepository(IDbConnectionFactory connections, I
     {
         var health = First(r.HealthCode, 1); var payor = T(r.PayorCode); var ins = First(r.Insurer, 1); var plan = T(r.Plan);
         var eff = r.PayorEffectiveDate!.Value; var exp = r.PayorExpiryDate!.Value; var dob = r.DateOfBirth!.Value;
-        if (ins is "F" or "H") throw new BusinessRuleException("Insured codes F and H take supplementary persons, which the web registration does not support yet. Please register these in the legacy application.", field: "insurer");
+        var supp = r.Supplementary ?? [];
+        if (supp.Count > 0 && ins is not ("F" or "H")) throw new BusinessRuleException("Only insured codes F and H take supplementary persons.", field: "insurer");
 
         var payRow = (await main.QueryAsync("SELECT PAYMBMRegStatus FROM PAY WHERE PAYCode = @payor", new { payor }, ct)).FirstOrDefault() ?? throw BusinessRuleException.NotFound($"Payor '{payor}' does not exist.");
         if (T(S(payRow, "PAYMBMRegStatus")) == "P") throw new BusinessRuleException("This payor numbers members by policy number, which the web registration does not support yet.", field: "payorCode");
@@ -50,7 +51,67 @@ internal sealed class RegistrationRepository(IDbConnectionFactory connections, I
         var memberType = string.IsNullOrEmpty(suppStatus) || suppStatus == "A" ? "P" : "Q";
 
         var dup = (await QueryAsync(GenesisDb.Maintenance, "SELECT TOP 1 MBMNumber FROM MBMCrossReference WHERE MBMIcBcPp = @ic ORDER BY MBMPayorEffDate DESC, MBMNumber DESC", new { ic = T(r.IcBcPp) }, ct)).Select(x => T(S(x, "MBMNumber"))).FirstOrDefault();
-        return (new RegistrationQuote(ageText, ageCode, adultChild, f.BasicPremium, f.Premium, f.BasicMco, f.McoFee, limit, memberType, string.IsNullOrEmpty(dup) ? null : dup, eff, exp), f);
+        var suppQuotes = await PriceSupplementaryAsync(main, supp, health, payor, ins, plan, eff, exp, ct);
+        return (new RegistrationQuote(ageText, ageCode, adultChild, f.BasicPremium, f.Premium, f.BasicMco, f.McoFee, limit, memberType, string.IsNullOrEmpty(dup) ? null : dup, eff, exp, suppQuotes), f);
+    }
+
+    /// <summary>Legacy saveCoverPersons: each covered person is priced on the principal's payor period using the plan's supplementary limit, MCO and premium statuses.</summary>
+    private async Task<IReadOnlyList<RegistrationSupplementaryQuote>> PriceSupplementaryAsync(IDbSession main, IReadOnlyList<RegistrationSupplementary> persons,
+        string health, string payor, string ins, string principalPlan, DateOnly payorEff, DateOnly payorExp, CancellationToken ct)
+    {
+        var list = new List<RegistrationSupplementaryQuote>();
+        var hasDiscPlan = persons.Count > 0 && (await QueryAsync(GenesisDb.Maintenance, "SELECT COUNT(*) AS N FROM DiscPlan WHERE PLNCode = @plan", new { plan = principalPlan }, ct)).Select(x => I(x, "N") ?? 0).First() > 0;
+        for (var i = 0; i < persons.Count; i++)
+        {
+            var s = persons[i]; var coverId = (i + 1).ToString("00");
+            var plan = Blank(s.SupplementaryPlan) ?? principalPlan; var eff = s.EffectiveDate ?? payorEff; var exp = s.ExpiryDate ?? payorExp;
+            if (exp < eff) throw new BusinessRuleException($"The cover expiry of {T(s.Name)} is before its effective date.", field: "supplementary");
+
+            var ageText = LegacyAge.Text(eff, s.DateOfBirth!.Value);
+            var rows = (await main.QueryAsync("SELECT AGEIndex, AGECode, AGEDescription, AGEFrom, AGETo, PLNCode FROM AGE WHERE PLNCode = @plan OR PLNCode IS NULL", new { plan = principalPlan }, ct))
+                .Select(x => new AgeBandRow(I(x, "AGEIndex") ?? 0, S(x, "AGECode") ?? "", S(x, "AGEDescription"), S(x, "AGEFrom"), S(x, "AGETo"), S(x, "PLNCode"))).ToList();
+            var band = LegacyAge.Band(ageText, principalPlan, rows) ?? throw new BusinessRuleException($"The age of {T(s.Name)} is out of the acceptable range.", field: "supplementary");
+            var ageCode = First(band.Code, 2); var adultChild = LegacyAge.AdultChild(ageCode);
+
+            var planRow = (await main.QueryAsync("SELECT TOP 1 PLNLifeTimeStatus, PLNRoundUpStatus, PLNProRate FROM PLN WHERE PLNCode = @plan AND HLTCode = @health AND PLNEffDate <= @eff AND (@health = 'S' OR PAYCode = @payor) ORDER BY PLNEffDate DESC",
+                new { plan, health, eff = At(payorEff), payor }, ct)).FirstOrDefault();
+            if (planRow is not null && T(S(planRow, "PLNLifeTimeStatus")) == "Y") throw new BusinessRuleException("A lifetime-limit plan is not supported yet. Please use the legacy application.", field: "supplementary");
+            var roundUp = planRow is null || T(S(planRow, "PLNRoundUpStatus")) != "N"; var proRate = planRow is null || T(S(planRow, "PLNProRate")) != "N";
+
+            var lmt = (await main.QueryAsync("SELECT TOP 1 SuppLimitStatus, SuppLimit FROM AnnualLimit WHERE PLNCode = @plan AND HLTCode = @health AND INSCode = @ins AND AnnualEffDate <= @eff ORDER BY AnnualEffDate DESC", new { plan, health, ins, eff = At(payorEff) }, ct)).FirstOrDefault();
+            var limitStatus = lmt is not null && T(S(lmt, "SuppLimitStatus")) is { Length: > 0 } ls ? ls : "A";
+            var annual = (limitStatus == "B" && coverId == "01") || limitStatus == "C" ? Dec(lmt!, "SuppLimit") ?? 0 : 0;
+
+            var mcoRow = (await main.QueryAsync("""
+                SELECT TOP 1 SuppMCOStatus, CovIDChrg, MCOSuppAdultAmt, MCOSuppChildAmt FROM MCO WHERE HLTCode = @health AND INSCode = @ins AND MCOEffDate <= @eff AND (PLNCode = @plan OR PLNCode IS NULL)
+                ORDER BY CASE WHEN PLNCode = @plan THEN 0 ELSE 1 END, MCOEffDate DESC
+                """, new { health, ins, eff = At(payorEff), plan }, ct)).FirstOrDefault();
+            var mcoStatus = mcoRow is not null && T(S(mcoRow, "SuppMCOStatus")) is { Length: > 0 } ms ? ms : "A"; var chrgFrom = mcoRow is null ? "" : T(S(mcoRow, "CovIDChrg"));
+            decimal basicMco = 0, mco = 0;
+            if (mcoRow is not null && ((mcoStatus == "B" && coverId == "01") || mcoStatus == "C" || (mcoStatus == "D" && string.CompareOrdinal(coverId, chrgFrom) >= 0)))
+            {
+                basicMco = FeeMath.Money((adultChild == "C" ? Dec(mcoRow, "MCOSuppChildAmt") : Dec(mcoRow, "MCOSuppAdultAmt")) ?? 0);
+                mco = FeeMath.Mco(basicMco, new PlanFeeFlags(roundUp, proRate), eff, exp);
+            }
+
+            decimal basicPrem = 0, prem = 0;
+            var prm = (await main.QueryAsync("""
+                SELECT TOP 1 SuppPrmStatus, SuppPrmAmt FROM PRM WHERE PLNCode = @plan AND AGECode = @age AND INSCode = @ins AND HLTCode = @health AND PRMEffDate <= @eff AND (@health = 'S' OR PAYCode = @payor)
+                ORDER BY PRMEffDate DESC
+                """, new { plan, age = ageCode, ins, health, eff = At(payorEff), payor }, ct)).FirstOrDefault();
+            if (prm is not null)
+            {
+                var ps = T(S(prm, "SuppPrmStatus")) is { Length: > 0 } x ? x : "A";
+                if ((ps == "B" && coverId == "01") || ps == "C")
+                {
+                    basicPrem = Dec(prm, "SuppPrmAmt") ?? 0;
+                    prem = FeeMath.ProRatePremium(eff, exp, FeeMath.Money(basicPrem));
+                    if (hasDiscPlan) prem = FeeMath.ApplyDiscounts(prem, new DiscountRates(Policy: s.PolicyDiscount ?? 0, Renewal: s.RenewalDiscount ?? 0));
+                }
+            }
+            list.Add(new RegistrationSupplementaryQuote(coverId, T(s.Name), ageText, ageCode, adultChild, plan, eff, exp, annual, basicPrem, prem, basicMco, mco));
+        }
+        return list;
     }
 
     public async Task<RegistrationQuote> QuoteAsync(RegistrationRequest request, CancellationToken ct = default)
@@ -164,6 +225,21 @@ internal sealed class RegistrationRepository(IDbConnectionFactory connections, I
                 VALUES (@number, @occ, @work, @marital, @allergic, @exclusion, @remarks, 0, 0, 0, 0, 0, 0, 0, 0)
                 """, new { number, occ = Blank(r.Occupation), work = Blank(r.WorkNature), marital = Blank(r.MaritalStatus), allergic = Blank(r.Allergies), exclusion = Blank(r.Exclusion), remarks = Blank(r.Remarks) }, ct);
 
+            for (var i = 0; i < (q.Supplementary?.Count ?? 0); i++)
+            {
+                var sq = q.Supplementary![i]; var s = r.Supplementary![i];
+                await main.ExecuteAsync("""
+                    INSERT INTO MBMCoveredPersons (MBMCNumber, MBMCCoverID, MBMCAgeband, MBMCStatus, MBMCBordxDate, MBMCBatchNo, MBMCName, MBMCICBCPPNo, MBMCDOB, MBMCSex, MBMCAdultChild, MBMCRELCode, MBMCMemberType,
+                        MBMCRegDate, MBMCPLNCode, MBMCEffDate, MBMCExpDate, MBMCAnnualLimit, MBMCAvailableLimit, MBMCBasicPremium, MBMCPremium, MBMCBasicMCO, MBMCMCO)
+                    VALUES (@number, @cover, @age, 'A', @bordx, @batch, @name, @ic, @dob, @sex, @ac, @rel, 'C', @today, @plan, @effd, @expd, @limit, @limit, @bp, @prem, @bm, @mco)
+                    """, new { number, cover = sq.CoverId, age = sq.AgeCode, bordx, batch = r.BatchNo!.Value.ToString(), name = sq.Name, ic = T(s.IcBcPp), dob = At(s.DateOfBirth!.Value), sex = s.Sex, ac = sq.AdultChild,
+                        rel = T(s.Relationship), today, plan = sq.Plan, effd = At(sq.EffectiveDate), expd = At(sq.ExpiryDate), limit = sq.AnnualLimit, bp = sq.BasicPremium, prem = sq.Premium, bm = sq.BasicMco, mco = sq.Mco }, ct);
+                await main.ExecuteAsync("""
+                    INSERT INTO MBMCoveredPersonsTwo (MBMCNumber, MBMCCoverID, MBMCSalutation, MBMCAllergic, MBMCExclusion, MBMCRenewalDisc, MBMCPolicyDisc)
+                    VALUES (@number, @cover, @sal, @allergic, @exclusion, @renew, @policy)
+                    """, new { number, cover = sq.CoverId, sal = Blank(s.Salutation), allergic = Blank(s.Allergies), exclusion = Blank(s.Exclusion), renew = s.RenewalDiscount ?? 0, policy = s.PolicyDiscount ?? 0 }, ct);
+            }
+
             // SaveBatch: one BAT row per payor, bordx date and type N; its sequence is the batch number just used.
             if (await main.ScalarAsync<int>("SELECT COUNT(*) FROM BAT WHERE PAYCode = @payor AND BATBordxDate = @bordx AND BordxType = 'N'", new { payor, bordx }, ct) == 0)
                 await main.ExecuteAsync("INSERT INTO BAT (PAYCode, BATBordxDate, BATSequence, BordxType) VALUES (@payor, @bordx, @batch, 'N')", new { payor, bordx, batch = r.BatchNo!.Value }, ct);
@@ -191,3 +267,4 @@ internal sealed class RegistrationRepository(IDbConnectionFactory connections, I
         return new RegistrationResult(number, q, xref);
     }
 }
+

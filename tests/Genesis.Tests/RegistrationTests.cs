@@ -181,7 +181,7 @@ public class RegistrationTests(WriteApiFactory factory) : IClassFixture<WriteApi
         var chkBefore = await Scalar<string>(GenesisDb.Main, "SELECT MBMChkDigits FROM MBMCheckDigits");
         var f = await Client().PostAsJsonAsync(Url, Req(insurer: "F"));
         Assert.Equal(HttpStatusCode.BadRequest, f.StatusCode);
-        Assert.Contains("supplementary", await f.Content.ReadAsStringAsync());
+        Assert.Contains("premium range", await f.Content.ReadAsStringAsync());
         Assert.Equal(HttpStatusCode.NotFound, (await Client().PostAsJsonAsync(Url, Req(plan: "NOPE"))).StatusCode);
         Assert.Equal(HttpStatusCode.BadRequest, (await Client().PostAsJsonAsync(Url, Req() with { Name = "" })).StatusCode);
         Assert.Equal(HttpStatusCode.BadRequest, (await Client().PostAsJsonAsync(Url, Req() with { DateOfBirth = new(1890, 1, 1) })).StatusCode);
@@ -194,4 +194,5 @@ public class RegistrationTests(WriteApiFactory factory) : IClassFixture<WriteApi
         Assert.Empty(factory.Audit.Entries);
     }
 }
+
 

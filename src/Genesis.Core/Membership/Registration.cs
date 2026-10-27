@@ -15,11 +15,21 @@ public sealed record RegistrationRequest(
     string? Address1, string? Address2, string? Address3, string? City, string? State, string? PostCode, string? Email, string? TelHome, string? TelMobile, string? TelOffice,
     string? Insurer, string? Plan, string? PolicyNo, DateOnly? PayorEffectiveDate, DateOnly? PayorExpiryDate,
     string? GroupCompany, string? EmployeeNo, string? AgentCode, string? Department, string? Branch, string? InstallmentMode,
-    string? Occupation, string? WorkNature, string? MaritalStatus, string? Allergies, string? Exclusion, string? Remarks);
+    string? Occupation, string? WorkNature, string? MaritalStatus, string? Allergies, string? Exclusion, string? Remarks,
+    IReadOnlyList<RegistrationSupplementary>? Supplementary = null);
+
+/// <summary>A supplementary (covered) person entered on the Supplementary tab. Cover ids 01, 02, ... follow the list order.</summary>
+public sealed record RegistrationSupplementary(
+    string? Name, string? Salutation, string? IcBcPp, DateOnly? DateOfBirth, string? Sex, string? Relationship, string? Allergies, string? Exclusion,
+    string? SupplementaryPlan = null, DateOnly? EffectiveDate = null, DateOnly? ExpiryDate = null, decimal? RenewalDiscount = null, decimal? PolicyDiscount = null);
+
+public sealed record RegistrationSupplementaryQuote(
+    string CoverId, string Name, string AgeText, string AgeCode, string AdultChild, string Plan, DateOnly EffectiveDate, DateOnly ExpiryDate,
+    decimal AnnualLimit, decimal BasicPremium, decimal Premium, decimal BasicMco, decimal Mco);
 
 public sealed record RegistrationQuote(
     string AgeText, string AgeCode, string AdultChild, decimal BasicPremium, decimal Premium, decimal BasicMco, decimal McoFee, decimal AnnualLimit,
-    string MemberType, string? DuplicateMemberNo, DateOnly PayorEffectiveDate, DateOnly PayorExpiryDate);
+    string MemberType, string? DuplicateMemberNo, DateOnly PayorEffectiveDate, DateOnly PayorExpiryDate, IReadOnlyList<RegistrationSupplementaryQuote>? Supplementary = null);
 
 public sealed record RegistrationResult(string MemberNumber, RegistrationQuote Quote, bool CrossReferenceSaved);
 
@@ -67,6 +77,20 @@ public static partial class RegistrationRules
         if (r.PayorExpiryDate is null) return ("payorExpiryDate", "Please enter the payor expiry date.");
         if (r.PayorExpiryDate < r.PayorEffectiveDate) return ("payorExpiryDate", "The payor expiry date cannot be before the effective date.");
         if (T(r.InstallmentMode) is { Length: > 0 } m && m is not ("A" or "Q" or "S" or "M")) return ("installmentMode", "Installment mode must be A, Q, S or M.");
+        if (r.Supplementary is { Count: > 20 }) return ("supplementary", "At most 20 supplementary persons can be registered at once.");
+        foreach (var s in r.Supplementary ?? [])
+        {
+            if (T(s.Name).Length == 0) return ("supplementary", "Please enter the covered person name.");
+            if (Bad(s.Name, 60)) return ("supplementary", "A covered person name can be at most 60 characters.");
+            if (T(s.IcBcPp).Length == 0) return ("supplementary", $"Please enter the identification of {T(s.Name)}.");
+            if (Bad(s.IcBcPp, 30)) return ("supplementary", "A covered person identification can be at most 30 characters.");
+            if (T(s.Relationship).Length != 1) return ("supplementary", $"Please enter the relationship code (1 character) of {T(s.Name)}.");
+            if (s.Sex is not ("M" or "F")) return ("supplementary", $"Please select the sex of {T(s.Name)}.");
+            if (s.DateOfBirth is null || s.DateOfBirth < new DateOnly(1900, 1, 1) || s.DateOfBirth > DateOnly.FromDateTime(DateTime.Today)) return ("supplementary", $"Please enter a valid birth date for {T(s.Name)}.");
+            if (Bad(s.Salutation, 5) || Bad(s.Allergies, 500) || Bad(s.Exclusion, 4000)) return ("supplementary", $"A field of {T(s.Name)} is too long.");
+            if (T(s.SupplementaryPlan).Length > 4) return ("supplementary", "The supplementary plan code can be at most 4 characters.");
+            if (s.RenewalDiscount is < 0 or > 100 || s.PolicyDiscount is < 0 or > 100) return ("supplementary", "Discounts must be between 0 and 100.");
+        }
         return null;
     }
 }
