@@ -80,10 +80,12 @@ app.MapMemberDeletion();
 app.MapReinstatement();
 app.MapAdjustment();
 app.MapRegistration();
+app.MapBenefits();
 
 app.Run();
 
 public partial class Program;
+
 
 
 
