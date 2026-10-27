@@ -2,7 +2,7 @@
 
 namespace Genesis.Core.Maintenance;
 
-public enum LookupFieldKind { Text, Money, Choice }
+public enum LookupFieldKind { Text, Money, Choice, Date, Integer }
 
 /// <summary>
 /// One editable column. The key field identifies the row and cannot be changed after creation. Optional fields are stored as NULL when left empty
@@ -25,7 +25,10 @@ public sealed record LookupDefinition(
 {
     public const int MaxRows = 2000;
     public const decimal MaxMoney = 922337203685477m;
-    public LookupField KeyField => Fields.Single(f => f.IsKey);
+    public LookupField KeyField => Fields.First(f => f.IsKey);
+
+    /// <summary>All key columns in order; a table with more than one (composite key) uses "a|b|c" as the row key.</summary>
+    public IReadOnlyList<LookupField> KeyFields => Fields.Where(f => f.IsKey).ToList();
 }
 
 public sealed record LookupRow(string Key, IReadOnlyDictionary<string, string?> Values);
@@ -37,4 +40,6 @@ public interface ILookupRepository
     Task<LookupRow> UpdateAsync(LookupDefinition def, string key, IReadOnlyDictionary<string, string?> values, string user, CancellationToken ct = default);
     Task DeleteAsync(LookupDefinition def, string key, string user, CancellationToken ct = default);
 }
+
+
 

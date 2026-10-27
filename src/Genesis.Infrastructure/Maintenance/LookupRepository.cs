@@ -16,17 +16,18 @@ internal sealed class LookupRepository(IDbConnectionFactory connections, IAuditL
     {
         null or DBNull => "",
         decimal m => m.ToString("0.00", CultureInfo.InvariantCulture),
+        DateTime d => d.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
         string s => s.Trim().Trim('\0'),
         _ => Convert.ToString(value, CultureInfo.InvariantCulture)?.Trim() ?? "",
     };
 
     private static LookupRow ToRow(LookupDefinition def, IDictionary<string, object?> r) =>
-        new(Display(Get(r, def.KeyField.Column)), def.Fields.ToDictionary(f => f.Key, f => Display(Get(r, f.Column)) is { Length: > 0 } v ? v : null, StringComparer.OrdinalIgnoreCase));
+        new(string.Join("|", def.KeyFields.Select(k => Display(Get(r, k.Column)))), def.Fields.ToDictionary(f => f.Key, f => Display(Get(r, f.Column)) is { Length: > 0 } v ? v : null, StringComparer.OrdinalIgnoreCase));
 
     public async Task<IReadOnlyList<LookupRow>> ListAsync(LookupDefinition def, string? search, CancellationToken ct = default)
     {
         var like = string.IsNullOrWhiteSpace(search) ? null : "%" + Like(search.Trim()) + "%";
-        var match = string.Join(" OR ", def.Fields.Select(f => f.Kind == LookupFieldKind.Money ? null : f.Kind == LookupFieldKind.Text && !f.IsKey ? $"{f.Column} LIKE @like" : $"CAST({f.Column} AS nvarchar(50)) LIKE @like").Where(x => x is not null));
+        var match = string.Join(" OR ", def.Fields.Select(f => f.Kind is LookupFieldKind.Money or LookupFieldKind.Date ? null : f.Kind == LookupFieldKind.Text && !f.IsKey ? $"{f.Column} LIKE @like" : $"CAST({f.Column} AS nvarchar(50)) LIKE @like").Where(x => x is not null));
         var sql = $"SELECT TOP ({LookupDefinition.MaxRows}) {Columns(def)} FROM {def.Table} WHERE (@like IS NULL OR {match}) ORDER BY {def.OrderBy}";
         return (await QueryAsync(def.Database, sql, new { like }, ct)).Select(r => ToRow(def, r)).ToList();
     }
@@ -62,6 +63,16 @@ internal sealed class LookupRepository(IDbConnectionFactory connections, IAuditL
                         throw new BusinessRuleException($"{f.Label} must be an amount of zero or more.", field: f.Key);
                     clean[f.Key] = Math.Round(amount, 4);
                     continue;
+                case LookupFieldKind.Date:
+                    if (!DateTime.TryParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var day) || day.Year < 1900 || day.Year > 2999)
+                        throw new BusinessRuleException($"{f.Label} must be a valid date.", field: f.Key);
+                    clean[f.Key] = day;
+                    continue;
+                case LookupFieldKind.Integer:
+                    if (!int.TryParse(value, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var whole))
+                        throw new BusinessRuleException($"{f.Label} must be a whole number.", field: f.Key);
+                    clean[f.Key] = whole;
+                    continue;
             }
             clean[f.Key] = value;
         }
@@ -70,6 +81,13 @@ internal sealed class LookupRepository(IDbConnectionFactory connections, IAuditL
 
     private static string KeyOf(LookupDefinition def, string key)
     {
+        if (def.KeyFields.Count > 1)
+        {
+            var parts = key.Split('|').Select(p => p.Trim()).ToArray();
+            if (parts.Length != def.KeyFields.Count || parts.Select((p, i) => p.Length == 0 || p.Length > def.KeyFields[i].MaxLength || p.Any(char.IsControl)).Any(b => b))
+                throw new BusinessRuleException($"'{key}' is not a valid {def.Title.ToLowerInvariant()} key.");
+            return string.Join("|", parts);
+        }
         var k = key.Trim();
         var f = def.KeyField;
         var bad = k.Length == 0 || k.Length > f.MaxLength || k.Any(char.IsControl) || (def.KeyIsIdentity && !k.All(char.IsAsciiDigit));
@@ -77,8 +95,19 @@ internal sealed class LookupRepository(IDbConnectionFactory connections, IAuditL
         return k;
     }
 
-    private static async Task<LookupRow?> FindAsync(IDbSession session, LookupDefinition def, string key, CancellationToken ct) =>
-        (await session.QueryAsync($"SELECT {Columns(def)} FROM {def.Table} WHERE {def.KeyField.Column} = @key", new { key }, ct)).Select(r => ToRow(def, r)).FirstOrDefault();
+    private static (string Where, Dictionary<string, object?> Args) KeyWhere(LookupDefinition def, string key)
+    {
+        var parts = key.Split('|');
+        var args = new Dictionary<string, object?> { ["key"] = key };
+        for (var i = 0; i < def.KeyFields.Count; i++) args["k" + i] = parts[i];
+        return (string.Join(" AND ", def.KeyFields.Select((k, i) => $"{k.Column} = @k{i}")), args);
+    }
+
+    private static async Task<LookupRow?> FindAsync(IDbSession session, LookupDefinition def, string key, CancellationToken ct)
+    {
+        var (where, args) = KeyWhere(def, key);
+        return (await session.QueryAsync($"SELECT {Columns(def)} FROM {def.Table} WHERE {where}", args, ct)).Select(r => ToRow(def, r)).FirstOrDefault();
+    }
 
     public async Task<LookupRow> CreateAsync(LookupDefinition def, IReadOnlyDictionary<string, string?> values, string user, CancellationToken ct = default)
     {
@@ -105,7 +134,7 @@ internal sealed class LookupRepository(IDbConnectionFactory connections, IAuditL
         }
         else
         {
-            key = KeyOf(def, (string)clean[def.KeyField.Key]!);
+            key = KeyOf(def, string.Join("|", def.KeyFields.Select(k => (string)clean[k.Key]!)));
             if (await FindAsync(session, def, key, ct) is not null)
                 throw BusinessRuleException.Conflict($"Record duplicated: '{key}' already exists. Edit the existing record instead.");
             await session.ExecuteAsync($"INSERT INTO {def.Table} ({string.Join(", ", cols)}) VALUES ({string.Join(", ", vals)})", args, ct);
@@ -121,8 +150,10 @@ internal sealed class LookupRepository(IDbConnectionFactory connections, IAuditL
     public async Task<LookupRow> UpdateAsync(LookupDefinition def, string key, IReadOnlyDictionary<string, string?> values, string user, CancellationToken ct = default)
     {
         key = KeyOf(def, key);
-        if (values.TryGetValue(def.KeyField.Key, out var sent) && !string.Equals(sent?.Trim(), key, StringComparison.Ordinal))
-            throw new BusinessRuleException($"The {def.KeyField.Label.ToLowerInvariant()} cannot be changed.", field: def.KeyField.Key);
+        var keyParts = key.Split('|');
+        for (var i = 0; i < def.KeyFields.Count; i++)
+            if (values.TryGetValue(def.KeyFields[i].Key, out var sent) && !string.Equals(sent?.Trim(), keyParts[i], StringComparison.Ordinal))
+                throw new BusinessRuleException($"The {def.KeyFields[i].Label.ToLowerInvariant()} cannot be changed.", field: def.KeyFields[i].Key);
         var clean = Validate(def, values, includeKey: false);
 
         await using var session = await Db.BeginSessionAsync(def.Database, ct);
@@ -133,7 +164,9 @@ internal sealed class LookupRepository(IDbConnectionFactory connections, IAuditL
         foreach (var f in def.Fields.Where(f => !f.IsKey)) { sets.Add($"{f.Column} = @v_{f.Key}"); args["v_" + f.Key] = clean[f.Key]; }
         if (def.UpdatedByColumn is not null) { sets.Add($"{def.UpdatedByColumn} = @by"); args["by"] = user; }
         if (def.UpdatedDateColumn is not null) { sets.Add($"{def.UpdatedDateColumn} = @on"); args["on"] = DateTime.Today; }
-        await session.ExecuteAsync($"UPDATE {def.Table} SET {string.Join(", ", sets)} WHERE {def.KeyField.Column} = @key", args, ct);
+        var (keyWhere, keyArgs) = KeyWhere(def, key);
+        foreach (var p in keyArgs) args[p.Key] = p.Value;
+        await session.ExecuteAsync($"UPDATE {def.Table} SET {string.Join(", ", sets)} WHERE {keyWhere}", args, ct);
         var after = await FindAsync(session, def, key, ct) ?? throw new InvalidOperationException("The record could not be read back.");
         await session.CommitAsync(ct);
 
@@ -154,9 +187,12 @@ internal sealed class LookupRepository(IDbConnectionFactory connections, IAuditL
 
         await using var session = await Db.BeginSessionAsync(def.Database, ct);
         var before = await FindAsync(session, def, key, ct) ?? throw BusinessRuleException.NotFound($"'{key}' does not exist.");
-        await session.ExecuteAsync($"DELETE FROM {def.Table} WHERE {def.KeyField.Column} = @key", new { key }, ct);
+        var (delWhere, delArgs) = KeyWhere(def, key);
+        await session.ExecuteAsync($"DELETE FROM {def.Table} WHERE {delWhere}", delArgs, ct);
         await session.CommitAsync(ct);
 
         audit.Record(new AuditEntry("Lookup.Delete", def.Table, key, user, new Dictionary<string, object?> { ["before"] = before.Values }));
     }
 }
+
+

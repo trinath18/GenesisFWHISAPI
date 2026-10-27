@@ -20,7 +20,7 @@ public class LookupCatalogTests
             Assert.Matches(id, d.Table);
             Assert.Matches(id, d.OrderBy);
             Assert.All(d.Fields, f => { Assert.Matches(id, f.Column); Assert.True(f.MaxLength > 0); });
-            Assert.Single(d.Fields, f => f.IsKey);
+            Assert.NotEmpty(d.Fields.Where(f => f.IsKey));
             Assert.All(d.References, r => { Assert.Matches(id, r.Table); Assert.Matches(id, r.Column); });
             if (d.UpdatedByColumn is not null) Assert.Matches(id, d.UpdatedByColumn);
             if (d.UpdatedDateColumn is not null) Assert.Matches(id, d.UpdatedDateColumn);
@@ -356,3 +356,4 @@ public class MmaTests(WriteApiFactory factory) : IClassFixture<WriteApiFactory>,
         Assert.Equal(0, await Scalar<int>("SELECT COUNT(*) FROM MMAFees WHERE FeeIndex = @k", new { k }));
     }
 }
+
