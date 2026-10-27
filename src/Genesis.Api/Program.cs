@@ -81,10 +81,12 @@ app.MapReinstatement();
 app.MapAdjustment();
 app.MapRegistration();
 app.MapBenefits();
+app.MapIcdSelection();
 
 app.Run();
 
 public partial class Program;
+
 
 
 

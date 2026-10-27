@@ -143,7 +143,31 @@ public static class LookupCatalog
             [new("health", "MgmtHLTCode", "Health code", 2, Required: true, IsKey: true), new("insured", "MgmtINSCode", "Insured code", 2, Required: true, IsKey: true), new("plan", "MgmtPLNCode", "Plan code", 4, Required: true, IsKey: true),
              new("fee", "MgmtFee", "Case management fee", 19, Required: true, Kind: LookupFieldKind.Money)],
             [], UpdatedByColumn: "MgmtLastUpdateUser", UpdatedDateColumn: "MgmtLastUpdateDate"),
-        new("plan-product-category", "Product Category", "Maintenance > Plan", 82, GenesisDb.Maintenance, "ProductCategory", "ProductCode",
+        // Legacy: Maintenance > Case (frmMaintenanceCase). Tab n is enabled by USRAccess position 90 + n: ICD Selection 90 (own screen), ICD Maintenance 91, ICD Category 92, Repudiation Code 93,
+        // Repudiation Category 94, Nature of Claim 95, Treatment Modality 96, Hospitalisation Type 97. The restored CAS table has no repudiation column, so Repudiation Code has no "in use" check.
+        new("case-icd", "ICD Maintenance", "Maintenance > Case", 91, GenesisDb.Main, "ICD", "ICDCode",
+            [new("code", "ICDCode", "ICD code", 5, Required: true, IsKey: true), new("category", "ICDCatCode", "ICD category", 10), new("description", "ICDDescription", "Description", 1000, Required: true, Multiline: true),
+             new("otherDescription", "ICDOtherDesc", "Other description", 1000, Multiline: true)],
+            [new(GenesisDb.Main, "DIAFinal", "ICDCode1", "final diagnoses"), new(GenesisDb.Main, "DIAFirst", "ICDCode1", "first diagnoses")], UpdatedByColumn: "ICDLastUpdateUser", UpdatedDateColumn: "ICDLastUpdateDate"),
+        new("case-icd-category", "ICD Category", "Maintenance > Case", 92, GenesisDb.Main, "ICDCategory", "ICDCATCode",
+            [new("code", "ICDCATCode", "Category code", 10, Required: true, IsKey: true), new("description", "ICDCATDescription", "Description", 1000, Required: true, Multiline: true)],
+            [new(GenesisDb.Main, "ICD", "ICDCatCode", "ICD codes")], UpdatedByColumn: "ICDCATLastUpdateUser", UpdatedDateColumn: "ICDCATLastUpdateDate"),
+        new("case-repudiation-code", "Repudiation Code", "Maintenance > Case", 93, GenesisDb.Main, "RepCode", "RepCode",
+            [new("code", "RepCode", "Repudiation code", 10, Required: true, IsKey: true), new("category", "RepCatCode", "Repudiation category", 4), new("description", "RepDescription", "Description", 1000, Multiline: true),
+             new("nonDisclosure", "RepNonDisc", "Non-disclosure", 1)],
+            [], UpdatedByColumn: "RepLastUpdateUser", UpdatedDateColumn: "RepLastUpdateDate"),
+        new("case-repudiation-category", "Repudiation Category", "Maintenance > Case", 94, GenesisDb.Main, "RepCodeCategory", "RepCatCode",
+            [new("code", "RepCatCode", "Category code", 4, Required: true, IsKey: true), new("name", "RepCatName", "Name", 50, Required: true), new("description", "RepCatDescription", "Description", 1000, Multiline: true)],
+            [new(GenesisDb.Main, "RepCode", "RepCatCode", "repudiation codes")], UpdatedByColumn: "RepCatLastUpdateUser", UpdatedDateColumn: "RepCatLastUpdateDate"),
+        new("case-claim-nature", "Nature of Claim", "Maintenance > Case", 95, GenesisDb.Main, "ClaimNature", "ClaimNatureCode",
+            [new("code", "ClaimNatureCode", "Nature code", 5, Required: true, IsKey: true), new("name", "ClaimNatureName", "Name", 100, Required: true)],
+            [new(GenesisDb.Main, "CAS", "ClaimNatureCode", "cases")], UpdatedByColumn: "ClaimNatureLastUpdateUser", UpdatedDateColumn: "ClaimNatureLastUpdateDate"),
+        new("case-treatment-modality", "Treatment Modality", "Maintenance > Case", 96, GenesisDb.Main, "TreatmentModality", "ModalityCode",
+            [new("code", "ModalityCode", "Modality code", 2, Required: true, IsKey: true), new("name", "ModalityName", "Name", 50, Required: true), new("description", "ModalityDesc", "Description", 1000, Multiline: true)],
+            [new(GenesisDb.Main, "CAS", "ModalityCode", "cases")], UpdatedByColumn: "ModalityLastUpdateUser", UpdatedDateColumn: "ModalityLastUpdatedate"),
+        new("case-hospitalisation-type", "Hospitalisation Type", "Maintenance > Case", 97, GenesisDb.Main, "PayType", "PayTypeCode",
+            [new("code", "PayTypeCode", "Type code", 2, Required: true, IsKey: true), new("name", "PayTypeName", "Name", 100, Required: true), new("description", "PayTypeDesc", "Description", 1000, Multiline: true)],
+            [new(GenesisDb.Main, "CAS", "PayTypeCode", "cases")], UpdatedByColumn: "PayTypeLastUpdateUser", UpdatedDateColumn: "PAYTypeLastUpdateDate"),        new("plan-product-category", "Product Category", "Maintenance > Plan", 82, GenesisDb.Maintenance, "ProductCategory", "ProductCode",
             [new("code", "ProductCode", "Product code", 2, Required: true, IsKey: true), new("description", "ProductName", "Product name", 50, Required: true)], []),
         new("plan-supp-mco-status", "Supp. MCO Status", "Maintenance > Plan", 85, GenesisDb.Maintenance, "SuppMCOStatus", "MCOCode",
             [new("code", "MCOCode", "Status code", 1, Required: true, IsKey: true), new("description", "MCOStatus", "Description", 50, Required: true)], []),
@@ -151,6 +175,7 @@ public static class LookupCatalog
 
     public static LookupDefinition? Find(string id) => All.FirstOrDefault(d => string.Equals(d.Id, id, StringComparison.OrdinalIgnoreCase));
 }
+
 
 
 
