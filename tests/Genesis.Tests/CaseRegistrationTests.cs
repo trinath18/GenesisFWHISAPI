@@ -37,8 +37,14 @@ public class CaseRegistrationRuleTests
     }
 
     [Fact]
-    public void Repudiating_claimability_is_refused_in_this_slice() =>
-        Assert.Contains("repudiation", CaseRegistrationRules.Validate(Ok() with { Claimability = "RR" }, Today)!.Value.Message);
+    public void Repudiated_claimability_needs_codes_and_the_selection_reasons()
+    {
+        Assert.Equal("repudiationCodes", CaseRegistrationRules.Validate(Ok() with { Claimability = "RR" }, Today)!.Value.Field);
+        Assert.Equal("document", CaseRegistrationRules.Validate(Ok() with { Claimability = "RR", RepudiationCodes = ["RC1"] }, Today)!.Value.Field);
+        Assert.Null(CaseRegistrationRules.Validate(Ok() with { Claimability = "RR", RepudiationCodes = ["RC1"], Document = "D0001", Personnel = "P0001", Attention = "A0001" }, Today));
+        Assert.Equal("repudiationCodes", CaseRegistrationRules.Validate(Ok() with { Claimability = "RR", RepudiationCodes = ["RC1", "RC1"], Document = "D0001", Personnel = "P0001", Attention = "A0001" }, Today)!.Value.Field);
+        Assert.Equal("deductionAmount", CaseRegistrationRules.Validate(Ok() with { DeductionAmount = -1 }, Today)!.Value.Field);
+    }
 }
 
 public class CaseRegistrationTests(WriteApiFactory factory) : IClassFixture<WriteApiFactory>, IAsyncLifetime
@@ -78,10 +84,11 @@ public class CaseRegistrationTests(WriteApiFactory factory) : IClassFixture<Writ
     }
 
     [DatabaseFact]
-    public async Task Options_hold_the_legacy_lists_without_the_repudiating_statuses()
+    public async Task Options_hold_the_legacy_lists_including_repudiation_codes_and_reasons()
     {
         var o = (await Client().GetFromJsonAsync<CaseRegistrationOptions>($"{Url}/options"))!;
-        Assert.Contains(o.Claimability, c => c.Code == "AA"); Assert.DoesNotContain(o.Claimability, c => c.Code == "RR");
+        Assert.Contains(o.Claimability, c => c.Code == "AA"); Assert.Contains(o.Claimability, c => c.Code == "RR");
+        Assert.NotEmpty(o.Repudiation); Assert.Contains(o.RepudiationSelections, c => c.Code == "D0001");
         Assert.Equal(["C", "R"], o.PayTypes.Select(p => p.Code)); Assert.DoesNotContain(o.StayTypes, p => p.Code is "C" or "R");
         Assert.NotEmpty(o.Icd); Assert.NotEmpty(o.Modalities); Assert.NotEmpty(o.Natures); Assert.NotEmpty(o.SpecialApprovals);
         Assert.NotEmpty(await Client().GetFromJsonAsync<List<CaseOption>>($"{Url}/hospitals?search=DIALYSIS") ?? []);
@@ -128,6 +135,42 @@ public class CaseRegistrationTests(WriteApiFactory factory) : IClassFixture<Writ
     }
 
     [DatabaseFact]
+    public async Task A_repudiated_case_stores_the_codes_reasons_and_underlying_flag()
+    {
+        await Seed();
+        var res = await Client().PostAsJsonAsync(Url, Req() with { Claimability = "RR", RepudiationCodes = ["RC1", "RC2.01"], Document = "D0001", Personnel = "P0001", Attention = "A0002", Underlying = true });
+        Assert.Equal(HttpStatusCode.Created, res.StatusCode);
+        var r = (await res.Content.ReadFromJsonAsync<CaseRegistrationResult>())!;
+        Assert.Equal(1, await Scalar<int>(GenesisDb.Main, "SELECT COUNT(*) FROM CASRepudiation WHERE CASNumber = @n AND CASREPCode1 = 'RC1' AND CASREPCode2 = 'RC2.01' AND CASREPCode3 = '' AND CASDocument = 'D0001' AND CASPersonnel = 'P0001' AND CASAttention = 'A0002' AND CASUnderlying = 'Y' AND CASREPIssuedBy = 'TEST' AND CASREPDate = CAST(GETDATE() AS date)", new { n = r.CaseNumber }));
+        Assert.Equal("RR", await Scalar<string>(GenesisDb.Main, "SELECT CASClaimability FROM CAS WHERE CASNumber = @n", new { n = r.CaseNumber }));
+        var normal = (await (await Client().PostAsJsonAsync(Url, Req() with { AcknowledgeOpenCase = true })).Content.ReadFromJsonAsync<CaseRegistrationResult>())!;
+        Assert.Equal(0, await Scalar<int>(GenesisDb.Main, "SELECT COUNT(*) FROM CASRepudiation WHERE CASNumber = @n", new { n = normal.CaseNumber }));
+    }
+
+    [DatabaseFact]
+    public async Task Underlying_illness_is_stored_and_an_empty_row_is_still_written_like_the_legacy_form()
+    {
+        await Seed();
+        var a = (await (await Client().PostAsJsonAsync(Url, Req() with { UnderlyingDiagnosis = [new("A00", "diabetes since 2010", new(2020, 1, 5))] })).Content.ReadFromJsonAsync<CaseRegistrationResult>())!;
+        Assert.Equal(("A00", "diabetes since 2010"), (await Scalar<string>(GenesisDb.Main, "SELECT RTRIM(CASUDCode1) FROM CAS_UD WHERE CASNumber = @n", new { n = a.CaseNumber }), await Scalar<string>(GenesisDb.Main, "SELECT CASUDReasons1 FROM CAS_UD WHERE CASNumber = @n", new { n = a.CaseNumber })));
+        var b = (await (await Client().PostAsJsonAsync(Url, Req() with { AcknowledgeOpenCase = true })).Content.ReadFromJsonAsync<CaseRegistrationResult>())!;
+        Assert.Equal(1, await Scalar<int>(GenesisDb.Main, "SELECT COUNT(*) FROM CAS_UD WHERE CASNumber = @n AND CASUDCode1 = ''", new { n = b.CaseNumber }));
+    }
+
+    [DatabaseFact]
+    public async Task The_deduction_amount_reduces_the_available_limit_but_never_below_zero_and_is_stored_on_the_case()
+    {
+        await Seed(limit: 20000);
+        var a = (await (await Client().PostAsJsonAsync(Url, Req() with { DeductionAmount = 4500m })).Content.ReadFromJsonAsync<CaseRegistrationResult>())!;
+        Assert.Equal(15500m, await Scalar<decimal>(GenesisDb.Main, "SELECT MBMAvailableLimit FROM MBM WHERE MBMNumber = 'WMZCASE01*01'"));
+        Assert.Equal(4500m, await Scalar<decimal>(GenesisDb.Main, "SELECT CASRedAmt FROM CASOthers WHERE CASNumber = @n", new { n = a.CaseNumber }));
+        await Client().PostAsJsonAsync(Url, Req() with { DeductionAmount = 99999m, AcknowledgeOpenCase = true });
+        Assert.Equal(0m, await Scalar<decimal>(GenesisDb.Main, "SELECT MBMAvailableLimit FROM MBM WHERE MBMNumber = 'WMZCASE01*01'"));
+        await Client().PostAsJsonAsync(Url, Req() with { AcknowledgeOpenCase = true });
+        Assert.Equal(0m, await Scalar<decimal>(GenesisDb.Main, "SELECT MBMAvailableLimit FROM MBM WHERE MBMNumber = 'WMZCASE01*01'"));
+    }
+
+    [DatabaseFact]
     public async Task Reimbursement_cases_are_flagged_for_claims_with_the_token_date_and_user()
     {
         await Seed();
@@ -157,6 +200,9 @@ public class CaseRegistrationTests(WriteApiFactory factory) : IClassFixture<Writ
         await Seed();
         var counter = await Scalar<string>(GenesisDb.Maintenance, "SELECT CAQNumber FROM CAQ WHERE PAYCode = 'WM'");
         Assert.Equal(HttpStatusCode.BadRequest, (await Client().PostAsJsonAsync(Url, Req() with { Claimability = "RR" })).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await Client().PostAsJsonAsync(Url, Req() with { Claimability = "RR", RepudiationCodes = ["NOCODE"], Document = "D0001", Personnel = "P0001", Attention = "A0001" })).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await Client().PostAsJsonAsync(Url, Req() with { Claimability = "RR", RepudiationCodes = ["RC1"], Document = "P0001", Personnel = "P0001", Attention = "A0001" })).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await Client().PostAsJsonAsync(Url, Req() with { UnderlyingDiagnosis = [new("QQQQQ", null, null)] })).StatusCode);
         Assert.Equal(HttpStatusCode.BadRequest, (await Client().PostAsJsonAsync(Url, Req(patient: "05"))).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await Client().PostAsJsonAsync(Url, Req() with { HospitalCode = "NOHOSP" })).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await Client().PostAsJsonAsync(Url, Req() with { Nature = "ZZZ" })).StatusCode);
@@ -181,4 +227,5 @@ public class CaseRegistrationTests(WriteApiFactory factory) : IClassFixture<Writ
         Assert.Equal(HttpStatusCode.Created, ok.StatusCode);
     }
 }
+
 

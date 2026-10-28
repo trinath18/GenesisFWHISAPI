@@ -18,12 +18,14 @@ internal sealed class CaseRegistrationRepository(IDbConnectionFactory connection
     {
         var payTypes = Codes(await QueryAsync(GenesisDb.Main, "SELECT PayTypeCode, PayTypeName FROM PayType ORDER BY PayTypeCode", null, ct), "PayTypeCode", "PayTypeName");
         return new CaseRegistrationOptions(
-            CaseRegistrationRules.Claimability.Where(c => !CaseRegistrationRules.Repudiating.Contains(c.Code)).ToList(), [],
+            CaseRegistrationRules.Claimability, [],
             payTypes.Where(p => p.Code is "C" or "R").ToList(), payTypes.Where(p => p.Code is not ("C" or "R")).ToList(),
             Codes(await QueryAsync(GenesisDb.Main, "SELECT ModalityCode, ModalityName FROM TreatmentModality ORDER BY ModalityCode", null, ct), "ModalityCode", "ModalityName"),
             Codes(await QueryAsync(GenesisDb.Main, "SELECT ClaimNatureCode, ClaimNatureName FROM ClaimNature ORDER BY ClaimNatureCode", null, ct), "ClaimNatureCode", "ClaimNatureName"),
             Codes(await QueryAsync(GenesisDb.Maintenance, "SELECT SpecAppCode, SpecAppDesc FROM SpecApprove ORDER BY SpecAppCode", null, ct), "SpecAppCode", "SpecAppDesc"),
-            Codes(await QueryAsync(GenesisDb.Main, "SELECT ICDCode, ICDDescription FROM ICDOriginal ORDER BY ICDCode", null, ct), "ICDCode", "ICDDescription"));
+            Codes(await QueryAsync(GenesisDb.Main, "SELECT ICDCode, ICDDescription FROM ICDOriginal ORDER BY ICDCode", null, ct), "ICDCode", "ICDDescription"),
+            Codes(await QueryAsync(GenesisDb.Main, "SELECT RepCode, RepDescription FROM RepCode ORDER BY RepCode", null, ct), "RepCode", "RepDescription"),
+            Codes(await QueryAsync(GenesisDb.Maintenance, "SELECT REPCode, REPDescription FROM REPSelection ORDER BY REPCode", null, ct), "REPCode", "REPDescription"));
     }
 
     public async Task<IReadOnlyList<CaseOption>> HospitalsAsync(string? search, CancellationToken ct = default)
@@ -87,6 +89,16 @@ internal sealed class CaseRegistrationRepository(IDbConnectionFactory connection
         foreach (var icd in (r.FirstDiagnosis ?? []).Concat(r.FinalDiagnosis ?? []).Select(d => Blank(d.Code)).Where(c => c is not null).Distinct())
             if (await ScalarAsync<int>(GenesisDb.Main, "SELECT COUNT(*) FROM ICD WHERE ICDCode = @c", new { c = icd }, ct) == 0) throw BusinessRuleException.NotFound($"ICD code '{icd}' does not exist.");
 
+        var repudiating = CaseRegistrationRules.Repudiating.Contains(r.Claimability!.Trim());
+        var repCodes = repudiating ? r.RepudiationCodes!.Select(T).Where(c => c.Length > 0).ToList() : [];
+        foreach (var rc in repCodes)
+            if (await ScalarAsync<int>(GenesisDb.Main, "SELECT COUNT(*) FROM RepCode WHERE RepCode = @c", new { c = rc }, ct) == 0) throw BusinessRuleException.NotFound($"Repudiation code '{rc}' does not exist.");
+        if (repudiating)
+            foreach (var (code, prefix, label) in new[] { (T(r.Document), "D", "document"), (T(r.Personnel), "P", "personnel"), (T(r.Attention), "A", "attention") })
+                if (!code.StartsWith(prefix) || await ScalarAsync<int>(GenesisDb.Maintenance, "SELECT COUNT(*) FROM REPSelection WHERE REPCode = @c", new { c = code }, ct) == 0) throw BusinessRuleException.NotFound($"The repudiation {label} selection '{code}' does not exist.");
+        foreach (var icd in (r.UnderlyingDiagnosis ?? []).Select(d => Blank(d.Code)).Where(c => c is not null).Distinct())
+            if (await ScalarAsync<int>(GenesisDb.Main, "SELECT COUNT(*) FROM ICD WHERE ICDCode = @c", new { c = icd }, ct) == 0) throw BusinessRuleException.NotFound($"ICD code '{icd}' does not exist.");
+
         var stayDays = r.DateDischarge is { } dd ? dd.DayNumber - r.DateAdmitted!.Value.DayNumber : 0;
         if (stayDays > 5 && !r.AcknowledgeLongStay) throw BusinessRuleException.Conflict("Admission Period Is More Than 5 Days. Confirm to continue.");
         if (member.EffectiveDate is { } eff && today.DayNumber - eff.DayNumber is >= 0 and <= 30 && !r.AcknowledgeRecentPolicy) throw BusinessRuleException.Conflict("Policy has just been activated less than 30 days ago. Confirm to continue.");
@@ -115,6 +127,7 @@ internal sealed class CaseRegistrationRepository(IDbConnectionFactory connection
             await x.CommitAsync(ct);
         }
 
+        decimal? limitBefore = null, limitAfter = null;
         try
         {
             await using var s = await Db.BeginSessionAsync(GenesisDb.Main, ct);
@@ -149,6 +162,20 @@ internal sealed class CaseRegistrationRepository(IDbConnectionFactory connection
                 INSERT INTO CASOthersTwo (CasNumber, CASTotalDoctors, CASTotalAnaes, CASTotalFinalDiag, CASTotalProc, CASAdmissionReason, ReferedBy, CASIntExtTO, CASHOSName)
                 VALUES (@n, 0, 0, @finals, 0, @reason, @by, @io, @hosName)
                 """, new { n = caseNumber, finals = fin.Count(d => !string.IsNullOrWhiteSpace(d.Code)), reason = Blank(r.AdmissionReason), by = Blank(r.ReferredBy), io = Nz(r.IntExtTakeOver), hosName = Blank(r.HospitalName) }, ct);
+            var ud = Pad(r.UnderlyingDiagnosis);
+            await s.ExecuteAsync("INSERT INTO CAS_UD (CasNumber, CASUDCode1, CASUDCode2, CASUDCode3, CASUDReasons1, CASUDReasons2, CASUDReasons3, CASUDDOS1, CASUDDOS2, CASUDDOS3) VALUES (@n, @c1, @c2, @c3, @t1, @t2, @t3, @d1, @d2, @d3)", Diag(caseNumber, ud), ct);
+
+            if (repudiating)
+                await s.ExecuteAsync("INSERT INTO CASRepudiation (CasNumber, CASREPCode1, CASREPCode2, CASREPCode3, CASREPIssuedBy, CASREPDate, CASDocument, CASPersonnel, CASAttention, CASUnderlying) VALUES (@n, @c1, @c2, @c3, @user, @now, @doc, @per, @att, @und)",
+                    new { n = caseNumber, c1 = repCodes[0], c2 = repCodes.Count > 1 ? repCodes[1] : "", c3 = repCodes.Count > 2 ? repCodes[2] : "", user, now, doc = T(r.Document), per = T(r.Personnel), att = T(r.Attention), und = r.Underlying ? "Y" : "N" }, ct);
+
+            if (r.DeductionAmount is { } red)
+            {
+                var available = await s.ScalarAsync<decimal?>("SELECT MBMAvailableLimit FROM MBM WITH (UPDLOCK) WHERE MBMNumber = @n", new { n = member.MemberNumber }, ct) ?? 0m;
+                limitBefore = available; limitAfter = available > red ? available - red : 0m;
+                await s.ExecuteAsync("UPDATE MBM SET MBMAvailableLimit = @limit WHERE MBMNumber = @n", new { limit = limitAfter, n = member.MemberNumber }, ct);
+                await s.ExecuteAsync("UPDATE CASOthers SET CASRedAmt = @red WHERE CASNumber = @caseNumber", new { red, caseNumber }, ct);
+            }
             await s.CommitAsync(ct);
         }
         catch
@@ -159,7 +186,7 @@ internal sealed class CaseRegistrationRepository(IDbConnectionFactory connection
             throw;
         }
 
-        audit.Record(new AuditEntry("Case.Register", "CAS", caseNumber, user, new Dictionary<string, object?> { ["request"] = r with { Remarks = null }, ["hospital"] = hospitalName }));
+        audit.Record(new AuditEntry("Case.Register", "CAS", caseNumber, user, new Dictionary<string, object?> { ["request"] = r with { Remarks = null }, ["hospital"] = hospitalName, ["limitBefore"] = limitBefore, ["limitAfter"] = limitAfter }));
         return new CaseRegistrationResult(caseNumber, member.MemberNumber, patientId, $"Record Saved, Your Case No is : {caseNumber}");
     }
 
@@ -169,4 +196,5 @@ internal sealed class CaseRegistrationRepository(IDbConnectionFactory connection
         n = caseNumber, c1 = Nz(Blank(d[0].Code)), c2 = Nz(Blank(d[1].Code)), c3 = Nz(Blank(d[2].Code)), t1 = Nz(Blank(d[0].Text)), t2 = Nz(Blank(d[1].Text)), t3 = Nz(Blank(d[2].Text)), d1 = At(d[0].Date), d2 = At(d[1].Date), d3 = At(d[2].Date)
     };
 }
+
 

@@ -4,7 +4,7 @@ public sealed record CaseOption(string Code, string Name);
 
 public sealed record CaseRegistrationOptions(
     IReadOnlyList<CaseOption> Claimability, IReadOnlyList<CaseOption> Hospitals, IReadOnlyList<CaseOption> PayTypes, IReadOnlyList<CaseOption> StayTypes, IReadOnlyList<CaseOption> Modalities,
-    IReadOnlyList<CaseOption> Natures, IReadOnlyList<CaseOption> SpecialApprovals, IReadOnlyList<CaseOption> Icd);
+    IReadOnlyList<CaseOption> Natures, IReadOnlyList<CaseOption> SpecialApprovals, IReadOnlyList<CaseOption> Icd, IReadOnlyList<CaseOption> Repudiation, IReadOnlyList<CaseOption> RepudiationSelections);
 
 public sealed record CasePatient(string CoverId, string Name, string? IcBcPp, string Relation, DateOnly? BirthDate);
 
@@ -20,7 +20,8 @@ public sealed record CaseRegistrationRequest(
     string? LgTime, string? PayType, string? StayType, string? Modality, string? Nature, string? SpecialApproval, string? TopUpLimit, string? Query, string? LinkCaseNo, string? ReferredBy, string? AdmissionReason,
     DateOnly? DocReceivedDate, int? PolicyYear, string? EspRefNo, string? TakeOverInd, decimal? TakeOverAmount, string? TakeOverPlan, string? IntExtTakeOver, string? PatientAge, string? AgeUnit,
     string? FirstCall, string? FirstTreated, string? PayPending, string? FollowUp, string? ConditionWillRecur, string? FollowUpRequired, IReadOnlyList<string>? Remarks,
-    IReadOnlyList<CaseDiagnosisInput>? FirstDiagnosis, IReadOnlyList<CaseDiagnosisInput>? FinalDiagnosis, bool AcknowledgeLongStay, bool AcknowledgeRecentPolicy, bool AcknowledgeOpenCase);
+    IReadOnlyList<CaseDiagnosisInput>? FirstDiagnosis, IReadOnlyList<CaseDiagnosisInput>? FinalDiagnosis, bool AcknowledgeLongStay, bool AcknowledgeRecentPolicy, bool AcknowledgeOpenCase,
+    IReadOnlyList<string>? RepudiationCodes = null, string? Document = null, string? Personnel = null, string? Attention = null, bool Underlying = false, IReadOnlyList<CaseDiagnosisInput>? UnderlyingDiagnosis = null, decimal? DeductionAmount = null);
 
 public sealed record CaseRegistrationResult(string CaseNumber, string MemberNumber, string PatientId, string Message);
 
@@ -52,7 +53,6 @@ public static class CaseRegistrationRules
         if (string.IsNullOrWhiteSpace(r.PatientId) || r.PatientId.Trim().Length != 2) return ("patientId", "Please Enter Patient Information");
         if (claim.Length == 0) return ("claimability", "Please Enter Claimability Status");
         if (!Claimability.Any(c => c.Code == claim)) return ("claimability", "Unknown claimability status.");
-        if (Repudiating.Contains(claim)) return ("claimability", "Repudiated claimability statuses need the repudiation selection, which is not migrated yet; use the legacy application for this case.");
         if (string.IsNullOrWhiteSpace(r.HospitalCode) || Bad(r.HospitalCode, 10)) return ("hospitalCode", "Please Enter Hospital Information");
         if (r.DateAdmitted is null) return ("dateAdmitted", "Please Enter Admission Date");
         if (r.DateAdmitted < new DateOnly(1990, 1, 1) || r.DateAdmitted > today.AddYears(1)) return ("dateAdmitted", "Please Enter a Valid Admission Date");
@@ -76,7 +76,16 @@ public static class CaseRegistrationRules
         if (!string.IsNullOrEmpty(r.LgTime) && !System.Text.RegularExpressions.Regex.IsMatch(r.LgTime, @"^([01]\d|2[0-3]):[0-5]\d$")) return ("lgTime", "Please enter the LG time as hh:mm.");
         if (r.TakeOverAmount is < 0 or > MaxAmount) return ("takeOverAmount", "The take over amount must be zero or more.");
         if (r.Remarks is not null && (r.Remarks.Count > 5 || r.Remarks.Any(x => (x?.Length ?? 0) > 3900))) return ("remarks", "Remarks are limited to 3,900 characters each.");
-        foreach (var (name, list) in new[] { ("firstDiagnosis", r.FirstDiagnosis), ("finalDiagnosis", r.FinalDiagnosis) })
+        if (Repudiating.Contains(claim))
+        {
+            var codes = (r.RepudiationCodes ?? []).Select(c => c?.Trim() ?? "").Where(c => c.Length > 0).ToList();
+            if (codes.Count == 0) return ("repudiationCodes", "Please Enter Repudiate Code");
+            if (codes.Count > 3 || codes.Any(c => c.Length > 10 || c.Any(char.IsControl)) || codes.Distinct(StringComparer.OrdinalIgnoreCase).Count() != codes.Count) return ("repudiationCodes", "Up to three different repudiation codes are allowed.");
+            if (string.IsNullOrWhiteSpace(r.Document) || string.IsNullOrWhiteSpace(r.Personnel) || string.IsNullOrWhiteSpace(r.Attention)) return ("document", "Please Enter Repudiation Selection Reason");
+            if (Bad(r.Document, 5) || Bad(r.Personnel, 5) || Bad(r.Attention, 5)) return ("document", "A repudiation selection code is invalid.");
+        }
+        if (r.DeductionAmount is < 0 or > MaxAmount) return ("deductionAmount", "The deduction amount must be zero or more.");
+        foreach (var (name, list) in new[] { ("firstDiagnosis", r.FirstDiagnosis), ("finalDiagnosis", r.FinalDiagnosis), ("underlyingDiagnosis", r.UnderlyingDiagnosis) })
         {
             if (list is null) continue;
             if (list.Count > 3) return (name, "At most three diagnoses are allowed.");
@@ -95,8 +104,9 @@ public interface ICaseRegistrationRepository
     Task<CaseMemberView?> MemberAsync(string memberNumber, CancellationToken ct = default);
 
     /// <summary>
-    /// Registers a new case: reserves the next case number of the payor (CAQ), then writes CAS, the remarks, the first and final diagnoses and the CASOthers rows in one transaction,
-    /// and the cross reference in the maintenance database. Repudiated claimability, deduction amounts and the letters are not part of this slice.
+    /// Registers a new case: reserves the next case number of the payor (CAQ), then writes CAS, the remarks, the first, final and underlying diagnoses, the CASOthers rows, the repudiation (for repudiated
+    /// claimability) and the limit deduction (member available limit) in one transaction, and the cross reference in the maintenance database. Repudiated claimability, deduction amounts and the letters are not part of this slice.
     /// </summary>
     Task<CaseRegistrationResult> RegisterAsync(CaseRegistrationRequest request, string user, CancellationToken ct = default);
 }
+
