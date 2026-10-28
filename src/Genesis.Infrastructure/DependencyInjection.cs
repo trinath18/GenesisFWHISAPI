@@ -53,12 +53,14 @@ public static class DependencyInjection
         services.AddScoped<IBenefitRepository, BenefitRepository>();
         services.AddScoped<IIcdSelectionRepository, IcdSelectionRepository>();
         services.AddScoped<IMcoRefundRepository, McoRefundRepository>();
+        services.AddScoped<IFwhsInvoiceRepository, FwhsInvoiceRepository>();
         services.AddScoped<IValidDateRangeRepository, ValidDateRangeRepository>();
         services.AddScoped<ISummaryService, SummaryService>();
         services.AddSingleton<ICaseDocumentStore, FileSystemCaseDocumentStore>();
         return services;
     }
 }
+
 
 
 
