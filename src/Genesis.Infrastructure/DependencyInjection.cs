@@ -31,6 +31,7 @@ public static class DependencyInjection
         services.AddScoped<IMembershipTabsRepository, MembershipTabsRepository>();
         services.AddSingleton<IPolicyWordingStore, FileSystemPolicyWordingStore>();
         services.AddScoped<ICaseInquiryRepository, CaseInquiryRepository>();
+        services.AddScoped<ICaseRegistrationRepository, CaseRegistrationRepository>();
         services.AddScoped<ITrackingService, TrackingService>();
         services.AddSingleton<IAuditLog, AuditLog>();
         services.AddScoped<IPanelHospitalRepository, PanelHospitalRepository>();
@@ -65,6 +66,7 @@ public static class DependencyInjection
         return services;
     }
 }
+
 
 
 
