@@ -56,12 +56,14 @@ public static class DependencyInjection
         services.AddScoped<IFwhsInvoiceRepository, FwhsInvoiceRepository>();
         services.AddScoped<IMcoManualInvoiceRepository, McoManualInvoiceRepository>();
         services.AddScoped<IMcoCorrectionRepository, McoCorrectionRepository>();
+        services.AddScoped<IMcoReceiptRepository, McoReceiptRepository>();
         services.AddScoped<IValidDateRangeRepository, ValidDateRangeRepository>();
         services.AddScoped<ISummaryService, SummaryService>();
         services.AddSingleton<ICaseDocumentStore, FileSystemCaseDocumentStore>();
         return services;
     }
 }
+
 
 
 

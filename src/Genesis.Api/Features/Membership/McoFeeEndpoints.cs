@@ -14,6 +14,9 @@ public static class McoFeeEndpoints
     /// <summary>Legacy USRAccess position of MCOFees > Invoice Manual Upd.</summary>
     public const int ManualInvoiceScreen = 148;
 
+    /// <summary>Legacy USRAccess position of MCOFees > Receipt MCO/Others (and the manual variant).</summary>
+    public const int ReceiptScreen = 19;
+
     public static void MapMcoFees(this IEndpointRouteBuilder app)
     {
         var refund = app.MapGroup("/api/mco/refund-listing").WithTags("MCO Fees: Refund Listing").RequireScreen(RefundListingScreen);
@@ -31,9 +34,20 @@ public static class McoFeeEndpoints
         var correction = app.MapGroup("/api/mco/correction").WithTags("MCO Fees: MCO Correction").RequireScreen(InvoiceScreen);
         correction.MapPost("/search", async (McoManualFilter filter, IMcoCorrectionRepository repo, CancellationToken ct) => Results.Ok(await repo.SearchAsync(filter, ct)));
         correction.MapPost("/update", async (McoCorrectionRequest request, System.Security.Claims.ClaimsPrincipal user, IMcoCorrectionRepository repo, CancellationToken ct) => Results.Ok(await repo.UpdateAsync(request, user.UserCode(), ct)));
+        var receipt = app.MapGroup("/api/mco/receipts").WithTags("MCO Fees: Receipt MCO/Others").RequireScreen(ReceiptScreen);
+        receipt.MapGet("/payors", async (IMcoRefundRepository repo, CancellationToken ct) => Results.Ok(await repo.PayorsAsync(ct)));
+        receipt.MapGet("/invoices", async (string? payor, string? numberFrom, string? numberTo, DateOnly? dateFrom, DateOnly? dateTo, bool? creditNotes, bool? onlyOpen, IMcoReceiptRepository repo, CancellationToken ct) =>
+            Results.Ok(await repo.InvoicesAsync(new McoReceiptInvoiceSearch(payor, numberFrom, numberTo, dateFrom, dateTo, creditNotes ?? false, onlyOpen ?? true), ct)));
+        receipt.MapGet("/", async (string? type, string? receiptFrom, string? receiptTo, DateOnly? dateFrom, DateOnly? dateTo, string? invoiceNo, IMcoReceiptRepository repo, CancellationToken ct) =>
+            Results.Ok(await repo.ListAsync(new McoReceiptSearch(type, receiptFrom, receiptTo, dateFrom, dateTo, invoiceNo), ct)));
+        receipt.MapPost("/", async (McoReceiptRequest request, System.Security.Claims.ClaimsPrincipal user, IMcoReceiptRepository repo, CancellationToken ct) => Results.Created("/api/mco/receipts", await repo.CreateAsync(request, false, user.UserCode(), ct)));
+        receipt.MapPost("/manual", async (McoReceiptRequest request, System.Security.Claims.ClaimsPrincipal user, IMcoReceiptRepository repo, CancellationToken ct) => Results.Created("/api/mco/receipts", await repo.CreateAsync(request, true, user.UserCode(), ct)));
+        receipt.MapPut("/{kind}/{index:int}", async (string kind, int index, McoReceiptUpdate update, System.Security.Claims.ClaimsPrincipal user, IMcoReceiptRepository repo, CancellationToken ct) => { await repo.UpdateAsync(kind, index, update, user.UserCode(), ct); return Results.Ok(new { updated = true }); });
+        receipt.MapDelete("/{kind}/{index:int}", async (string kind, int index, System.Security.Claims.ClaimsPrincipal user, IMcoReceiptRepository repo, CancellationToken ct) => { await repo.DeleteAsync(kind, index, user.UserCode(), ct); return Results.Ok(new { deleted = true }); });
         refund.MapGet("/supplementary", async (string memberNumber, IMcoRefundRepository repo, CancellationToken ct) => Results.Ok(await repo.SupplementaryAsync(memberNumber, ct)));
     }
 }
+
 
 
 
