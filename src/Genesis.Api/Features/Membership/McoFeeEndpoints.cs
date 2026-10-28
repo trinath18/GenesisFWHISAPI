@@ -28,8 +28,12 @@ public static class McoFeeEndpoints
         var manual = app.MapGroup("/api/mco/manual-invoice").WithTags("MCO Fees: Invoice Manual Upd").RequireScreen(ManualInvoiceScreen);
         manual.MapPost("/search", async (McoManualFilter filter, IMcoManualInvoiceRepository repo, CancellationToken ct) => Results.Ok(await repo.ListAsync(filter, ct)));
         manual.MapPost("/update", async (McoManualUpdateRequest request, System.Security.Claims.ClaimsPrincipal user, IMcoManualInvoiceRepository repo, CancellationToken ct) => Results.Ok(await repo.UpdateAsync(request, user.UserCode(), ct)));
+        var correction = app.MapGroup("/api/mco/correction").WithTags("MCO Fees: MCO Correction").RequireScreen(InvoiceScreen);
+        correction.MapPost("/search", async (McoManualFilter filter, IMcoCorrectionRepository repo, CancellationToken ct) => Results.Ok(await repo.SearchAsync(filter, ct)));
+        correction.MapPost("/update", async (McoCorrectionRequest request, System.Security.Claims.ClaimsPrincipal user, IMcoCorrectionRepository repo, CancellationToken ct) => Results.Ok(await repo.UpdateAsync(request, user.UserCode(), ct)));
         refund.MapGet("/supplementary", async (string memberNumber, IMcoRefundRepository repo, CancellationToken ct) => Results.Ok(await repo.SupplementaryAsync(memberNumber, ct)));
     }
 }
+
 
 
