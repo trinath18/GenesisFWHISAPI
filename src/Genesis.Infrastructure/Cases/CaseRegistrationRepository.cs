@@ -69,6 +69,122 @@ internal sealed class CaseRegistrationRepository(IDbConnectionFactory connection
         return new CaseMemberView(number, T(S(m, "MBMName")), Blank(S(m, "MBMIcBcPp")), Blank(S(m, "MBMPolicyNo")), health, T(S(m, "INSCode")), plan, payor, status, Day(m, "MBMDOB"), eff, Day(m, "MBMPayorExpDate"), limit, topUp, terminated, message, patients, blocked, warnings);
     }
 
+    public async Task<CaseMemberExtras?> ExtrasAsync(string memberNumber, CancellationToken ct = default)
+    {
+        var number = T(memberNumber);
+        if (number.Length == 0 || number.Length > 15 || number.Any(char.IsControl)) throw new BusinessRuleException("Please key in Membership No.!", field: "memberNumber");
+        var m = (await QueryAsync(GenesisDb.Main, "SELECT PAYCode, PLNCode FROM MBM WHERE MBMNumber = @n", new { n = number }, ct)).FirstOrDefault();
+        if (m is null) return null;
+        var principal = (await QueryAsync(GenesisDb.Main, "SELECT MBMExclusion FROM MBMOthersTwo WHERE MBMNumber = @n", new { n = number }, ct)).Select(r => Blank(S(r, "MBMExclusion"))).FirstOrDefault();
+        var covered = (await QueryAsync(GenesisDb.Main, "SELECT t.MBMCCoverID, c.MBMCName, t.MBMCExclusion FROM MBMCoveredPersonsTwo t LEFT JOIN MBMCoveredPersons c ON c.MBMCNumber = t.MBMCNumber AND c.MBMCCoverID = t.MBMCCoverID WHERE t.MBMCNumber = @n AND t.MBMCExclusion <> '' ORDER BY t.MBMCCoverID", new { n = number }, ct))
+            .Select(r => new CaseCoveredExclusion(T(S(r, "MBMCCoverID")), Blank(S(r, "MBMCName")), Blank(S(r, "MBMCExclusion")))).ToList();
+        var note = (await QueryAsync(GenesisDb.Main, "SELECT MBMMmgtNotes FROM MBMTwo WHERE MBMNumber = @n", new { n = number }, ct)).Select(r => Blank(S(r, "MBMMmgtNotes"))).FirstOrDefault();
+        var surg = (await QueryAsync(GenesisDb.Main, "SELECT PAYCode, PLNCode, SurgMainCat, SurgSubCat, SurgPerc FROM PLNSurgOperation WHERE PAYCode = @payor AND PLNCode = @plan ORDER BY SurgMainCat, SurgSubCat", new { payor = T(S(m, "PAYCode")), plan = T(S(m, "PLNCode")) }, ct))
+            .Select(r => new CaseSurgicalSchedule(T(S(r, "PAYCode")), T(S(r, "PLNCode")), T(S(r, "SurgMainCat")), T(S(r, "SurgSubCat")), T(S(r, "SurgPerc")))).ToList();
+        return new CaseMemberExtras(principal, covered, note, surg);
+    }
+
+    private static string CaseNo(string s) { var c = T(s); if (c.Length is 0 or > 15 || c.Any(ch => !char.IsLetterOrDigit(ch))) throw new BusinessRuleException("Invalid case number.", field: "caseNumber"); return c; }
+
+    public async Task<CaseLgResult> IssueLgAsync(string caseNumber, CaseLgRequest r, string user, CancellationToken ct = default)
+    {
+        var no = CaseNo(caseNumber);
+        if (CaseLgRules.Validate(r) is { } p) throw new BusinessRuleException(p.Message, field: p.Field);
+        var amount = Math.Round(r.Amount!.Value, 2);
+        var c = (await QueryAsync(GenesisDb.Main, """
+            SELECT c.CASNumber, c.CASStatus, c.MBMNumber, c.MBMPatientCovID, m.PAYCode, m.PLNCode, m.INSCode, m.MBMMemberType, m.MBMTopupInd, m.MBMPayorEffDate
+            FROM CAS c JOIN MBM m ON m.MBMNumber = c.MBMNumber WHERE c.CASNumber = @no
+            """, new { no }, ct)).FirstOrDefault() ?? throw BusinessRuleException.NotFound($"Case '{no}' does not exist.");
+        if (T(S(c, "CASStatus")) != "O") throw new BusinessRuleException("A guarantee letter can only be issued for an open case.");
+        var (member, patient, plan, ins, payor) = (T(S(c, "MBMNumber")), T(S(c, "MBMPatientCovID")), T(S(c, "PLNCode")), T(S(c, "INSCode")), T(S(c, "PAYCode")));
+        if (T(S(c, "MBMTopupInd")) == "Y") throw new BusinessRuleException("Guarantee letters for top-up policies are not migrated yet; use the legacy application.");
+        var pln = (await QueryAsync(GenesisDb.Main, "SELECT PLNLGType, PLNLifeTimeStatus, PLNPerVisit, PLNRBType, PLNBTBG FROM PLN WHERE PLNCode = @plan AND PAYCode = @payor", new { plan, payor }, ct)).FirstOrDefault()
+            ?? throw BusinessRuleException.NotFound($"Plan '{plan}' of payor '{payor}' does not exist.");
+        if (T(S(pln, "PLNLifeTimeStatus")) == "Y") throw new BusinessRuleException("Guarantee letters for lifetime-limit plans are not migrated yet; use the legacy application.");
+
+        var eff = D(c, "MBMPayorEffDate") ?? DateTime.Today;
+        var limits = (await QueryAsync(GenesisDb.Main, "SELECT TOP 1 AnnLimit, SuppLimit, SuppLimitStatus FROM AnnualLimit WHERE PLNCode = @plan AND INSCode = @ins AND AnnualEffDate <= @eff ORDER BY AnnualEffDate DESC", new { plan, ins, eff }, ct)).FirstOrDefault()
+            ?? throw BusinessRuleException.NotFound("No annual limit is defined for this plan.");
+        var status = T(S(limits, "SuppLimitStatus"));
+        // Claims already approved against the limit: the legacy View_Claim_Get* views read the HISMaintenance database (a different dataset), so the member's cases are read from CAS and summed in Claim.
+        var cases = (await QueryAsync(GenesisDb.Main, "SELECT CASNumber, MBMPatientCovID FROM CAS WHERE MBMNumber = @member", new { member }, ct))
+            .Select(x => (No: T(S(x, "CASNumber")), Patient: T(S(x, "MBMPatientCovID")))).Where(x => status switch
+            {
+                "A" => true,
+                "B" => patient == "00" ? x.Patient == "00" : x.Patient != "00",
+                _ => patient == "00" ? x.Patient == "00" : x.Patient == patient
+            }).Select(x => x.No).ToList();
+        var bordx = 0m;
+        foreach (var chunk in cases.Chunk(1000))
+            bordx += (await QueryAsync(GenesisDb.Worksheet, "SELECT SUM(CLMTotalApproved) AS Amt FROM Claim WHERE CASNumber IN @cases", new { cases = chunk }, ct)).Select(x => Dec(x, "Amt") ?? 0).FirstOrDefault();
+        var useSupp = T(S(c, "MBMMemberType")) == "Q" && status is "B" or "C" && patient != "00";
+        var balance = (useSupp ? Dec(limits, "SuppLimit") : Dec(limits, "AnnLimit")) is { } lim ? lim - bordx : 0m - bordx;
+        if (amount > balance) throw new BusinessRuleException($"Please Check Balance Limit (available {balance:N2}).");
+
+        var letter = T(S(pln, "PLNLGType")); if (letter.Length == 0) letter = "L";
+        if (letter != "C" && T(S(pln, "PLNBTBG")) == "Y") letter = "B";
+        int seq;
+        await using (var s = await Db.BeginSessionAsync(GenesisDb.Maintenance, ct))
+        {
+            var current = (await s.QueryAsync("SELECT TOP 1 LGSequence FROM LGSeq WITH (UPDLOCK, HOLDLOCK) WHERE CASNumber = @no", new { no }, ct)).Select(x => I(x, "LGSequence") ?? 0).Cast<int?>().FirstOrDefault();
+            if (current is null) { seq = 1; await s.ExecuteAsync("INSERT INTO LGSeq (CASNumber, LGSequence) VALUES (@no, 1)", new { no }, ct); }
+            else { seq = current.Value + 1; await s.ExecuteAsync("UPDATE LGSeq SET LGSequence = @seq WHERE CASNumber = @no", new { seq, no }, ct); }
+            await s.ExecuteAsync("""
+                INSERT INTO CASLG (CASENo, LGNo, LGDate, LGAmt, LGIssuedBy, LGStatus, LGRemark, PLNPerVisit, PLNRBType, LGUserTime, LGSystemTime)
+                VALUES (@no, @seq, @today, @amount, @user, @letter, @remark, @perVisit, @rb, @time, @sys)
+                """, new { no, seq, today = DateTime.Today, amount, user, letter, remark = Blank(r.Remark) ?? "", perVisit = T(S(pln, "PLNPerVisit")) == "Y" ? "Y" : "", rb = T(S(pln, "PLNRBType")), time = r.Time!.Trim(), sys = DateTime.Now.ToString("HH:mm") }, ct);
+            await s.CommitAsync(ct);
+        }
+        var number = (letter == "B" ? "B" : "L") + no + "-" + seq;
+        audit.Record(new AuditEntry("Case.IssueLg", "CASLG", number, user, new Dictionary<string, object?> { ["amount"] = amount, ["balance"] = balance, ["letter"] = letter, ["bordx"] = bordx }));
+        return new CaseLgResult(number, seq, letter, balance, amount);
+    }
+
+    public async Task<CaseLetterData?> LetterAsync(string caseNumber, string kind, string user, CancellationToken ct = default)
+    {
+        var no = CaseNo(caseNumber);
+        if (!CaseLetterKinds.All.Contains(kind)) throw new BusinessRuleException("Unknown letter.", field: "kind");
+        var c = (await QueryAsync(GenesisDb.Main, """
+            SELECT c.CASNumber, c.MBMNumber, c.MBMPatientCovID, c.CASDateAdmitted, c.CASDischargeDate, c.CASHOSCode, m.MBMName, m.MBMIcBcPp, m.MBMPolicyNo, m.PAYCode, m.MBMPayorExpDate, m.MBMAddress1, m.MBMAddress2, m.MBMAddress3, m.MBMPostCode, m.CTYCode, m.STACode,
+                   cp.MBMCName, cp.MBMCICBCPPNo, o2.CASAdmissionReason, o2.CASHOSName, h.HOSName, h.HOSContact, h.HOSFaxNo, y.PAYCompanyName, y.PAYAddress1, y.PAYAddress2, y.PAYAddress3, y.PAYAdmissionContact
+            FROM CAS c JOIN MBM m ON m.MBMNumber = c.MBMNumber
+                 LEFT JOIN MBMCoveredPersons cp ON cp.MBMCNumber = c.MBMNumber AND cp.MBMCCoverID = c.MBMPatientCovID
+                 LEFT JOIN CASOthersTwo o2 ON o2.CASNumber = c.CASNumber LEFT JOIN HOS h ON h.HOSCode = c.CASHOSCode LEFT JOIN PAY y ON y.PAYCode = m.PAYCode
+            WHERE c.CASNumber = @no
+            """, new { no }, ct)).FirstOrDefault();
+        if (c is null) return null;
+        var principal = T(S(c, "MBMName")); var covId = T(S(c, "MBMPatientCovID"));
+        var patient = covId == "00" ? principal : T(S(c, "MBMCName")); var ic = covId == "00" ? Blank(S(c, "MBMIcBcPp")) : Blank(S(c, "MBMCICBCPPNo"));
+        var hospital = Blank(S(c, "CASHOSName")) ?? Blank(S(c, "HOSName"));
+
+        string? lgNumber = null; decimal? lgAmount = null; string? rb = null, remark = null;
+        if (kind is CaseLetterKinds.Lg or CaseLetterKinds.Btbg)
+        {
+            var lg = (await QueryAsync(GenesisDb.Maintenance, "SELECT TOP 1 LGNo, LGAmt, LGStatus, LGRemark, PLNRBType FROM CASLG WHERE CASENo = @no ORDER BY LGNo DESC", new { no }, ct)).FirstOrDefault()
+                ?? throw new BusinessRuleException("No guarantee letter has been issued for this case.");
+            lgNumber = (T(S(lg, "LGStatus")) == "B" ? "B" : "L") + no + "-" + T(S(lg, "LGNo")); lgAmount = Dec(lg, "LGAmt"); rb = Blank(S(lg, "PLNRBType")); remark = Blank(S(lg, "LGRemark"));
+        }
+        var reps = new List<CaseRepudiationText>(); string? doc = null, per = null, att = null, und = null;
+        if (kind == CaseLetterKinds.Repudiation)
+        {
+            var rep = (await QueryAsync(GenesisDb.Main, "SELECT CASREPCode1, CASREPCode2, CASREPCode3, CASDocument, CASPersonnel, CASAttention, CASUnderlying FROM CASRepudiation WHERE CASNumber = @no", new { no }, ct)).FirstOrDefault()
+                ?? throw new BusinessRuleException("This case has no repudiation.");
+            foreach (var code in new[] { T(S(rep, "CASREPCode1")), T(S(rep, "CASREPCode2")), T(S(rep, "CASREPCode3")) }.Where(x => x.Length > 0))
+            {
+                var rc = (await QueryAsync(GenesisDb.Main, "SELECT r.RepDescription, g.RepCatName, g.RepCatDescription FROM RepCode r LEFT JOIN RepCodeCategory g ON g.RepCatCode = r.RepCatCode WHERE r.RepCode = @code", new { code }, ct)).FirstOrDefault();
+                reps.Add(new CaseRepudiationText(code, rc is null ? null : Blank(S(rc, "RepCatName")), rc is null ? null : Blank(S(rc, "RepCatDescription")), rc is null ? null : Blank(S(rc, "RepDescription"))));
+            }
+            async Task<string?> Sel(string code) => string.IsNullOrWhiteSpace(code) ? null : (await QueryAsync(GenesisDb.Maintenance, "SELECT REPDescription FROM REPSelection WHERE REPCode = @code", new { code = T(code) }, ct)).Select(x => Blank(S(x, "REPDescription"))).FirstOrDefault();
+            (doc, per, att) = (await Sel(S(rep, "CASDocument") ?? ""), await Sel(S(rep, "CASPersonnel") ?? ""), await Sel(S(rep, "CASAttention") ?? ""));
+            if (T(S(rep, "CASUnderlying")) == "Y")
+                und = string.Join("; ", (await QueryAsync(GenesisDb.Main, "SELECT CASUDReasons1, CASUDReasons2, CASUDReasons3 FROM CAS_UD WHERE CASNumber = @no", new { no }, ct)).SelectMany(x => new[] { S(x, "CASUDReasons1"), S(x, "CASUDReasons2"), S(x, "CASUDReasons3") }).Select(T).Where(x => x.Length > 0));
+        }
+        DateOnly? Dd(string col) => D(c, col) is { } d && d.Year > 1900 ? DateOnly.FromDateTime(d) : null;
+        return new CaseLetterData(kind, no, T(S(c, "MBMNumber")), Blank(S(c, "MBMPolicyNo")), patient, ic, principal, Blank(S(c, "MBMAddress1")), Blank(S(c, "MBMAddress2")), Blank(S(c, "MBMPostCode")), Blank(S(c, "CTYCode")), Blank(S(c, "STACode")),
+            hospital, Blank(S(c, "HOSContact")), Blank(S(c, "HOSFaxNo")), Dd("CASDateAdmitted"), Dd("CASDischargeDate"), Dd("MBMPayorExpDate"), Blank(S(c, "PAYCompanyName")), Blank(S(c, "PAYAddress1")), Blank(S(c, "PAYAddress2")), Blank(S(c, "PAYAddress3")), Blank(S(c, "PAYAdmissionContact")),
+            Blank(S(c, "CASAdmissionReason")), lgNumber, lgAmount, rb, remark, user, DateOnly.FromDateTime(DateTime.Today), reps, doc, per, att, und);
+    }
+
     private static string Nz(string? s) => s ?? "";
 
     public async Task<CaseRegistrationResult> RegisterAsync(CaseRegistrationRequest r, string user, CancellationToken ct = default)
@@ -154,14 +270,31 @@ internal sealed class CaseRegistrationRepository(IDbConnectionFactory connection
             await s.ExecuteAsync("INSERT INTO DIAFirst (CasNumber, ICDCode1, ICDCode2, ICDCode3, DIAPrelimDiag1, DIAPrelimDiag2, DIAPrelimDiag3, DIADOS1, DIADOS2, DIADOS3) VALUES (@n, @c1, @c2, @c3, @t1, @t2, @t3, @d1, @d2, @d3)", Diag(caseNumber, first), ct);
             await s.ExecuteAsync("INSERT INTO DIAFinal (CasNumber, ICDCode1, ICDCode2, ICDCode3, DIAFinalDiag1, DIAFinalDiag2, DIAFinalDiag3, DIADOS1, DIADOS2, DIADOS3) VALUES (@n, @c1, @c2, @c3, @t1, @t2, @t3, @d1, @d2, @d3)", Diag(caseNumber, fin), ct);
 
+            var procs = Fill(r.Procedures, 6); var nons = Fill(r.NonSurgicalProcedures, 6); var invs = FillInv(r.Investigations); var med = Fill(r.MedicalManagement, 3); var docs = Fill(r.AttendingDoctors, 5); var anae = Fill(r.Anaesthetists, 3);
             await s.ExecuteAsync("""
-                INSERT INTO CASOthers (CasNumber, CASOCondWillRecur, CASOFollowUpRequired, CASFirstCall, CASFirstTreated, CASRedAmt, CASFolUp, CASPayPending, CASPatientAge, CASPatientDayYr)
-                VALUES (@n, @recur, @followReq, @call, @treated, 0, @fol, @payPend, @age, @unit)
-                """, new { n = caseNumber, recur = Nz(r.ConditionWillRecur), followReq = Nz(r.FollowUpRequired), call = Blank(r.FirstCall), treated = Blank(r.FirstTreated), fol = Nz(r.FollowUp), payPend = Nz(r.PayPending), age = r.PatientAge!.Trim(), unit = r.AgeUnit }, ct);
+                INSERT INTO CASOthers (CasNumber, CASOCondWillRecur, CASOFollowUpRequired, CASFirstCall, CASFirstTreated, CASRedAmt, CASFolUp, CASPayPending, CASPatientAge, CASPatientDayYr,
+                    CASOPROCRequired1, CASOPROCRequired2, CASOPROCRequired3, CASOPROCRequired4, CASOPROCRequired5, CASOPROCRequired6, CASCptCode1, CASCptCode2, CASCptCode3, CASCptCode4, CASCptCode5, CASCptCode6,
+                    CASONonSurgPROCRequired1, CASONonSurgPROCRequired2, CASONonSurgPROCRequired3, CASONonSurgPROCRequired4, CASONonSurgPROCRequired5, CASONonSurgPROCRequired6,
+                    CASNonSurgCptCode1, CASNonSurgCptCode2, CASNonSurgCptCode3, CASNonSurgCptCode4, CASNonSurgCptCode5, CASNonSurgCptCode6,
+                    CASOProcInvestigationDone1, CASOProcInvestigationDone2, CASOProcInvestigationDone3, CASInvCode1, CASInvCode2, CASInvCode3, CASOMedSurMgmt1, CASOMedSurMgmt2, CASOMedSurMgmt3)
+                VALUES (@n, @recur, @followReq, @call, @treated, 0, @fol, @payPend, @age, @unit,
+                    @p1, @p2, @p3, @p4, @p5, @p6, @pc1, @pc2, @pc3, @pc4, @pc5, @pc6, @s1, @s2, @s3, @s4, @s5, @s6, @sc1, @sc2, @sc3, @sc4, @sc5, @sc6, @i1, @i2, @i3, @ic1, @ic2, @ic3, @m1, @m2, @m3)
+                """, new
+            {
+                n = caseNumber, recur = Nz(r.ConditionWillRecur), followReq = Nz(r.FollowUpRequired), call = Blank(r.FirstCall), treated = Blank(r.FirstTreated), fol = Nz(r.FollowUp), payPend = Nz(r.PayPending), age = r.PatientAge!.Trim(), unit = r.AgeUnit,
+                p1 = procs[0].T, p2 = procs[1].T, p3 = procs[2].T, p4 = procs[3].T, p5 = procs[4].T, p6 = procs[5].T, pc1 = procs[0].C, pc2 = procs[1].C, pc3 = procs[2].C, pc4 = procs[3].C, pc5 = procs[4].C, pc6 = procs[5].C,
+                s1 = nons[0].T, s2 = nons[1].T, s3 = nons[2].T, s4 = nons[3].T, s5 = nons[4].T, s6 = nons[5].T, sc1 = nons[0].C, sc2 = nons[1].C, sc3 = nons[2].C, sc4 = nons[3].C, sc5 = nons[4].C, sc6 = nons[5].C,
+                i1 = invs[0].T, i2 = invs[1].T, i3 = invs[2].T, ic1 = invs[0].C, ic2 = invs[1].C, ic3 = invs[2].C, m1 = med[0].T, m2 = med[1].T, m3 = med[2].T
+            }, ct);
             await s.ExecuteAsync("""
-                INSERT INTO CASOthersTwo (CasNumber, CASTotalDoctors, CASTotalAnaes, CASTotalFinalDiag, CASTotalProc, CASAdmissionReason, ReferedBy, CASIntExtTO, CASHOSName)
-                VALUES (@n, 0, 0, @finals, 0, @reason, @by, @io, @hosName)
-                """, new { n = caseNumber, finals = fin.Count(d => !string.IsNullOrWhiteSpace(d.Code)), reason = Blank(r.AdmissionReason), by = Blank(r.ReferredBy), io = Nz(r.IntExtTakeOver), hosName = Blank(r.HospitalName) }, ct);
+                INSERT INTO CASOthersTwo (CasNumber, CASAttendDoctor1, CASAttendDoctor2, CASAttendDoctor3, CASAttendDoctor4, CASAttendDoctor5, CASAnaesName1, CASAnaesName2, CASAnaesName3, CASTotalDoctors, CASTotalAnaes, CASTotalFinalDiag, CASTotalProc,
+                                         CASAdmissionReason, ReferedBy, CASFirstDocDate, CASSubSeqDocDate, CASIntExtTO, CASHOSName)
+                VALUES (@n, @d1, @d2, @d3, @d4, @d5, @a1, @a2, @a3, @totalDocs, @totalAnae, @finals, @totalProc, @reason, @by, @firstDoc, @subDoc, @io, @hosName)
+                """, new
+            {
+                n = caseNumber, d1 = docs[0].T, d2 = docs[1].T, d3 = docs[2].T, d4 = docs[3].T, d5 = docs[4].T, a1 = anae[0].T, a2 = anae[1].T, a3 = anae[2].T, totalDocs = docs.Count(x => x.T != ""), totalAnae = anae.Count(x => x.T != ""),
+                finals = fin.Count(d => !string.IsNullOrWhiteSpace(d.Code)), totalProc = procs.Count(x => x.T != ""), reason = Blank(r.AdmissionReason), by = Blank(r.ReferredBy), firstDoc = At(r.FirstDocDate), subDoc = At(r.SubsequentDocDate), io = Nz(r.IntExtTakeOver), hosName = Blank(r.HospitalName)
+            }, ct);
             var ud = Pad(r.UnderlyingDiagnosis);
             await s.ExecuteAsync("INSERT INTO CAS_UD (CasNumber, CASUDCode1, CASUDCode2, CASUDCode3, CASUDReasons1, CASUDReasons2, CASUDReasons3, CASUDDOS1, CASUDDOS2, CASUDDOS3) VALUES (@n, @c1, @c2, @c3, @t1, @t2, @t3, @d1, @d2, @d3)", Diag(caseNumber, ud), ct);
 
@@ -187,14 +320,21 @@ internal sealed class CaseRegistrationRepository(IDbConnectionFactory connection
         }
 
         audit.Record(new AuditEntry("Case.Register", "CAS", caseNumber, user, new Dictionary<string, object?> { ["request"] = r with { Remarks = null }, ["hospital"] = hospitalName, ["limitBefore"] = limitBefore, ["limitAfter"] = limitAfter }));
-        return new CaseRegistrationResult(caseNumber, member.MemberNumber, patientId, $"Record Saved, Your Case No is : {caseNumber}");
+        return new CaseRegistrationResult(caseNumber, member.MemberNumber, patientId, $"Record Saved, Your Case No is : {caseNumber}", CaseLetterKinds.AfterRegistration(today, member.ExpiryDate, repudiating));
     }
 
+    private static List<(string T, string C)> Fill(IReadOnlyList<CaseProcedureInput>? l, int n) { var x = (l ?? []).Select(p => (T(p.Text), T(p.CptCode))).ToList(); while (x.Count < n) x.Add(("", "")); return x; }
+    private static List<(string T, string C)> Fill(IReadOnlyList<string>? l, int n) { var x = (l ?? []).Select(p => (T(p), "")).ToList(); while (x.Count < n) x.Add(("", "")); return x; }
+    private static List<(string T, string C)> FillInv(IReadOnlyList<CaseInvestigationInput>? l) { var x = (l ?? []).Select(p => (T(p.Done), T(p.Code))).ToList(); while (x.Count < 3) x.Add(("", "")); return x; }
     private static List<CaseDiagnosisInput> Pad(IReadOnlyList<CaseDiagnosisInput>? l) { var x = (l ?? []).ToList(); while (x.Count < 3) x.Add(new(null, null, null)); return x; }
     private static object Diag(string caseNumber, List<CaseDiagnosisInput> d) => new
     {
         n = caseNumber, c1 = Nz(Blank(d[0].Code)), c2 = Nz(Blank(d[1].Code)), c3 = Nz(Blank(d[2].Code)), t1 = Nz(Blank(d[0].Text)), t2 = Nz(Blank(d[1].Text)), t3 = Nz(Blank(d[2].Text)), d1 = At(d[0].Date), d2 = At(d[1].Date), d3 = At(d[2].Date)
     };
 }
+
+
+
+
 
 

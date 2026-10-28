@@ -47,6 +47,7 @@ public class CaseRegistrationRuleTests
     }
 }
 
+[Collection("CaseRegistration")]
 public class CaseRegistrationTests(WriteApiFactory factory) : IClassFixture<WriteApiFactory>, IAsyncLifetime
 {
     private const string Url = "/api/case-registration";
@@ -227,5 +228,6 @@ public class CaseRegistrationTests(WriteApiFactory factory) : IClassFixture<Writ
         Assert.Equal(HttpStatusCode.Created, ok.StatusCode);
     }
 }
+
 
 

@@ -15,15 +15,30 @@ public sealed record CaseMemberView(
 
 public sealed record CaseDiagnosisInput(string? Code, string? Text, DateOnly? Date);
 
+/// <summary>A procedure (surgical or non-surgical) with its CPT / OPCS code.</summary>
+public sealed record CaseProcedureInput(string? Text, string? CptCode);
+
+/// <summary>An investigation done and its investigation code.</summary>
+public sealed record CaseInvestigationInput(string? Done, string? Code);
+
 public sealed record CaseRegistrationRequest(
     string? MemberNumber, string? PatientId, string? Claimability, string? HospitalCode, string? HospitalName, DateOnly? DateAdmitted, DateOnly? DateDischarge, string? Pending, decimal? ReserveAmount, decimal? LgAmount,
     string? LgTime, string? PayType, string? StayType, string? Modality, string? Nature, string? SpecialApproval, string? TopUpLimit, string? Query, string? LinkCaseNo, string? ReferredBy, string? AdmissionReason,
     DateOnly? DocReceivedDate, int? PolicyYear, string? EspRefNo, string? TakeOverInd, decimal? TakeOverAmount, string? TakeOverPlan, string? IntExtTakeOver, string? PatientAge, string? AgeUnit,
     string? FirstCall, string? FirstTreated, string? PayPending, string? FollowUp, string? ConditionWillRecur, string? FollowUpRequired, IReadOnlyList<string>? Remarks,
     IReadOnlyList<CaseDiagnosisInput>? FirstDiagnosis, IReadOnlyList<CaseDiagnosisInput>? FinalDiagnosis, bool AcknowledgeLongStay, bool AcknowledgeRecentPolicy, bool AcknowledgeOpenCase,
-    IReadOnlyList<string>? RepudiationCodes = null, string? Document = null, string? Personnel = null, string? Attention = null, bool Underlying = false, IReadOnlyList<CaseDiagnosisInput>? UnderlyingDiagnosis = null, decimal? DeductionAmount = null);
+    IReadOnlyList<string>? RepudiationCodes = null, string? Document = null, string? Personnel = null, string? Attention = null, bool Underlying = false, IReadOnlyList<CaseDiagnosisInput>? UnderlyingDiagnosis = null, decimal? DeductionAmount = null,
+    IReadOnlyList<string>? AttendingDoctors = null, IReadOnlyList<string>? Anaesthetists = null, IReadOnlyList<CaseProcedureInput>? Procedures = null, IReadOnlyList<CaseProcedureInput>? NonSurgicalProcedures = null,
+    IReadOnlyList<CaseInvestigationInput>? Investigations = null, IReadOnlyList<string>? MedicalManagement = null, DateOnly? FirstDocDate = null, DateOnly? SubsequentDocDate = null);
 
-public sealed record CaseRegistrationResult(string CaseNumber, string MemberNumber, string PatientId, string Message);
+public sealed record CaseCoveredExclusion(string CoverId, string? Name, string? Exclusion);
+
+public sealed record CaseSurgicalSchedule(string Payor, string Plan, string MainCategory, string SubCategory, string Percent);
+
+/// <summary>Warranty / exclusions, the management note and the surgical schedule of the plan shown on the Case Registration tabs.</summary>
+public sealed record CaseMemberExtras(string? PrincipalExclusion, IReadOnlyList<CaseCoveredExclusion> CoveredExclusions, string? ManagementNote, IReadOnlyList<CaseSurgicalSchedule> SurgicalSchedule);
+
+public sealed record CaseRegistrationResult(string CaseNumber, string MemberNumber, string PatientId, string Message, IReadOnlyList<string> Letters);
 
 public static class CaseRegistrationRules
 {
@@ -85,6 +100,13 @@ public static class CaseRegistrationRules
             if (Bad(r.Document, 5) || Bad(r.Personnel, 5) || Bad(r.Attention, 5)) return ("document", "A repudiation selection code is invalid.");
         }
         if (r.DeductionAmount is < 0 or > MaxAmount) return ("deductionAmount", "The deduction amount must be zero or more.");
+        if ((r.AttendingDoctors?.Count ?? 0) > 5 || (r.Anaesthetists?.Count ?? 0) > 3) return ("doctors", "At most five attending doctors and three anaesthetists are allowed.");
+        if (r.AttendingDoctors?.Select((n, i) => (n ?? "").Length > (i == 0 ? 100 : 30) || (n?.Any(char.IsControl) ?? false)).Any(x => x) == true || r.Anaesthetists?.Any(n => (n ?? "").Length > 30 || (n?.Any(char.IsControl) ?? false)) == true) return ("doctors", "A doctor name is too long (30 characters; the first attending doctor 100).");
+        foreach (var (name, list, max) in new[] { ("procedures", r.Procedures, 500), ("nonSurgicalProcedures", r.NonSurgicalProcedures, 200) })
+            if (list is not null && (list.Count > 6 || list.Any(p => (p.Text?.Length ?? 0) > max || (p.CptCode?.Trim().Length ?? 0) > 6 || (p.Text?.Any(char.IsControl) ?? false) || (p.CptCode?.Any(char.IsControl) ?? false)))) return (name, "At most six procedures; text up to " + max + " characters and a CPT code of up to 6 characters.");
+        if (r.Investigations is not null && (r.Investigations.Count > 3 || r.Investigations.Any(i => (i.Done?.Length ?? 0) > 500 || (i.Code?.Trim().Length ?? 0) > 10 || (i.Done?.Any(char.IsControl) ?? false)))) return ("investigations", "At most three investigations (text up to 500, code up to 10 characters).");
+        if (r.MedicalManagement is not null && (r.MedicalManagement.Count > 3 || r.MedicalManagement.Any(m => (m?.Length ?? 0) > 500 || (m?.Any(char.IsControl) ?? false)))) return ("medicalManagement", "At most three medical management entries of up to 500 characters.");
+        if (r.FirstDocDate is { } fd && fd < new DateOnly(1900, 1, 1) || r.SubsequentDocDate is { } sd && sd < new DateOnly(1900, 1, 1)) return ("firstDocDate", "A doctor date is invalid.");
         foreach (var (name, list) in new[] { ("firstDiagnosis", r.FirstDiagnosis), ("finalDiagnosis", r.FinalDiagnosis), ("underlyingDiagnosis", r.UnderlyingDiagnosis) })
         {
             if (list is null) continue;
@@ -103,10 +125,24 @@ public interface ICaseRegistrationRepository
     /// <summary>The policy, its patients (principal 00 and covered persons) and the legacy checks (cancelled, not yet activated, limit exceeded; warnings for a recent policy, low limit, termination).</summary>
     Task<CaseMemberView?> MemberAsync(string memberNumber, CancellationToken ct = default);
 
+    Task<CaseMemberExtras?> ExtrasAsync(string memberNumber, CancellationToken ct = default);
+
     /// <summary>
     /// Registers a new case: reserves the next case number of the payor (CAQ), then writes CAS, the remarks, the first, final and underlying diagnoses, the CASOthers rows, the repudiation (for repudiated
     /// claimability) and the limit deduction (member available limit) in one transaction, and the cross reference in the maintenance database. Repudiated claimability, deduction amounts and the letters are not part of this slice.
     /// </summary>
     Task<CaseRegistrationResult> RegisterAsync(CaseRegistrationRequest request, string user, CancellationToken ct = default);
+
+    /// <summary>
+    /// Issues a guarantee letter for an open case: checks the amount against the balance of the annual limit (annual limit minus claims bordereaux amount, by supplementary limit type), takes the next LG number of the case (LGSeq),
+    /// writes CASLG in the maintenance database. Lifetime-limit plans and top-up policies are refused because their limit logic is not migrated.
+    /// </summary>
+    Task<CaseLgResult> IssueLgAsync(string caseNumber, CaseLgRequest request, string user, CancellationToken ct = default);
+
+    /// <summary>The data of a case letter of the given kind (see CaseLetterKinds), or null when the case does not exist.</summary>
+    Task<CaseLetterData?> LetterAsync(string caseNumber, string kind, string user, CancellationToken ct = default);
 }
+
+
+
 
