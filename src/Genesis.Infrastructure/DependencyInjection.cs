@@ -52,12 +52,14 @@ public static class DependencyInjection
         services.AddScoped<IRegistrationRepository, RegistrationRepository>();
         services.AddScoped<IBenefitRepository, BenefitRepository>();
         services.AddScoped<IIcdSelectionRepository, IcdSelectionRepository>();
+        services.AddScoped<IMcoRefundRepository, McoRefundRepository>();
         services.AddScoped<IValidDateRangeRepository, ValidDateRangeRepository>();
         services.AddScoped<ISummaryService, SummaryService>();
         services.AddSingleton<ICaseDocumentStore, FileSystemCaseDocumentStore>();
         return services;
     }
 }
+
 
 
 

@@ -82,10 +82,12 @@ app.MapAdjustment();
 app.MapRegistration();
 app.MapBenefits();
 app.MapIcdSelection();
+app.MapMcoFees();
 
 app.Run();
 
 public partial class Program;
+
 
 
 
