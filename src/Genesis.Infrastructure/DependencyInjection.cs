@@ -34,6 +34,8 @@ public static class DependencyInjection
         services.AddScoped<ICaseRegistrationRepository, CaseRegistrationRepository>();
         services.AddScoped<ICaseAdjustmentRepository, CaseAdjustmentRepository>();
         services.AddScoped<ICaseAdjustmentTabsRepository, CaseAdjustmentTabsRepository>();
+        services.AddScoped<ICaseTransferRepository, CaseTransferRepository>();
+        services.AddScoped<ICasePayClaimRepository, CasePayClaimRepository>();
         services.AddScoped<ITrackingService, TrackingService>();
         services.AddSingleton<IAuditLog, AuditLog>();
         services.AddScoped<IPanelHospitalRepository, PanelHospitalRepository>();
@@ -68,6 +70,7 @@ public static class DependencyInjection
         return services;
     }
 }
+
 
 
 
