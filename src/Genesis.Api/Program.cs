@@ -70,6 +70,7 @@ app.MapReports();
 app.MapMembership();
 app.MapCases();
 app.MapCaseRegistration();
+app.MapCaseAdjustment();
 app.MapTracking();
 app.MapSummaries();
 app.MapPanelHospitals();
@@ -88,6 +89,7 @@ app.MapMcoFees();
 app.Run();
 
 public partial class Program;
+
 
 
 
