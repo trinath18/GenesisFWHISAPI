@@ -140,7 +140,7 @@ internal sealed class CaseRegistrationRepository(IDbConnectionFactory connection
         return new CaseLgResult(number, seq, letter, balance, amount);
     }
 
-    public async Task<CaseLetterData?> LetterAsync(string caseNumber, string kind, string user, CancellationToken ct = default)
+    public async Task<CaseLetterData?> LetterAsync(string caseNumber, string kind, string user, CancellationToken ct = default, int? lgNo = null)
     {
         var no = CaseNo(caseNumber);
         if (!CaseLetterKinds.All.Contains(kind)) throw new BusinessRuleException("Unknown letter.", field: "kind");
@@ -160,7 +160,7 @@ internal sealed class CaseRegistrationRepository(IDbConnectionFactory connection
         string? lgNumber = null; decimal? lgAmount = null; string? rb = null, remark = null;
         if (kind is CaseLetterKinds.Lg or CaseLetterKinds.Btbg)
         {
-            var lg = (await QueryAsync(GenesisDb.Maintenance, "SELECT TOP 1 LGNo, LGAmt, LGStatus, LGRemark, PLNRBType FROM CASLG WHERE CASENo = @no ORDER BY LGNo DESC", new { no }, ct)).FirstOrDefault()
+            var lg = (await QueryAsync(GenesisDb.Maintenance, "SELECT TOP 1 LGNo, LGAmt, LGStatus, LGRemark, PLNRBType FROM CASLG WHERE CASENo = @no AND (@lgNo IS NULL OR LGNo = @lgNo) ORDER BY LGNo DESC", new { no, lgNo }, ct)).FirstOrDefault()
                 ?? throw new BusinessRuleException("No guarantee letter has been issued for this case.");
             lgNumber = (T(S(lg, "LGStatus")) == "B" ? "B" : "L") + no + "-" + T(S(lg, "LGNo")); lgAmount = Dec(lg, "LGAmt"); rb = Blank(S(lg, "PLNRBType")); remark = Blank(S(lg, "LGRemark"));
         }
@@ -332,6 +332,7 @@ internal sealed class CaseRegistrationRepository(IDbConnectionFactory connection
         n = caseNumber, c1 = Nz(Blank(d[0].Code)), c2 = Nz(Blank(d[1].Code)), c3 = Nz(Blank(d[2].Code)), t1 = Nz(Blank(d[0].Text)), t2 = Nz(Blank(d[1].Text)), t3 = Nz(Blank(d[2].Text)), d1 = At(d[0].Date), d2 = At(d[1].Date), d3 = At(d[2].Date)
     };
 }
+
 
 
 

@@ -140,8 +140,9 @@ public interface ICaseRegistrationRepository
     Task<CaseLgResult> IssueLgAsync(string caseNumber, CaseLgRequest request, string user, CancellationToken ct = default);
 
     /// <summary>The data of a case letter of the given kind (see CaseLetterKinds), or null when the case does not exist.</summary>
-    Task<CaseLetterData?> LetterAsync(string caseNumber, string kind, string user, CancellationToken ct = default);
+    Task<CaseLetterData?> LetterAsync(string caseNumber, string kind, string user, CancellationToken ct = default, int? lgNo = null);
 }
+
 
 
 
