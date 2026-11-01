@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/GenesisFIS.Api/GenesisFIS.Api.csproj" />
+    <Project Path="src/GenesisFIS.Core/GenesisFIS.Core.csproj" />
+    <Project Path="src/GenesisFIS.Infrastructure/GenesisFIS.Infrastructure.csproj" />
+    <Project Path="src/GenesisFIS.Reports/GenesisFIS.Reports.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/GenesisFIS.Tests/GenesisFIS.Tests.csproj" />
+  </Folder>
+</Solution>
