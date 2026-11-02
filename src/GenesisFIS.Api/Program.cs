@@ -1,4 +1,4 @@
-﻿using GenesisFIS.Api.Features.Auth;
+using GenesisFIS.Api.Features.Auth;
 using GenesisFIS.Api.Features.Cases;
 using GenesisFIS.Api.Features.Health;
 using GenesisFIS.Api.Features.Maintenance;
@@ -82,6 +82,7 @@ app.MapPanelHospitals();
 app.MapLookups();
 app.MapSuspensions();
 app.MapCardSending();
+app.MapLeaflet();
 app.MapMcoPending();
 app.MapMemberDeletion();
 app.MapReinstatement();
@@ -90,6 +91,7 @@ app.MapRegistration();
 app.MapBenefits();
 app.MapIcdSelection();
 app.MapMcoFees();
+app.MapBordxUpload();
 
 app.Run();
 

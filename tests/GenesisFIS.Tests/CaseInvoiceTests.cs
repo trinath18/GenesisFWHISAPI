@@ -21,9 +21,9 @@ public class CaseInvoiceRuleTests
             ["rbTaxOld"] = 5, ["icuTaxOld"] = 6, ["services"] = 200, ["grossRoomBoard"] = 999, ["accidentEmergency"] = 999, ["notGp"] = 999,
         });
         Assert.Equal((450m, 477m, 500m, 500m, 40m, 40m), (a["roomAmount"], a["roomTotal"], a["icuAmount"], a["icuTotal"], a["guardianAmount"], a["guardianTotal"]));
-        Assert.Equal((1100m, 300m, 80m, 100m, 11m), (a["surgical"], a["anaesthetist"], a["preDiagnostic"], a["cashAllowance"], a["tax"]));
-        // Room, ICU and guardian count once (through their totals); gross R&B, accident emergency and not-payable amounts are not part of the invoice amount.
-        Assert.Equal(477m + 500m + 40m + 1100m + 300m + 80m + 100m + 11m + 200m, total);
+        Assert.Equal((1100m, 300m, 80m, 100m, 11m, 999m), (a["surgical"], a["anaesthetist"], a["preDiagnostic"], a["cashAllowance"], a["tax"], a["accidentPostAmount"]));
+        // Room, ICU and guardian count once (through their totals), accident through A11 (accident + post-treatment); gross R&B and not-payable amounts are not part of the invoice amount.
+        Assert.Equal(477m + 500m + 40m + 1100m + 300m + 80m + 100m + 11m + 200m + 999m, total);
     }
 
     [Fact]
@@ -77,8 +77,8 @@ public class CaseInvoiceTests(WriteApiFactory factory) : IClassFixture<WriteApiF
             await main.ExecuteAsync("""
                 INSERT INTO MBM (MBMNumber, MBMCOVID, MBMStatus, MBMName, MBMIcBcPp, PAYCode, HLTCode, INSCode, PLNCode, MBMPolicyNo, MBMAvailableLimit, MBMTopupInd)
                 VALUES ('ZZINV0001*01', '00', 'A', 'INVOICE PRINCIPAL', 'IC1', 'WM', 'N', 'F', '2ZZ1', 'POLINV', 20000, 'N');
-                INSERT INTO CAS (CASNumber, CASClaimAdmin, MBMNumber, MBMPatientCovID, CASHOSCode, CASDateAdmitted, CASDischargeDate, CASStayType)
-                VALUES (@case, 'N', 'ZZINV0001*01', '00', '00001', '2024-05-01', @dod, 'I');
+                INSERT INTO CAS (CASNumber, CASClaimAdmin, MBMNumber, MBMPatientCovID, CASHOSCode, CASDateAdmitted, CASDischargeDate, CASStayType, ModalityCode)
+                VALUES (@case, 'N', 'ZZINV0001*01', '00', '00001', '2024-05-01', @dod, 'I', 'S');
                 """, new { @case = Case, dod = discharged ? new DateTime(2024, 5, 4) : (DateTime?)null });
         }
         await using var ws = await factory.Db.OpenAsync(GenesisDb.Worksheet);
@@ -113,6 +113,10 @@ public class CaseInvoiceTests(WriteApiFactory factory) : IClassFixture<WriteApiF
         Assert.DoesNotContain(o.StayTypes, s => s.Code is "C" or "R");
         Assert.Contains(o.ReceiptModes, s => s.Code == "PM");
         Assert.Equal(CaseInvoiceCatalog.Fields.Count, o.Fields.Count);
+        // The UI tells computed and not-covered boxes apart by name.
+        var json = await Client().GetStringAsync($"{Url}/options");
+        Assert.Contains("\"kind\":\"Computed\"", json);
+        Assert.Contains("\"table\":\"NotCovered\"", json);
     }
 
     [DatabaseFact]
@@ -121,12 +125,14 @@ public class CaseInvoiceTests(WriteApiFactory factory) : IClassFixture<WriteApiF
         await SeedAsync(closedVersions: 2);
         var screen = (await Client().GetFromJsonAsync<CaseInvoiceScreen>($"{Url}/{Case}"))!;
         Assert.Equal((3, "INVOICE PRINCIPAL", new DateOnly(2024, 5, 4)), (screen.NextVersion, screen.Case.MemberName, screen.Case.Discharged));
+        Assert.Equal(("INVOICE PRINCIPAL", "S"), (screen.Case.PatientName, screen.Case.Modality));   // the principal is the patient; a surgical case
         Assert.Empty(screen.Invoices);
 
         var res = await Client().PostAsJsonAsync($"{Url}/{Case}", Request());
         Assert.Equal(HttpStatusCode.Created, res.StatusCode);
         var inv = (await res.Content.ReadFromJsonAsync<InvoiceEntry>())!;
         Assert.Equal((3, 1470m, 50m, 1420m, "H", "TEST"), (inv.Version, inv.Amount, inv.Excess, inv.PayAmount, inv.PayTo, inv.EnteredBy));
+        Assert.Equal(50m, inv.PaidByMember);   // legacy "Exc Paid"
         Assert.Equal((450m, 450m, 1000m, 15m), (inv.Amounts["roomAmount"], inv.Amounts["roomTotal"], inv.Amounts["surgical"], inv.Amounts["notGp"]));
         Assert.Equal(["phoneByMember"], inv.ChargedToMember);
         Assert.Equal(("TOWEL", "GP NOT COVERED"), (inv.OthersDescription, inv.NotPayableRemark));
@@ -201,5 +207,52 @@ public class CaseInvoiceTests(WriteApiFactory factory) : IClassFixture<WriteApiF
         Assert.Equal("second", (await Client().GetFromJsonAsync<CaseInvoiceScreen>($"{Url}/{Case}"))!.Remarks);
         Assert.Equal(1, await Scalar<int>("SELECT COUNT(*) FROM ClaimInvoiceRemarks WHERE CASNumber = @case"));
         Assert.Equal(HttpStatusCode.BadRequest, (await Client().PutAsJsonAsync($"{Url}/{Case}/remarks", new CaseInvoiceRemarksRequest(new string('x', 501)))).StatusCode);
+    }
+
+    private static InvoiceCaseProcedures Procedures() => new(
+        ["DR SURGEON", null, null, null, null], ["DR GAS"], ["MEDICAL MGMT"], [new CaseInvestigationInput("BLOOD TEST", "20010")],
+        [new InvoiceProcedure("APPENDICECTOMY", "25130", 1500m, 300m)], [new InvoiceProcedure(null, null, null), new InvoiceProcedure("SCOPE", "64302", 800m)]);
+
+    [DatabaseFact]
+    public async Task The_procedure_entry_is_saved_with_the_invoice_and_shown_with_its_mma_rates()
+    {
+        await SeedAsync();
+        await using (var main = await factory.Db.OpenAsync(GenesisDb.Main))
+            await main.ExecuteAsync("INSERT INTO CASOthers (CASNumber, CASOPROCRequired3) VALUES (@case, 'OLD'); INSERT INTO CASOthersTwo (CASNumber, CASAttendDoctor2) VALUES (@case, 'OLD DR')", new { @case = Case });
+
+        // Without the procedure entry the case is left alone.
+        var res = await Client().PostAsJsonAsync($"{Url}/{Case}", Request());
+        Assert.Equal(HttpStatusCode.Created, res.StatusCode);
+        var screen = (await Client().GetFromJsonAsync<CaseInvoiceScreen>($"{Url}/{Case}"))!;
+        Assert.Equal(("OLD", "OLD DR"), (screen.Procedures!.Surgical![2].Text, screen.Procedures.AttendingDoctors![1]));
+        Assert.Equal(6, screen.Procedures.NonSurgical!.Count);
+
+        // With it, every slot is written (legacy SaveCASOthers), and the MMA and 13th schedule rates come back with the codes.
+        Assert.Equal(HttpStatusCode.Created, (await Client().PostAsJsonAsync($"{Url}/{Case}", Request("INV-002") with { Procedures = Procedures() })).StatusCode);
+        screen = (await Client().GetFromJsonAsync<CaseInvoiceScreen>($"{Url}/{Case}"))!;
+        var p = screen.Procedures!;
+        Assert.Equal(("APPENDICECTOMY", "25130", 1500m, 300m), (p.Surgical![0].Text, p.Surgical[0].Code, p.Surgical[0].ActualFee, p.Surgical[0].ActualAnaesFee));
+        Assert.Null(p.Surgical[2].Text);
+        Assert.Equal(("SCOPE", "64302", 800m), (p.NonSurgical![1].Text, p.NonSurgical[1].Code, p.NonSurgical[1].ActualFee));
+        Assert.Equal(("DR SURGEON", null, "DR GAS", "MEDICAL MGMT"), (p.AttendingDoctors![0], p.AttendingDoctors[1], p.Anaesthetists![0], p.MedicalManagement![0]));
+        Assert.Equal(("BLOOD TEST", "20010"), (p.Investigations![0].Done, p.Investigations[0].Code));
+        Assert.Equal((1370m, 275m, 1370m, 275m), (screen.Rates!["25130"].Surgeon, screen.Rates["25130"].Anaesthetist, screen.Rates["25130"].Surgeon13th, screen.Rates["25130"].Anaesthetist13th));
+        Assert.Equal(875m, screen.Rates["64302"].Surgeon13th);
+
+        var tooLong = Procedures() with { Anaesthetists = [new string('x', 31)] };
+        Assert.Equal(HttpStatusCode.BadRequest, (await Client().PostAsJsonAsync($"{Url}/{Case}", Request("INV-003") with { Procedures = tooLong })).StatusCode);
+    }
+
+    [DatabaseFact]
+    public async Task Opcs_and_investigation_codes_can_be_searched_and_their_rates_looked_up()
+    {
+        var all = (await Client().GetFromJsonAsync<List<MmaCode>>($"{Url}/mma?code=2513"))!;
+        Assert.Contains(all, c => c.Code == "25130");
+        var inv = (await Client().GetFromJsonAsync<List<MmaCode>>($"{Url}/mma?code=2001&investigations=true"))!;
+        Assert.Contains(inv, c => c.Code == "20010");
+        Assert.DoesNotContain((await Client().GetFromJsonAsync<List<MmaCode>>($"{Url}/mma?code=2513&investigations=true"))!, c => c.Code == "25130");
+        Assert.Equal(1370m, (await Client().GetFromJsonAsync<MmaRate>($"{Url}/mma/25130"))!.Surgeon);
+        Assert.Equal(HttpStatusCode.NotFound, (await Client().GetAsync($"{Url}/mma/NOPE9")).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await Client(12).GetAsync($"{Url}/mma?code=1")).StatusCode);
     }
 }

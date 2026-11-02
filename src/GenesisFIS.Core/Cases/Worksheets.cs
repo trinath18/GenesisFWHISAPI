@@ -1,4 +1,4 @@
-namespace GenesisFIS.Core.Cases;
+﻿namespace GenesisFIS.Core.Cases;
 
 /// <summary>
 /// One row of the legacy worksheet grid (frmNewWorksheet2010 Fgrid, rows from view_bnf_cat_subcat plus the fixed tax rows). Each row is stored as the same
@@ -68,7 +68,8 @@ public sealed record WorksheetVersion(
     int Version, string? Status, string? WorksheetStatus, string? WorksheetStatusName, DateOnly? Opened, DateOnly? Closed, string? OpenedBy,
     decimal? TotalActual, decimal? TotalApproved, decimal? PayableToHospital, decimal? PayableToMember, decimal? Excess, decimal? BalanceLimit, decimal? PreviousBalance,
     string? StayType, string? CashType, string? BordxRefNo, string? DebitCreditRefNo, DateOnly? DebitCreditDate, string? PayorApprovalStatus,
-    IReadOnlyDictionary<string, string?> LimitDays, IReadOnlyList<WorksheetLineValue> Lines, IReadOnlyList<WorksheetInvoiceRef> Invoices);
+    IReadOnlyDictionary<string, string?> LimitDays, IReadOnlyList<WorksheetLineValue> Lines, IReadOnlyList<WorksheetInvoiceRef> Invoices,
+    decimal? FinalApproved = null, decimal? LimitExceeded = null);
 
 /// <summary>Worksheet Enquiry: the case and every saved worksheet version.</summary>
 public sealed record WorksheetEnquiry(CaseInvoiceCase Case, bool CombinedRows, IReadOnlyList<WorksheetVersion> Versions);
@@ -90,11 +91,11 @@ public sealed record WorksheetCalculateRequest(IReadOnlyDictionary<int, string>?
 public sealed record WorksheetSaveRequest(
     string? WorksheetStatus, decimal? ExpectedFinalApproved, IReadOnlyDictionary<int, string>? LimitOverrides, string? Remarks, string? DebitCreditRemarks, string? Note,
     bool ExGratia, string? PayTo, string? Bank, string? AccountNo, string? Address1, string? Address2, string? Address3, string? PostCode, string? City, string? State,
-    string? PaymentMode, string? Attention);
+    string? PaymentMode, string? Attention, string? GpName = null, DateOnly? LastDocDate = null);
 
 /// <summary>The saved worksheet: its number (case-version), amounts and the credit / debit note raised for the member's share.</summary>
 public sealed record WorksheetSaveResult(string WorksheetNumber, int Version, decimal FinalApproved, decimal PayableToHospital, decimal PayableToMember, decimal Excess,
-    string? DebitCreditNote, decimal? BalanceAfter, int Invoices);
+    string? DebitCreditNote, decimal? BalanceAfter, int Invoices, string? ExcessNumber = null);
 
 public static class WorksheetSaveRules
 {
@@ -115,9 +116,10 @@ public static class WorksheetSaveRules
             if (string.IsNullOrWhiteSpace(r.State)) return ("state", "Please Enter State");
         }
         foreach (var (field, value, max) in new[] { ("payTo", r.PayTo, 50), ("bank", r.Bank, 40), ("accountNo", r.AccountNo, 30), ("address1", r.Address1, 50), ("address2", r.Address2, 50),
-                     ("address3", r.Address3, 50), ("postCode", r.PostCode, 6), ("city", r.City, 50), ("state", r.State, 50), ("paymentMode", r.PaymentMode, 50), ("attention", r.Attention, 60),
+                     ("address3", r.Address3, 50), ("postCode", r.PostCode, 6), ("city", r.City, 50), ("state", r.State, 50), ("paymentMode", r.PaymentMode, 50), ("attention", r.Attention, 60), ("gpName", r.GpName, 50),
                      ("remarks", r.Remarks, 160), ("debitCreditRemarks", r.DebitCreditRemarks, 200), ("note", r.Note, 100) })
             if (Bad(value, max)) return (field, $"The {field} can be at most {max} characters.");
+        if (r.LastDocDate is { } d && (d.Year < 1900 || d > DateOnly.FromDateTime(DateTime.Today))) return ("lastDocDate", "Invalid Date Format! ");
         return null;
     }
 }
@@ -141,6 +143,15 @@ public interface IWorksheetRepository
     Task<WorksheetSaveResult> SaveAsync(string caseNumber, WorksheetSaveRequest request, string user, CancellationToken ct = default);
 
     Task<WorksheetEnquiry?> EnquiryAsync(string caseNumber, CancellationToken ct = default);
+
+    /// <summary>What the worksheet documents (credit/debit note, excess and cheque letters, Excel export) print for a saved version; null when it does not exist.</summary>
+    Task<WorksheetDocumentData?> DocumentAsync(string caseNumber, int version, string user, CancellationToken ct = default);
+
+    /// <summary>The case, member, diagnoses and invoices around a worksheet version (the legacy "Invoices &amp; Diagnosis" tab); null when the case does not exist.</summary>
+    Task<WorksheetCaseDetail?> DetailAsync(string caseNumber, int version, CancellationToken ct = default);
+
+    /// <summary>The drop-down lists of the worksheet forms.</summary>
+    Task<WorksheetOptions> OptionsAsync(CancellationToken ct = default);
     Task<WorksheetPreview?> PreviewAsync(string caseNumber, IReadOnlyDictionary<int, string>? limitOverrides = null, CancellationToken ct = default);
 
     /// <summary>The calculator input of one version: its invoices (only those not yet in a worksheet when <paramref name="openOnly"/>), the plan's benefits,

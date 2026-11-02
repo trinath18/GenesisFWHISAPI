@@ -13,6 +13,11 @@ public static class CaseInvoiceEndpoints
     {
         var g = app.MapGroup("/api/case-invoices").WithTags("Invoice Processing").RequireScreen(Screen);
         g.MapGet("/options", async (ICaseInvoiceRepository repo, CancellationToken ct) => Results.Ok(await repo.OptionsAsync(ct)));
+        // The procedure entry: OPCS / investigation search and the MMA rates of a code.
+        g.MapGet("/mma", async (string? code, string? narrative, bool? investigations, ICaseInvoiceRepository repo, CancellationToken ct) =>
+            Results.Ok(await repo.MmaCodesAsync(code, narrative, investigations ?? false, ct)));
+        g.MapGet("/mma/{code}", async (string code, ICaseInvoiceRepository repo, CancellationToken ct) =>
+            await repo.MmaRateAsync(code, ct) is { } rate ? Results.Ok(rate) : Results.NotFound(new { message = "No MMA rate for this code." }));
         g.MapGet("/hospitals", async (string? search, ICaseRegistrationRepository repo, CancellationToken ct) => Results.Ok(await repo.HospitalsAsync(search, ct)));
         g.MapGet("/{caseNumber}", async (string caseNumber, ICaseInvoiceRepository repo, CancellationToken ct) =>
             await repo.GetAsync(caseNumber, ct) is { } screen ? Results.Ok(screen) : Results.NotFound(new { message = "No record found!" }));

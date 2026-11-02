@@ -17,6 +17,7 @@ public static class CaseAdjustmentEndpoints
         g.MapGet("/options", async (ICaseRegistrationRepository repo, CancellationToken ct) => Results.Ok(await repo.OptionsAsync(ct)));
         g.MapGet("/hospitals", async (string? search, ICaseRegistrationRepository repo, CancellationToken ct) => Results.Ok(await repo.HospitalsAsync(search, ct)));
         CaseRegistrationEndpoints.MapMemberTabs(g);
+        CaseRegistrationEndpoints.MapDraftLetters(g);
         g.MapGet("/search", async (string? by, string? q, string? plan, ICaseInquiryRepository repo, CancellationToken ct) =>
         {
             if (!Enum.TryParse<CaseSearchBy>(by, true, out var kind)) return Results.BadRequest(new { error = "Unknown search type." });

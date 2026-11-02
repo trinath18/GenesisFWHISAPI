@@ -8,9 +8,9 @@ namespace GenesisFIS.Infrastructure.Cases;
 
 /// <summary>
 /// Worksheet Registration save (legacy frmNewWorksheet2010 cmdApprove_Click: SaveClaim, SaveClaimRemarks, saveLimit, saveActual, saveApprove, saveHos, saveMember,
-/// savePayMBMStatus, saveSameLimit, UpdateInvoice, UpdateCasReserve, UpdateMBMBalance, UpdateCreditDebit) and Worksheet Adjustment (frmNewWSAdjust2010, which
-/// rewrites a saved version). Not migrated: top-up, lifetime and take-over worksheets, the excess letter, the Excel export and the "increase approval limit"
-/// prompt for rows without an actual amount.
+/// savePayMBMStatus, saveExcessLetter, saveSameLimit, UpdateInvoice, UpdateCasReserve, UpdateMBMBalance, UpdateCreditDebit) and Worksheet Adjustment
+/// (frmNewWSAdjust2010, which rewrites a saved version). Not migrated: top-up, lifetime and take-over worksheets (no case or plan uses them) and the
+/// "increase approval limit" prompt for rows without an actual amount.
 /// </summary>
 internal sealed partial class WorksheetRepository
 {
@@ -43,6 +43,7 @@ internal sealed partial class WorksheetRepository
             throw new BusinessRuleException("Worksheet cannot be saved without Final Diagnosis!", field: "diagnosis");
         var memberPaid = preview.Invoices.Any(i => i.PayTo == CaseInvoicePayTo.Member);
         if (WorksheetSaveRules.Validate(r, memberPaid) is { } problem) throw new BusinessRuleException(problem.Message, field: problem.Field);
+        await CheckAccountAsync(r, ct);
         // Legacy check: on a cashless claim the hospital invoices must already show what the hospital is paid (invoice amount less the member's excess).
         var invoicePay = preview.Invoices.Where(i => i.PayTo == CaseInvoicePayTo.Hospital).Sum(i => i.PayAmount);
         if (!memberPaid && invoicePay != calc.PayableToHospital)
@@ -62,7 +63,7 @@ internal sealed partial class WorksheetRepository
         return new Dictionary<string, object?>
         {
             ["no"] = c.Number, ["version"] = version, ["today"] = DateTime.Today, ["user"] = user, ["bordxStatus"] = status == "XR" ? 1 : 0, ["bordxRef"] = status == "XR" ? "VOID" : "",
-            ["cashType"] = memberPaid ? "R" : "C", ["lastDoc"] = lastDoc, ["exGratia"] = r.ExGratia ? "Y" : "N", ["stayType"] = stayType?[..1] ?? "", ["actual"] = calc.TotalActual,
+            ["cashType"] = memberPaid ? "R" : "C", ["lastDoc"] = r.LastDocDate?.ToDateTime(TimeOnly.MinValue) ?? lastDoc, ["gp"] = Blank(r.GpName) ?? "", ["exGratia"] = r.ExGratia ? "Y" : "N", ["stayType"] = stayType?[..1] ?? "", ["actual"] = calc.TotalActual,
             ["approved"] = calc.TotalApproved, ["payH"] = calc.PayableToHospital, ["excessBy"] = memberPaid ? "M" : "H", ["excess"] = memberCells.Where(x => x < 0).Sum(),
             ["reimburse"] = memberCells.Where(x => x > 0).Sum(),
             // The legacy form stored previous balance + approved here (a sign slip); the balance left after this worksheet is stored instead.
@@ -175,15 +176,65 @@ internal sealed partial class WorksheetRepository
         return balanceAfter;
     }
 
-    private WorksheetSaveResult Done(string action, SaveCase c, int version, WorksheetPreview preview, WorksheetSaveRequest r, string user, int[] invoiceIds, string? note, decimal? balanceAfter)
+    /// <summary>
+    /// Legacy saveExcessLetter: when the hospital billed more than was approved (or the annual limit cut the approval) on a hospital-paid worksheet, the case
+    /// gets an excess record for the excess letter. Registration adds one numbered from EXC_SEQ (E + case + "-" + n); an amendment rewrites the case's latest
+    /// one, or adds one when it had none. Returns the excess number.
+    /// </summary>
+    private static async Task<string?> SaveExcessAsync(IDbSession ws, string no, WorksheetPreview preview, string user, bool amend, CancellationToken ct)
+    {
+        var hospital = preview.Invoices.Where(i => i.PayTo == CaseInvoicePayTo.Hospital).OrderBy(i => i.Index).FirstOrDefault();
+        var calc = preview.Calculation;
+        var lines = WorksheetExcessCatalog.Lines(calc.Lines);
+        var total = lines.Sum(l => l.Amount);
+        var exceeded = calc.LimitExceeded ? calc.TotalApproved - calc.FinalApproved : 0m;
+        if (hospital is null || preview.Invoices.Any(i => i.PayTo == CaseInvoicePayTo.Member) || (total <= 0 && exceeded <= 0)) return null;
+
+        var args = new Dictionary<string, object?>
+        {
+            ["no"] = no, ["inv"] = hospital.InvoiceNo, ["invAmt"] = hospital.Amount, ["total"] = total, ["user"] = user, ["now"] = DateTime.Now,
+            ["exceed"] = exceeded.ToString("0.##", Inv), ["zero"] = "0",
+        };
+        foreach (var (row, col) in WorksheetExcessCatalog.Columns)
+            args[col] = (lines.FirstOrDefault(l => l.Row == row)?.Amount ?? 0).ToString("0.##", Inv);
+        var cols = WorksheetExcessCatalog.Columns.Values.ToList();
+
+        var existing = amend
+            ? Blank(await ws.ScalarAsync<string?>("SELECT TOP 1 EXCNumber FROM CAS_Excess WITH (UPDLOCK, HOLDLOCK) WHERE CASNumber = @no ORDER BY EXCDate DESC, EXCNumber DESC", new { no }, ct))
+            : null;
+        if (existing is not null)
+        {
+            args["exc"] = existing;
+            await ws.ExecuteAsync($"""
+                UPDATE CAS_Excess SET INVNo = @inv, INVAmt = @invAmt, ExcessAmt = @total, EXCTotalExceed = @exceed, EXCUpdateLogon = @user, EXCUpdateDate = @now,
+                    {string.Join(", ", cols.Select(c => $"{c} = @{c}"))}
+                WHERE EXCNumber = @exc
+                """, args, ct);
+            return existing;
+        }
+        var seq = await ws.ScalarAsync<int?>("SELECT EXCSequence FROM EXC_SEQ WITH (UPDLOCK, HOLDLOCK) WHERE CASNumber = @no", new { no }, ct);
+        var next = (seq ?? 0) + 1;
+        await ws.ExecuteAsync(seq is null ? "INSERT INTO EXC_SEQ (CASNumber, EXCSequence) VALUES (@no, @next)" : "UPDATE EXC_SEQ SET EXCSequence = @next WHERE CASNumber = @no", new { no, next }, ct);
+        var number = $"E{no}-{next}";
+        args["exc"] = number;
+        await ws.ExecuteAsync($"""
+            INSERT INTO CAS_Excess (EXCNumber, CASNumber, EXCDate, INVNo, INVAmt, ExcessAmt, EXCIssuedBy, EXCIssuedDate, EXCTotalExceed, EXCUndExcess, EXCCoPayment, {string.Join(", ", cols)})
+            VALUES (@exc, @no, @now, @inv, @invAmt, @total, @user, @now, @exceed, @zero, @zero, {string.Join(", ", cols.Select(c => "@" + c))})
+            """, args, ct);
+        return number;
+    }
+
+    private WorksheetSaveResult Done(string action, SaveCase c, int version, WorksheetPreview preview, WorksheetSaveRequest r, string user, int[] invoiceIds, string? note, decimal? balanceAfter,
+        string? excess)
     {
         var calc = preview.Calculation;
         audit.Record(new AuditEntry(action, "Claim", $"{c.Number}-{version}", user, new Dictionary<string, object?>
         {
             ["status"] = r.WorksheetStatus, ["invoices"] = invoiceIds, ["final"] = calc.FinalApproved, ["payableToHospital"] = calc.PayableToHospital, ["payableToMember"] = calc.PayableToMember,
-            ["limitOverrides"] = r.LimitOverrides, ["note"] = note, ["balanceAfter"] = balanceAfter,
+            ["limitOverrides"] = r.LimitOverrides, ["note"] = note, ["balanceAfter"] = balanceAfter, ["excess"] = excess,
         }));
-        return new WorksheetSaveResult($"{c.Number}-{version}", version, calc.FinalApproved, calc.PayableToHospital, calc.PayableToMember, calc.Excess, note, balanceAfter, invoiceIds.Length);
+        return new WorksheetSaveResult($"{c.Number}-{version}", version, calc.FinalApproved, calc.PayableToHospital, calc.PayableToMember, calc.Excess, note, balanceAfter, invoiceIds.Length,
+            excess);
     }
 
     public async Task<WorksheetSaveResult> SaveAsync(string caseNumber, WorksheetSaveRequest r, string user, CancellationToken ct = default)
@@ -208,16 +259,17 @@ internal sealed partial class WorksheetRepository
                 CLMPrevMajorMed, CLMMajorMedFee, ClaimID)
             VALUES (@no, @version, @today, @user, @user, @today, @bordxStatus, 'N', 'N', 'M', '', @cashType, @lastDoc, @exGratia, @stayType, @actual, @approved, @payH, 0,
                 @excessBy, 0, @excess, @reimburse, @balanceAfter, @today, @previous, @previousNew, 0, 0, @bordxRef, 0, 0, @exceeded, @payM, @status, 0, 0, 0, 0,
-                'C', 0, @final, 0, @final, @payTo, @accountNo, @bank, '0', 0, '', 0, 0, 0, @claimId)
+                'C', 0, @final, 0, @final, @payTo, @accountNo, @bank, '0', 0, @gp, 0, 0, 0, @claimId)
             """, HeaderArgs(c, version, preview, r, user, lastDoc, stayType), ct);
         await WriteGridAsync(ws, c.Number, version, preview, ct);
         await WriteOthersAsync(ws, c.Number, version, r, invoiceIds, ct);
         await SaveSameLimitAsync(ws, c.LinkCase, input, preview.Calculation, giveBack: null, ct);
         var note = await RaiseNoteAsync(ws, c.Number, version, c.Payor, preview.Calculation.PayableToMember, ct);
+        var excess = await SaveExcessAsync(ws, c.Number, preview, user, amend: false, ct);
         await ws.CommitAsync(ct);
 
         var balanceAfter = await UpdateCaseAndBalanceAsync(c, preview.Calculation.AnnualBalance is not null, ct);
-        return Done("Worksheet.Save", c, version, preview, r, user, invoiceIds, note, balanceAfter);
+        return Done("Worksheet.Save", c, version, preview, r, user, invoiceIds, note, balanceAfter, excess);
     }
 
     public async Task<WorksheetAdjustmentView?> AdjustmentAsync(string caseNumber, int? version, IReadOnlyDictionary<int, string>? limitOverrides = null, CancellationToken ct = default)
@@ -226,13 +278,8 @@ internal sealed partial class WorksheetRepository
         var saved = version is { } v ? enquiry.Versions.FirstOrDefault(x => x.Version == v) : enquiry.Versions[^1];
         if (saved is null) return null;
         var no = enquiry.Case.CaseNumber;
-        var header = (await QueryAsync(GenesisDb.Worksheet, """
-            SELECT c.ClaimBordxStatus, c.BordxRefNo, c.CLMWSStatus, c.CLMExGratia, c.CLMPayTo, c.CLMBank, c.CLMAccountNo, o.CLMWSRemarks, o.CLMDCNoteRemarks, o.CLMNote, o.MBMAdd1, o.MBMAdd2,
-                   o.MBMAdd3, o.MBMPostCode, o.MBMCity, o.MBMState, o.CLMPayMode, o.CLMAttention
-            FROM Claim c LEFT JOIN ClaimOthers o ON o.CASNumber = c.CASNumber AND o.CLaimVersion = c.ClaimVersion WHERE c.CASNumber = @no AND c.ClaimVersion = @version
-            """, new { no, version = saved.Version }, ct)).First();
+        var header = (await SavedHeaderAsync(no, saved.Version, ct))!;
         string? H(string col) => Blank(S(header, col));
-        string? Zero(string col) => H(col) is "0" ? null : H(col);
         // Legacy: only the last version can be amended, and only until it goes on a bordereau.
         var blocked = saved.Version != enquiry.Versions[^1].Version ? $"Only the latest version ({enquiry.Versions[^1].Version}) can be amended."
             : (I(header, "ClaimBordxStatus") ?? 0) != 0 || H("BordxRefNo") is { } refNo && refNo != "" ? "This worksheet is on a bordereau and cannot be amended." : null;
@@ -241,9 +288,25 @@ internal sealed partial class WorksheetRepository
         if (limitOverrides is { Count: > 0 }) ValidateOverrides(limitOverrides, loaded.Input.Claimable);
         var calc = WorksheetCalculator.Calculate(loaded.Input with { LimitOverrides = limitOverrides });
         var recalculated = new WorksheetPreview(enquiry.Case, saved.Version, enquiry.CombinedRows, saved.Invoices, loaded.Claimability, loaded.Input.Claimable, loaded.Input.SameLimitDays is not null, calc);
-        var details = new WorksheetSaveRequest(H("CLMWSStatus"), calc.FinalApproved, null, H("CLMWSRemarks"), H("CLMDCNoteRemarks"), H("CLMNote"), H("CLMExGratia") == "Y",
-            H("CLMPayTo"), Zero("CLMBank"), Zero("CLMAccountNo"), H("MBMAdd1"), H("MBMAdd2"), H("MBMAdd3"), H("MBMPostCode"), H("MBMCity"), H("MBMState"), H("CLMPayMode"), H("CLMAttention"));
+        var details = SavedDetails(header) with { ExpectedFinalApproved = calc.FinalApproved };
         return new WorksheetAdjustmentView(enquiry.Case, saved.Version, enquiry.Versions.Select(x => x.Version).ToList(), blocked is null, blocked, saved, recalculated, details);
+    }
+
+    private async Task<IDictionary<string, object?>?> SavedHeaderAsync(string no, int version, CancellationToken ct) =>
+        (await QueryAsync(GenesisDb.Worksheet, """
+            SELECT c.ClaimBordxStatus, c.BordxRefNo, c.CLMWSStatus, c.CLMExGratia, c.CLMGPName, c.CLMLastDocDate, c.CLMPayTo, c.CLMBank, c.CLMAccountNo, o.CLMWSRemarks, o.CLMDCNoteRemarks, o.CLMNote, o.MBMAdd1, o.MBMAdd2,
+                   o.MBMAdd3, o.MBMPostCode, o.MBMCity, o.MBMState, o.CLMPayMode, o.CLMAttention
+            FROM Claim c LEFT JOIN ClaimOthers o ON o.CASNumber = c.CASNumber AND o.CLaimVersion = c.ClaimVersion WHERE c.CASNumber = @no AND c.ClaimVersion = @version
+            """, new { no, version }, ct)).FirstOrDefault();
+
+    /// <summary>The status, remarks, payee and address a version was saved with (the Claim and ClaimOthers rows), in the shape of a save request.</summary>
+    private static WorksheetSaveRequest SavedDetails(IDictionary<string, object?> header)
+    {
+        string? H(string col) => Blank(S(header, col));
+        string? Zero(string col) => H(col) is "0" ? null : H(col);
+        return new WorksheetSaveRequest(H("CLMWSStatus"), null, null, H("CLMWSRemarks"), H("CLMDCNoteRemarks"), H("CLMNote"), H("CLMExGratia") == "Y",
+            H("CLMPayTo"), Zero("CLMBank"), Zero("CLMAccountNo"), H("MBMAdd1"), H("MBMAdd2"), H("MBMAdd3"), H("MBMPostCode"), H("MBMCity"), H("MBMState"), H("CLMPayMode"), H("CLMAttention"),
+            H("CLMGPName"), Day(header, "CLMLastDocDate"));
     }
 
     public async Task<WorksheetSaveResult> AmendAsync(string caseNumber, int version, WorksheetSaveRequest r, string user, CancellationToken ct = default)
@@ -270,7 +333,7 @@ internal sealed partial class WorksheetRepository
                 CLMExGratia = @exGratia, CLMStayType = @stayType, CLMTotalActual = @actual, CLMTotalApproved = @approved, CLMPayableByMedix2H = @payH, ExcessCollectedBy = @excessBy,
                 CLMExcess = @excess, CLMReimburse = @reimburse, CLMBalanceLimit = @balanceAfter, CLMPreviousBalance = @previous, CLMPreviousNewLimit = @previousNew,
                 CLMLimitExceeded = @exceeded, CLMPayableByMedix2M = @payM, CLMWSStatus = @status, CLMBordxAmt = @final, CLMFinalApprove = @final, CLMPayTo = @payTo,
-                CLMAccountNo = @accountNo, CLMBank = @bank
+                CLMAccountNo = @accountNo, CLMBank = @bank, CLMGPName = @gp
             WHERE CASNumber = @no AND ClaimVersion = @version
             """, HeaderArgs(c, version, preview, r, user, lastDoc, stayType), ct);
         await WriteGridAsync(ws, c.Number, version, preview, ct);
@@ -279,10 +342,11 @@ internal sealed partial class WorksheetRepository
             WorksheetCalculator.Parse(S(oldDays, "CLMCashDays")) ?? 0, WorksheetCalculator.Parse(S(oldDays, "CLMGurdianDays")) ?? 0, WorksheetCalculator.Parse(S(oldDays, "CLMKIDDCDays")) ?? 0);
         await SaveSameLimitAsync(ws, c.LinkCase, input, preview.Calculation, giveBack, ct);
         var note = await RaiseNoteAsync(ws, c.Number, version, c.Payor, preview.Calculation.PayableToMember, ct);
+        var excess = await SaveExcessAsync(ws, c.Number, preview, user, amend: true, ct);
         await ws.CommitAsync(ct);
 
         var balanceAfter = await UpdateCaseAndBalanceAsync(c, preview.Calculation.AnnualBalance is not null, ct);
-        return Done("Worksheet.Amend", c, version, preview, r, user, invoiceIds, note, balanceAfter);
+        return Done("Worksheet.Amend", c, version, preview, r, user, invoiceIds, note, balanceAfter, excess);
     }
 
     /// <summary>

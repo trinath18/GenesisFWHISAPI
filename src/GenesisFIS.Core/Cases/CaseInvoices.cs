@@ -1,9 +1,14 @@
+﻿using System.Text.Json.Serialization;
+
 namespace GenesisFIS.Core.Cases;
 
 /// <summary>Which worksheet-database table an invoice amount lives in (legacy procedures Insert_ClaimInvActual2010, Insert_ClaimInvoiceActOthers_New, Insert_ClaimInvoiceNotCov08).</summary>
+// Sent by name ("NotCovered", "Computed"), as the UI's InvoiceField type expects.
+[JsonConverter(typeof(JsonStringEnumConverter<InvoiceTable>))]
 public enum InvoiceTable { Actual, ActualOthers, NotCovered }
 
 /// <summary>Entered: a money amount. Days: a count (days, months). Computed: worked out from other fields, as the legacy form did on LostFocus.</summary>
+[JsonConverter(typeof(JsonStringEnumConverter<InvoiceFieldKind>))]
 public enum InvoiceFieldKind { Amount, Days, Computed }
 
 /// <summary>One amount box of the legacy Invoice Processing form (frmInvoice). <see cref="InTotal"/> boxes add up to the invoice amount (legacy getTotal).</summary>
@@ -62,7 +67,7 @@ public static class CaseInvoiceCatalog
         new("nsPostTreatment", A, "CLMPost", "Post-hospital treatment", NonSurg, InTotal: true),              // A10
 
         new("accidentEmergency", A, "CLMEmergency", "Accident (emergency)", Out), new("accidentPostTreatment", A, "CLMPostTreat", "Accident post-treatment", Out),
-        new("accidentPostAmount", A, "CLMAccPostAmt", "Accident post-treatment amount", Out, InTotal: true), // A11
+        new("accidentPostAmount", A, "CLMAccPostAmt", "Accident post-treatment amount", Out, Computed, true), // A11 = accident + post-treatment
         new("ambulance", A, "CLMAmbulance", "Ambulance fee", Out, InTotal: true),                          // A12
         new("physiotherapy", A, "CLMOutpatient", "Outpatient physiotherapy", Out, InTotal: true),          // A13
         new("kidneyMonths", O, "CLMKidneyMnth", "Kidney dialysis months", Out, Days),
@@ -123,6 +128,7 @@ public static class CaseInvoiceCatalog
         v["anaesthetist"] = G("anaesFee") + G("anaesConsultation") + G("anaesWard");
         v["nsPreDiagnostic"] = G("nsPreXray") + G("nsPreLab") + G("nsPreOthers");
         v["inHospitalPhysician"] = G("physicianFee") + G("physicianWard") + G("procedureFee");
+        v["accidentPostAmount"] = G("accidentEmergency") + G("accidentPostTreatment");
         v["guardianAmount"] = G("guardianDays") * G("guardianRate");
         v["guardianTotal"] = G("guardianAmount") + G("guardianTax");
         v["tax"] = G("rbTaxOld") + G("icuTaxOld") + G("lodgerTaxOld");
@@ -151,21 +157,46 @@ public sealed record CaseInvoiceRequest(
     string? InvoiceNo, DateOnly? InvoiceDate, string? PayTo, string? StayType, string? Hospital, string? HospitalName,
     string? ReceiptMode, DateOnly? ReceiptDate, DateOnly? FollowUpDate, decimal? Excess, decimal? InitialAmount, string? UhcNo,
     IReadOnlyDictionary<string, decimal?>? Amounts, IReadOnlyList<string>? ChargedToMember,
-    string? OthersDescription, string? Others2Description, string? OthersNoCoPayDescription, string? NotPayableRemark);
+    string? OthersDescription, string? Others2Description, string? OthersNoCoPayDescription, string? NotPayableRemark,
+    // The procedure entry (legacy frmMMAEntry): when sent, the case's doctors and procedures are saved with the invoice, as legacy SaveCASOthers did.
+    InvoiceCaseProcedures? Procedures = null);
+
+/// <summary>One line of the legacy procedure entry: the procedure, its OPCS code and the actual fees charged (anaesthetist fee for surgical lines only).</summary>
+public sealed record InvoiceProcedure(string? Text, string? Code, decimal? ActualFee, decimal? ActualAnaesFee = null);
+
+/// <summary>
+/// What the legacy procedure entry (frmMMAEntry) edits for the case, in CASOthers and CASOthersTwo: attending doctors (5), anaesthetists (3), medical
+/// management (3), investigations (3), surgical procedures (6) and non-surgical procedures (6).
+/// </summary>
+public sealed record InvoiceCaseProcedures(
+    IReadOnlyList<string?>? AttendingDoctors, IReadOnlyList<string?>? Anaesthetists, IReadOnlyList<string?>? MedicalManagement,
+    IReadOnlyList<CaseInvestigationInput>? Investigations, IReadOnlyList<InvoiceProcedure>? Surgical, IReadOnlyList<InvoiceProcedure>? NonSurgical);
+
+/// <summary>A VIEW_MMA_Schedule row: the MMA rates and the 13th schedule rates of an OPCS code, with the details legacy frmMMA13thSchDesc showed.</summary>
+public sealed record MmaRate(string Code, string? Narrative, string? ScheduleDescription, string? BodyPartMma, string? PageMma, string? BodyPart13th, string? Page13th,
+    decimal Surgeon, decimal Anaesthetist, decimal Surgeon13thMin, decimal Surgeon13th, decimal Anaesthetist13th);
+
+/// <summary>An MMAProcedures row for the OPCS and investigation searches (legacy frmSearchCPT, frmSearchInv).</summary>
+public sealed record MmaCode(string Code, string? Narrative);
 
 public sealed record InvoiceEntry(
     int Index, string InvoiceNo, DateOnly? InvoiceDate, string? PayTo, string? StayType, string? Payee, string? PayeeName, string? HospitalName,
     string? ReceiptMode, DateOnly? ReceiptDate, DateOnly? FollowUpDate, decimal Amount, decimal Excess, decimal PayAmount, decimal? InitialAmount, string? UhcNo,
     int? Version, bool InWorksheet, bool InBordx, string? EnteredBy, DateOnly? EnteredDate,
     IReadOnlyDictionary<string, decimal> Amounts, IReadOnlyList<string> ChargedToMember,
-    string? OthersDescription, string? Others2Description, string? OthersNoCoPayDescription, string? NotPayableRemark);
+    string? OthersDescription, string? Others2Description, string? OthersNoCoPayDescription, string? NotPayableRemark,
+    // Legacy "Exc Paid" (INVPaidByMem): what the invoice saved as paid by the member (its excess).
+    decimal PaidByMember = 0);
 
 public sealed record CaseInvoiceCase(
     string CaseNumber, string? MemberNumber, string? MemberName, string? PolicyNo, string? PatientId, string? PlanCode, string? HospitalCode, string? HospitalName,
-    DateOnly? Admitted, DateOnly? Discharged, string? StayType);
+    DateOnly? Admitted, DateOnly? Discharged, string? StayType, string? PatientName = null, string? Modality = null,
+    // The General Info tab: the employer policy's dates (GroupCompanyFW), the policy status and the member's date of birth.
+    DateOnly? PolicyEffective = null, DateOnly? PolicyExpiry = null, string? PolicyStatus = null, DateOnly? MemberDob = null);
 
 /// <summary>Everything the Invoice Processing screen shows for one case: the case, the worksheet version new invoices go to, the case remark and the invoices.</summary>
-public sealed record CaseInvoiceScreen(CaseInvoiceCase Case, int NextVersion, string? Remarks, IReadOnlyList<InvoiceEntry> Invoices);
+public sealed record CaseInvoiceScreen(CaseInvoiceCase Case, int NextVersion, string? Remarks, IReadOnlyList<InvoiceEntry> Invoices,
+    InvoiceCaseProcedures? Procedures = null, IReadOnlyDictionary<string, MmaRate>? Rates = null);
 
 public sealed record CaseInvoiceOptions(IReadOnlyList<CaseOption> StayTypes, IReadOnlyList<CaseOption> ReceiptModes, IReadOnlyList<string> GenericHospitals,
     IReadOnlyList<InvoiceField> Fields, IReadOnlyList<InvoiceFlag> Flags);
@@ -211,6 +242,27 @@ public static class CaseInvoiceRules
         }
         foreach (var flag in r.ChargedToMember ?? [])
             if (CaseInvoiceCatalog.Flags.All(x => x.Key != flag)) return ("chargedToMember", $"Unknown option '{flag}'.");
+        return r.Procedures is null ? null : ValidateProcedures(r.Procedures);
+    }
+
+    /// <summary>The CASOthers / CASOthersTwo column sizes (the legacy stored procedures Case_AdjInvCASOthers and Case_AdjInvCASOthersTwo).</summary>
+    public static (string Field, string Message)? ValidateProcedures(InvoiceCaseProcedures p)
+    {
+        static bool Many<T>(IReadOnlyList<T>? xs, int max) => xs is not null && xs.Count > max;
+        if (Many(p.AttendingDoctors, 5) || Many(p.Anaesthetists, 3) || Many(p.MedicalManagement, 3) || Many(p.Investigations, 3) || Many(p.Surgical, 6) || Many(p.NonSurgical, 6))
+            return ("procedures", "Too many lines in the procedure entry.");
+        var doctors = p.AttendingDoctors ?? [];
+        for (var i = 0; i < doctors.Count; i++)
+            if (Bad(doctors[i], i == 0 ? 100 : 30)) return ("attendingDoctors", $"Attending doctor {i + 1} can be at most {(i == 0 ? 100 : 30)} characters.");
+        if ((p.Anaesthetists ?? []).Any(x => Bad(x, 30))) return ("anaesthetists", "An anaesthetist name can be at most 30 characters.");
+        if ((p.MedicalManagement ?? []).Any(x => Bad(x, 500))) return ("medicalManagement", "Medical management can be at most 500 characters.");
+        if ((p.Investigations ?? []).Any(x => Bad(x.Done, 500) || Bad(x.Code, 10))) return ("investigations", "An investigation can be at most 500 characters and its code 10.");
+        foreach (var (lines, max, name) in new[] { (p.Surgical, 500, "surgical"), (p.NonSurgical, 200, "nonSurgical") })
+            foreach (var x in lines ?? [])
+            {
+                if (Bad(x.Text, max) || Bad(x.Code, 6)) return (name, $"A procedure can be at most {max} characters and its OPCS code 6.");
+                if (x.ActualFee is < 0 or > CaseInvoiceCatalog.MaxAmount || x.ActualAnaesFee is < 0 or > CaseInvoiceCatalog.MaxAmount) return (name, "Actual fees must be zero or more.");
+            }
         return null;
     }
 }
@@ -230,4 +282,10 @@ public interface ICaseInvoiceRepository
     Task DeleteAsync(string caseNumber, int index, string user, CancellationToken ct = default);
 
     Task SaveRemarksAsync(string caseNumber, string? remarks, string user, CancellationToken ct = default);
+
+    /// <summary>The MMA and 13th schedule rates of an OPCS code (legacy SearchMMARate / SearchMMADesc), or null when the schedule has none.</summary>
+    Task<MmaRate?> MmaRateAsync(string code, CancellationToken ct = default);
+
+    /// <summary>Legacy frmSearchCPT (all MMA procedures) and frmSearchInv (investigations: procedure part A), by code prefix and narrative.</summary>
+    Task<IReadOnlyList<MmaCode>> MmaCodesAsync(string? code, string? narrative, bool investigations, CancellationToken ct = default);
 }

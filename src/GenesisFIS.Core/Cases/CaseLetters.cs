@@ -14,10 +14,20 @@ public sealed record CaseLetterData(
     string? AdmissionReason, string? LgNumber, decimal? LgAmount, string? RoomAndBoard, string? LgRemark, string IssuedBy, DateOnly Date,
     IReadOnlyList<CaseRepudiationText> Repudiation, string? Document, string? Personnel, string? Attention, string? Underlying);
 
+/// <summary>What a draft letter is printed from: the member, patient, hospital and dates on the form, and the case number once the case is saved.</summary>
+public sealed record CaseDraftLetterRequest(string? MemberNumber, string? PatientId, string? HospitalCode, string? HospitalName, DateOnly? Admitted, DateOnly? Discharged, string? CaseNumber);
+
 public static class CaseLetterKinds
 {
     public const string Lg = "lg", Btbg = "btbg", Repudiation = "repudiation", PolicyEnding = "policy-ending", Expired = "expired";
     public static readonly string[] All = [Lg, Btbg, Repudiation, PolicyEnding, Expired];
+
+    /// <summary>
+    /// Letters the legacy Case Registration form printed from what is on screen, before or after the case is saved: the document requests to the hospital on
+    /// admission (Doc Req Adm, letter A) and on discharge (Doc Req Discharge, letter D), and the take-home drugs letter (T.Home Drugs, letter T).
+    /// </summary>
+    public const string DocRequestAdmission = "doc-request-admission", DocRequestDischarge = "doc-request-discharge", TakeHomeDrugs = "take-home-drugs";
+    public static readonly string[] Drafts = [DocRequestAdmission, DocRequestDischarge, TakeHomeDrugs];
 
     /// <summary>Letters the legacy form printed straight after registration: policy ending within 45 days (P), expired policy (E) and the repudiation letter (R).</summary>
     public static IReadOnlyList<string> AfterRegistration(DateOnly today, DateOnly? expiry, bool repudiated)

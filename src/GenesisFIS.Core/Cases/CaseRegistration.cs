@@ -11,7 +11,10 @@ public sealed record CasePatient(string CoverId, string Name, string? IcBcPp, st
 /// <summary>The policy a case is registered against, with the checks the legacy form makes when the member number is shown.</summary>
 public sealed record CaseMemberView(
     string MemberNumber, string Name, string? IcBcPp, string? PolicyNo, string? Health, string? Insured, string? Plan, string? Payor, string? Status, DateOnly? BirthDate, DateOnly? EffectiveDate, DateOnly? ExpiryDate,
-    decimal? AvailableLimit, bool TopUp, bool Terminated, string? PlanMessage, IReadOnlyList<CasePatient> Patients, string? BlockedReason, IReadOnlyList<string> Warnings);
+    decimal? AvailableLimit, bool TopUp, bool Terminated, string? PlanMessage, IReadOnlyList<CasePatient> Patients, string? BlockedReason, IReadOnlyList<string> Warnings,
+    // The legacy header and General Info tab: renewal and take-over flags, the plan's annual limit and the member's address.
+    string? Renewal = null, string? TakeOver = null, decimal? AnnualLimit = null, string? Address1 = null, string? Address2 = null, string? Address3 = null,
+    string? PostCode = null, string? City = null, string? State = null);
 
 public sealed record CaseDiagnosisInput(string? Code, string? Text, DateOnly? Date);
 
@@ -141,6 +144,9 @@ public interface ICaseRegistrationRepository
 
     /// <summary>The data of a case letter of the given kind (see CaseLetterKinds), or null when the case does not exist.</summary>
     Task<CaseLetterData?> LetterAsync(string caseNumber, string kind, string user, CancellationToken ct = default, int? lgNo = null);
+
+    /// <summary>A letter printed from the form (see CaseLetterKinds.Drafts), with the legacy checks: member, patient, hospital and admission date are needed.</summary>
+    Task<CaseLetterData> DraftLetterAsync(string kind, CaseDraftLetterRequest request, string user, CancellationToken ct = default);
 }
 
 

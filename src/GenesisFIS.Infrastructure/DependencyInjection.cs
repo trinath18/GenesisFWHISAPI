@@ -1,4 +1,4 @@
-﻿using GenesisFIS.Core.Cases;
+using GenesisFIS.Core.Cases;
 using GenesisFIS.Core.Data;
 using GenesisFIS.Core.Hospitals;
 using GenesisFIS.Core.Fees;
@@ -51,6 +51,7 @@ public static class DependencyInjection
         services.AddScoped<ILookupRepository, LookupRepository>();
         services.AddScoped<ISuspensionRepository, SuspensionRepository>();
         services.AddScoped<ICardSendingRepository, CardSendingRepository>();
+        services.AddScoped<ILeafletRepository, LeafletRepository>();
         services.AddScoped<IMcoPendingRepository, McoPendingRepository>();
         services.AddScoped<IMemberDeletionRepository, MemberDeletionRepository>();
         services.AddScoped<IFeeRateSource, FeeRateSource>();
@@ -68,6 +69,7 @@ public static class DependencyInjection
         services.AddScoped<IIcdSelectionRepository, IcdSelectionRepository>();
         services.AddScoped<IMcoRefundRepository, McoRefundRepository>();
         services.AddScoped<IFwhsInvoiceRepository, FwhsInvoiceRepository>();
+        services.AddScoped<IBordxUploadRepository, BordxUploadRepository>();
         services.AddScoped<IMcoManualInvoiceRepository, McoManualInvoiceRepository>();
         services.AddScoped<IMcoCorrectionRepository, McoCorrectionRepository>();
         services.AddScoped<IMcoReceiptRepository, McoReceiptRepository>();

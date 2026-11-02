@@ -22,7 +22,8 @@ public sealed record WorksheetInput(
 
 public sealed record WorksheetCalculation(
     IReadOnlyList<WorksheetLineValue> Lines, WorksheetDays DaysAllowed, decimal TotalActual, decimal TotalApproved, decimal FinalApproved, bool LimitExceeded,
-    decimal TotalHospital, decimal PayableToHospital, decimal PayableToMember, decimal Excess, decimal? AnnualBalance);
+    decimal TotalHospital, decimal PayableToHospital, decimal PayableToMember, decimal Excess, decimal? AnnualBalance,
+    IReadOnlyDictionary<int, string>? DaysAtLimit = null);
 
 /// <summary>
 /// The worksheet arithmetic of frmNewWorksheet2010 for the plans in use (codes not starting with 2-5, no co-payment, no top-up, no lifetime or take-over limit):
@@ -96,11 +97,30 @@ public static class WorksheetCalculator
         };
     }
 
+    /// <summary>
+    /// The legacy "Days/Mths@Limit(MAX)" column: a per-day benefit shows its rate and the days allowed of the most allowed (the days left on the linked case when
+    /// there is one), e.g. "@160.00 (3/30)"; another benefit with a claimable amount shows "@amount".
+    /// </summary>
+    private static string? DaysAtLimit(WorksheetLine line, IReadOnlyDictionary<string, WorksheetBenefit> benefits, decimal allowed, WorksheetDays? same)
+    {
+        if (line.BenefitCode is not { } code || !benefits.TryGetValue(code, out var b)) return null;
+        static string Rate(string? r) => string.Equals(r?.Trim(), Full, StringComparison.OrdinalIgnoreCase) ? Full : (Parse(r) ?? 0).ToString("#,0.00", Inv);
+        decimal? sameDays = code switch { "101" => same?.Board, "102" => same?.Icu, "601" => same?.Cash, "701" => same?.Guardian, "404" => same?.KidneyMonths, _ => null };
+        var perDay = code is "101" or "102" or "601" or "701" || code == "404" && b.Days is > 0;
+        if (perDay)
+        {
+            var max = same is not null ? sameDays ?? 0 : b.Days ?? 0;
+            return $"@{Rate(code == "404" ? b.PerDisability : b.ClaimableAmount)} ({allowed.ToString("0.##", Inv)}/{max.ToString("0.##", Inv)})";
+        }
+        return string.IsNullOrWhiteSpace(b.ClaimableAmount) ? null : "@" + Rate(b.ClaimableAmount);
+    }
+
     public static WorksheetCalculation Calculate(WorksheetInput input)
     {
         var benefits = input.Benefits.GroupBy(b => b.Code.Trim()).ToDictionary(g => g.Key, g => g.First());
         var days = new Dictionary<string, decimal>();
         var lines = new List<WorksheetLineValue>();
+        var daysAtLimit = new Dictionary<int, string>();
         decimal totalActual = 0, totalApproved = 0, totalHospital = 0;
         foreach (var line in WorksheetCatalog.Lines)
         {
@@ -113,6 +133,7 @@ public static class WorksheetCalculator
             {
                 var (l, d) = DefaultLimit(line, benefits, input.Days, input.SameLimitDays);
                 if (line.BenefitCode is { } code) days[code] = d;
+                if (DaysAtLimit(line, benefits, d, input.SameLimitDays) is { } text) daysAtLimit[line.Row] = text;
                 if (input.LimitOverrides?.TryGetValue(line.Row, out var typed) == true && NormaliseLimit(typed) is { } t) { limit = t; approved = ApproveTyped(actual, t); }
                 else { limit = l; approved = Approve(actual, l); }
             }
@@ -127,7 +148,7 @@ public static class WorksheetCalculator
         var (payHospital, payMember, excess) = input.HasMemberInvoices ? (totalHospital, final - totalHospital, 0m) : (final, 0m, final - totalHospital);
         return new WorksheetCalculation(lines,
             new WorksheetDays(days.GetValueOrDefault("101"), days.GetValueOrDefault("102"), days.GetValueOrDefault("601"), days.GetValueOrDefault("701"), days.GetValueOrDefault("404")),
-            totalActual, totalApproved, final, exceeded, totalHospital, payHospital, payMember, excess, input.AnnualBalance);
+            totalActual, totalApproved, final, exceeded, totalHospital, payHospital, payMember, excess, input.AnnualBalance, daysAtLimit);
     }
 
     /// <summary>Case claimability codes for which the legacy worksheet shows no benefits.</summary>

@@ -36,7 +36,8 @@ internal sealed class CaseRegistrationRepository(IDbConnectionFactory connection
 
     private static readonly string MemberSql = """
         SELECT m.MBMNumber, m.MBMName, m.MBMIcBcPp, m.MBMPolicyNo, m.HLTCode, m.INSCode, m.PLNCode, m.PAYCode, m.MBMStatus, m.MBMDOB, m.MBMPayorEffDate,
-               ISNULL(g.CoPolicyExpDate, m.MBMPayorExpDate) AS MBMPayorExpDate, m.MBMAvailableLimit, m.MBMTopupInd, m.MBMTerminateStatus
+               ISNULL(g.CoPolicyExpDate, m.MBMPayorExpDate) AS MBMPayorExpDate, m.MBMAvailableLimit, m.MBMTopupInd, m.MBMTerminateStatus, m.MBMRenewFlag, m.MBMTakeover,
+               m.MBMAddress1, m.MBMAddress2, m.MBMAddress3, m.MBMPostCode, m.CTYCode, m.STACode
         FROM MBM m LEFT JOIN GroupCompanyFW g ON g.CoPolicyNo = m.MBMPolicyNo AND g.CoGRPPaycode = m.PAYCode
         WHERE m.MBMNumber = @n
         """;
@@ -66,7 +67,13 @@ internal sealed class CaseRegistrationRepository(IDbConnectionFactory connection
         if (eff is { } e2 && e2 <= today && today.DayNumber - e2.DayNumber <= 30) warnings.Add("Policy has just been activated less than 30 days ago.");
         if (limit is <= 2000) warnings.Add("The available annual limit is 2,000 or less.");
         if (terminated) warnings.Add("The policy has a termination status.");
-        return new CaseMemberView(number, T(S(m, "MBMName")), Blank(S(m, "MBMIcBcPp")), Blank(S(m, "MBMPolicyNo")), health, T(S(m, "INSCode")), plan, payor, status, Day(m, "MBMDOB"), eff, Day(m, "MBMPayorExpDate"), limit, topUp, terminated, message, patients, blocked, warnings);
+        // Legacy GetAnnualLimit: the plan's annual limit in force on the policy's effective date.
+        var annual = (await QueryAsync(GenesisDb.Main, """
+            SELECT TOP 1 AnnLimit FROM AnnualLimit WHERE PLNCode = @plan AND INSCode = @ins AND HLTCode = @health AND (@eff IS NULL OR AnnualEffDate <= @eff) ORDER BY AnnualEffDate DESC
+            """, new { plan, ins = T(S(m, "INSCode")), health, eff = eff?.ToDateTime(TimeOnly.MinValue) }, ct)).Select(r => Dec(r, "AnnLimit")).FirstOrDefault();
+        return new CaseMemberView(number, T(S(m, "MBMName")), Blank(S(m, "MBMIcBcPp")), Blank(S(m, "MBMPolicyNo")), health, T(S(m, "INSCode")), plan, payor, status, Day(m, "MBMDOB"), eff, Day(m, "MBMPayorExpDate"), limit, topUp, terminated, message, patients, blocked, warnings,
+            Blank(S(m, "MBMRenewFlag")), Blank(S(m, "MBMTakeover")), annual, Blank(S(m, "MBMAddress1")), Blank(S(m, "MBMAddress2")), Blank(S(m, "MBMAddress3")), Blank(S(m, "MBMPostCode")),
+            Blank(S(m, "CTYCode")), Blank(S(m, "STACode")));
     }
 
     public async Task<CaseMemberExtras?> ExtrasAsync(string memberNumber, CancellationToken ct = default)
@@ -172,6 +179,33 @@ internal sealed class CaseRegistrationRepository(IDbConnectionFactory connection
     }
 
     private static string Nz(string? s) => s ?? "";
+
+    public async Task<CaseLetterData> DraftLetterAsync(string kind, CaseDraftLetterRequest r, string user, CancellationToken ct = default)
+    {
+        if (!CaseLetterKinds.Drafts.Contains(kind)) throw new BusinessRuleException("Unknown letter.", field: "kind");
+        // Legacy cmdDocReqAdm_Click / cmdDocReqDis_Click / cmdTHDrugs_Click checks, in order.
+        if (string.IsNullOrWhiteSpace(r.MemberNumber)) throw new BusinessRuleException("Please Enter Membership Information", field: "memberNumber");
+        if (string.IsNullOrWhiteSpace(r.PatientId)) throw new BusinessRuleException("Please Enter Patient Information", field: "patientId");
+        if (string.IsNullOrWhiteSpace(r.HospitalCode)) throw new BusinessRuleException("Please Enter Hospital Information", field: "hospitalCode");
+        if (r.Admitted is null) throw new BusinessRuleException("Please Enter Admission Date", field: "dateAdmitted");
+        var c = (await QueryAsync(GenesisDb.Main, """
+
+            SELECT m.MBMNumber, m.MBMName, m.MBMIcBcPp, m.MBMPolicyNo, m.MBMPayorExpDate, m.MBMAddress1, m.MBMAddress2, m.MBMPostCode, m.CTYCode, m.STACode, cp.MBMCName, cp.MBMCICBCPPNo,
+                   y.PAYCompanyName, y.PAYAddress1, y.PAYAddress2, y.PAYAddress3, y.PAYAdmissionContact
+            FROM MBM m LEFT JOIN MBMCoveredPersons cp ON cp.MBMCNumber = m.MBMNumber AND cp.MBMCCoverID = @patient LEFT JOIN PAY y ON y.PAYCode = m.PAYCode
+            WHERE m.MBMNumber = @member
+            """, new { member = r.MemberNumber.Trim(), patient = r.PatientId.Trim() }, ct)).FirstOrDefault() ?? throw BusinessRuleException.NotFound("No record found!");
+        var h = (await QueryAsync(GenesisDb.Main, "SELECT HOSName, HOSContact, HOSFaxNo FROM HOS WHERE HOSCode = @code", new { code = r.HospitalCode.Trim() }, ct)).FirstOrDefault();
+        var principal = S(c, "MBMName")?.Trim() ?? "";
+        var own = r.PatientId.Trim() == "00";
+        var patient = own ? principal : Blank(S(c, "MBMCName")) ?? principal;
+        var hospital = Blank(r.HospitalName) ?? (h is null ? r.HospitalCode.Trim() : Blank(S(h, "HOSName")));
+        DateOnly? expiry = D(c, "MBMPayorExpDate") is { } e ? DateOnly.FromDateTime(e) : null;
+        return new CaseLetterData(kind, Blank(r.CaseNumber) ?? "-", S(c, "MBMNumber")!.Trim(), Blank(S(c, "MBMPolicyNo")), patient, own ? Blank(S(c, "MBMIcBcPp")) : Blank(S(c, "MBMCICBCPPNo")), principal,
+            Blank(S(c, "MBMAddress1")), Blank(S(c, "MBMAddress2")), Blank(S(c, "MBMPostCode")), Blank(S(c, "CTYCode")), Blank(S(c, "STACode")), hospital, h is null ? null : Blank(S(h, "HOSContact")),
+            h is null ? null : Blank(S(h, "HOSFaxNo")), r.Admitted, r.Discharged, expiry, Blank(S(c, "PAYCompanyName")), Blank(S(c, "PAYAddress1")), Blank(S(c, "PAYAddress2")),
+            Blank(S(c, "PAYAddress3")), Blank(S(c, "PAYAdmissionContact")), null, null, null, null, null, user, DateOnly.FromDateTime(DateTime.Today), [], null, null, null, null);
+    }
 
     public async Task<CaseRegistrationResult> RegisterAsync(CaseRegistrationRequest r, string user, CancellationToken ct = default)
     {

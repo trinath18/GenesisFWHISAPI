@@ -75,6 +75,19 @@ public class CaseInquiryApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
         Assert.Equal(HttpStatusCode.BadRequest, (await Client(13).GetAsync(url)).StatusCode);
 
     [DatabaseFact]
+    public async Task Prev_and_next_step_through_case_numbers_with_inquiry_access()
+    {
+        var prev = await Client(13).GetFromJsonAsync<System.Text.Json.JsonElement>($"/api/cases/{Case}/previous");
+        Assert.True(string.CompareOrdinal(prev.GetProperty("caseNumber").GetString(), Case) < 0);
+        var next = await Client(13).GetFromJsonAsync<System.Text.Json.JsonElement>($"/api/cases/{Case}/next");
+        Assert.True(string.CompareOrdinal(next.GetProperty("caseNumber").GetString(), Case) > 0);
+        var first = await Client(13).GetAsync("/api/cases/0/previous");
+        Assert.Equal(HttpStatusCode.NotFound, first.StatusCode);
+        Assert.Contains("First Record", await first.Content.ReadAsStringAsync());
+        Assert.Equal(HttpStatusCode.Forbidden, (await Client(3).GetAsync($"/api/cases/{Case}/next")).StatusCode);
+    }
+
+    [DatabaseFact]
     public async Task Search_works_for_each_criterion()
     {
         var c = Client(13);

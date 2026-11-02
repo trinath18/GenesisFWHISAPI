@@ -1,4 +1,4 @@
-﻿using GenesisFIS.Core.Data;
+using GenesisFIS.Core.Data;
 using GenesisFIS.Core.Fees;
 using GenesisFIS.Core.Membership;
 using GenesisFIS.Core.Writes;
@@ -146,7 +146,7 @@ internal sealed class RegistrationRepository(IDbConnectionFactory connections, I
     /// Legacy GenerateMBMNo05: number = payor + insured + sequence (letter, 5 digits, 2 check digits) + "*" + renewal id. The sequence is remembered per
     /// payor/insured/birth date/name key (MBMSEQRenew05) so a renewal of the same person keeps the sequence and bumps the renewal id.
     /// </summary>
-    private static async Task<string> GenerateNumberAsync(IDbSession main, IDbSession maint, string payor, string ins, DateOnly dob, string name, string renewal, CancellationToken ct)
+    internal static async Task<string> GenerateNumberAsync(IDbSession main, IDbSession maint, string payor, string ins, DateOnly dob, string name, string renewal, CancellationToken ct)
     {
         var key = $"{payor}*{ins}*{dob:yyyyMMdd}*{name.Trim().Replace("'", "''")}";
         var isNew = renewal == "N";

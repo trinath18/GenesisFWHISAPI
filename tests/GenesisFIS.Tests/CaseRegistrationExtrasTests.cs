@@ -141,6 +141,31 @@ public class CaseRegistrationExtrasTests(WriteApiFactory factory) : IClassFixtur
     }
 
     [DatabaseFact]
+    public async Task Document_request_and_take_home_drugs_letters_print_from_the_form_before_the_case_is_saved()
+    {
+        await Seed(expiresInDays: 200);
+        // The header and General Info tab: the member's address and the plan's annual limit.
+        var m = (await Client().GetFromJsonAsync<CaseMemberView>($"{Url}/member?memberNumber=WMZCASE01*01"))!;
+        Assert.Equal(("1 TEST ROAD", 10000m), (m.Address1, m.AnnualLimit));
+
+        var form = new CaseDraftLetterRequest("WMZCASE01*01", "00", "00001", null, new DateOnly(2024, 5, 1), null, null);
+        foreach (var kind in CaseLetterKinds.Drafts)
+        {
+            var res = await Client().PostAsJsonAsync($"{Url}/letters/{kind}", form);
+            Assert.Equal(HttpStatusCode.OK, res.StatusCode);
+            Assert.Equal("%PDF", System.Text.Encoding.ASCII.GetString((await res.Content.ReadAsByteArrayAsync())[..4]));
+            Assert.Equal($"{kind}-WMZCASE01*01.pdf", res.Content.Headers.ContentDisposition!.FileName?.Trim('"'));
+        }
+        // The legacy checks: patient, hospital and admission date are needed; an unknown letter or member is refused.
+        var missingDate = await Client().PostAsJsonAsync($"{Url}/letters/{CaseLetterKinds.DocRequestAdmission}", form with { Admitted = null });
+        Assert.Equal(HttpStatusCode.BadRequest, missingDate.StatusCode);
+        Assert.Contains("Admission Date", await missingDate.Content.ReadAsStringAsync());
+        Assert.Equal(HttpStatusCode.BadRequest, (await Client().PostAsJsonAsync($"{Url}/letters/{CaseLetterKinds.TakeHomeDrugs}", form with { HospitalCode = null })).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await Client().PostAsJsonAsync($"{Url}/letters/lg", form)).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await Client().PostAsJsonAsync($"{Url}/letters/{CaseLetterKinds.TakeHomeDrugs}", form with { MemberNumber = "NOSUCH" })).StatusCode);
+    }
+
+    [DatabaseFact]
     public async Task Letters_are_pdfs_registration_suggests_the_right_ones_and_an_lg_letter_needs_an_lg()
     {
         await Seed(expiresInDays: 20);

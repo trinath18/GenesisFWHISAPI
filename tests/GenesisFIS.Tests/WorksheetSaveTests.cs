@@ -58,7 +58,7 @@ public class WorksheetSaveTests(WriteApiFactory factory) : IClassFixture<WriteAp
             DELETE FROM ClaimInvoice WHERE CASNumber = @case; DELETE FROM Claim WHERE CASNumber = @case; DELETE FROM ClaimSameLimit WHERE CASNumber = @case;
             DELETE FROM ClaimActual WHERE CASNumber = @case; DELETE FROM ClaimLimit WHERE CASNumber = @case; DELETE FROM ClaimApprove WHERE CASNumber = @case;
             DELETE FROM ClaimHos WHERE CASNumber = @case; DELETE FROM ClaimMember WHERE CASNumber = @case; DELETE FROM ClaimOthers WHERE CASNumber = @case;
-            DELETE FROM ClaimPayMBMStatus WHERE CASNumber = @case;
+            DELETE FROM ClaimPayMBMStatus WHERE CASNumber = @case; DELETE FROM CAS_Excess WHERE CASNumber = @case; DELETE FROM EXC_SEQ WHERE CASNumber = @case;
             """, new { @case = Case });
     }
 
@@ -111,6 +111,10 @@ public class WorksheetSaveTests(WriteApiFactory factory) : IClassFixture<WriteAp
         Assert.Equal("CHECKED", (await Ws<string>("SELECT CLMWSRemarks FROM ClaimOthers WHERE CASNumber = @case AND CLaimVersion = 1"))!.Trim());
         Assert.Equal("27", (await Ws<string>("SELECT CLMBoardDays FROM ClaimSameLimit WHERE CASNumber = @case"))!.Trim());   // 30 days less the 3 used
         Assert.True(await Ws<bool>($"SELECT INVWSed FROM ClaimInvoice WHERE INVIndex = {invoice}"));
+        // The hospital billed 120 of room & board beyond the plan: an excess record for the excess letter (legacy saveExcessLetter).
+        Assert.Equal($"E{Case}-1", saved.ExcessNumber);
+        Assert.Equal(1, await Ws<int>("SELECT COUNT(*) FROM CAS_Excess WHERE CASNumber = @case AND EXCNumber = 'E' + @case + '-1' AND ExcessAmt = 120 AND EXCBoardAmt = '120' AND EXCServices = '0' AND INVNo = 'H1' AND INVAmt = 1500 AND EXCIssuedBy = 'TEST'"));
+        Assert.Equal(1, await Ws<int>("SELECT EXCSequence FROM EXC_SEQ WHERE CASNumber = @case"));
 
         Assert.Equal((0m, "N", 18620m), (await Main<decimal>("SELECT CASReserveAmount FROM CAS WHERE CASNumber = @case"), (await Main<string>("SELECT CASPending FROM CAS WHERE CASNumber = @case"))!.Trim(),
             await Main<decimal>("SELECT MBMAvailableLimit FROM MBM WHERE MBMNumber = @member")));
@@ -188,6 +192,9 @@ public class WorksheetSaveTests(WriteApiFactory factory) : IClassFixture<WriteAp
         Assert.Equal(1, await Ws<int>("SELECT COUNT(*) FROM ClaimApprove WHERE CASNumber = @case"));
         Assert.Equal("BILL CORRECTED", (await Ws<string>("SELECT CLMWSRemarks FROM ClaimOthers WHERE CASNumber = @case"))!.Trim());
         Assert.Equal("28", (await Ws<string>("SELECT CLMBoardDays FROM ClaimSameLimit WHERE CASNumber = @case"))!.Trim());   // 30 less the 2 days now used
+        Assert.Equal($"E{Case}-1", amended.ExcessNumber);   // the excess record is rewritten, not repeated
+        Assert.Equal(1, await Ws<int>("SELECT COUNT(*) FROM CAS_Excess WHERE CASNumber = @case AND ExcessAmt = 80 AND EXCBoardAmt = '80' AND EXCUpdateLogon = 'TEST'"));
+        Assert.Equal(1, await Ws<int>("SELECT COUNT(*) FROM CAS_Excess WHERE CASNumber = @case"));
         Assert.Equal(18780m, await Main<decimal>("SELECT MBMAvailableLimit FROM MBM WHERE MBMNumber = @member"));
         Assert.Contains(factory.Audit.Entries, e => e.Action == "Worksheet.Amend");
 
@@ -232,5 +239,79 @@ public class WorksheetSaveTests(WriteApiFactory factory) : IClassFixture<WriteAp
         Assert.Equal((900m, 0m, "CWM00042"), (saved.PayableToMember, saved.PayableToHospital, saved.DebitCreditNote));
         Assert.Equal(1, await Ws<int>("SELECT COUNT(*) FROM Claim WHERE CASNumber = @case AND CLMCashType = 'R' AND ExcessCollectedBy = 'M' AND CLMPayTo = 'ZETA TEST SDN BHD' AND DebitCreditRefNo = 'CWM00042' AND CLMReimburse = 900"));
         Assert.Equal("KUALA LUMPUR", (await Ws<string>("SELECT MBMCity FROM ClaimOthers WHERE CASNumber = @case"))!.Trim());
+        Assert.Null(saved.ExcessNumber);   // a reimbursement has no hospital excess
+        Assert.Equal(0, await Ws<int>("SELECT COUNT(*) FROM CAS_Excess WHERE CASNumber = @case"));
+
+        // The credit note and the cheque letter go with it.
+        var docs = await Client(13).GetFromJsonAsync<DocumentList>($"/api/worksheet-enquiry/{Case}/1/documents");
+        Assert.Equal(["credit-note", "cheque-letter", "worksheet"], docs!.Available);
+        Assert.Equal(("CWM00042", 900m), (docs.DebitCreditNote, docs.NoteAmount));
+        var note = await Client(13).GetAsync($"/api/worksheet-enquiry/{Case}/1/documents/credit-note");
+        Assert.Equal(("application/pdf", "credit-note-" + Case + "-1.pdf"), (note.Content.Headers.ContentType!.MediaType, note.Content.Headers.ContentDisposition!.FileName));
+        Assert.Equal(HttpStatusCode.NotFound, (await Client(13).GetAsync($"/api/worksheet-enquiry/{Case}/1/documents/excess-letter")).StatusCode);
+    }
+
+    [DatabaseFact]
+    public async Task The_legacy_form_panels_have_their_lists_details_and_the_days_at_limit_column()
+    {
+        await SeedAsync();
+        await HospitalInvoiceAsync();
+        var options = (await Client(64).GetFromJsonAsync<WorksheetOptions>("/api/worksheet-registration/options"))!;
+        Assert.Equal(15, options.Statuses.Count);
+        Assert.Equal(["BY POST", "BANK-IN"], options.PaymentModes);
+        Assert.NotEmpty(options.Banks);
+        Assert.NotEmpty(options.States);
+
+        var detail = (await Client(64).GetFromJsonAsync<WorksheetCaseDetail>($"/api/worksheet-registration/{Case}/1/details"))!;
+        Assert.Equal(("SAVE PRINCIPAL", "SAVE PRINCIPAL", "A00", 1), (detail.MemberName, detail.PatientName, detail.IcdCodes, detail.Invoices.Count));
+        Assert.Equal(new DateOnly(2024, 5, 4), detail.LastDocDate);
+        Assert.Contains(detail.NotCovered, n => n.Label == "GP fee" && n.Amount == 0);
+        Assert.Equal(HttpStatusCode.NotFound, (await Client(64).GetAsync("/api/worksheet-registration/NOSUCHCASE/1/details")).StatusCode);
+
+        // Room & board: 160 a day, 3 days of the plan's 30.
+        var preview = (await Client(64).GetFromJsonAsync<WorksheetPreview>($"{Url}/preview"))!;
+        Assert.Equal("@160.00 (3/30)", preview.Calculation.DaysAtLimit![1]);
+
+        // A bank account must have the bank's number of digits (legacy checkAccNo); the GP and last document date are kept.
+        var bank = options.Banks.First(b => b.AccountDigits is > 0);
+        var wrong = await Client(64).PostAsJsonAsync(Url, Save(expected: 1380) with { Bank = bank.Name, AccountNo = "1" });
+        Assert.Equal(HttpStatusCode.BadRequest, wrong.StatusCode);
+        Assert.Contains("account number", await wrong.Content.ReadAsStringAsync());
+        Assert.Equal(HttpStatusCode.Created, (await Client(64).PostAsJsonAsync(Url, Save(expected: 1380) with { GpName = "DR TEST", LastDocDate = new DateOnly(2024, 5, 10) })).StatusCode);
+        Assert.Equal(1, await Ws<int>("SELECT COUNT(*) FROM Claim WHERE CASNumber = @case AND CLMGPName = 'DR TEST' AND CLMLastDocDate = '2024-05-10'"));
+        var view = (await Client(65).GetFromJsonAsync<WorksheetAdjustmentView>($"/api/worksheet-adjustment/{Case}"))!;
+        Assert.Equal(("DR TEST", new DateOnly(2024, 5, 10)), (view.Details.GpName, view.Details.LastDocDate));
+        // The enquiry shows what the version was saved with.
+        var savedDetail = (await Client(13).GetFromJsonAsync<WorksheetCaseDetail>($"/api/worksheet-enquiry/{Case}/1/details"))!;
+        Assert.Equal(("AA", "CHECKED", "DR TEST"), (savedDetail.Saved!.WorksheetStatus, savedDetail.Saved.Remarks, savedDetail.Saved.GpName));
+        Assert.Equal(1380m, (await Client(13).GetFromJsonAsync<WorksheetEnquiry>($"/api/worksheet-enquiry/{Case}"))!.Versions.Single().FinalApproved);
+    }
+
+    private sealed record DocumentList(string[] Available, string? DebitCreditNote, string? ExcessNumber, decimal NoteAmount);
+
+    [DatabaseFact]
+    public async Task The_excess_letter_and_export_come_from_each_worksheet_screen()
+    {
+        await SeedAsync();
+        await HospitalInvoiceAsync();
+        Assert.Equal(HttpStatusCode.Created, (await Client(64).PostAsJsonAsync(Url, Save(expected: 1380))).StatusCode);
+
+        foreach (var (position, path) in new[] { (13, "worksheet-enquiry"), (64, "worksheet-registration"), (65, "worksheet-adjustment") })
+        {
+            var docs = await Client(position).GetFromJsonAsync<DocumentList>($"/api/{path}/{Case}/1/documents");
+            Assert.Equal(["excess-letter", "worksheet"], docs!.Available);
+            Assert.Equal($"E{Case}-1", docs.ExcessNumber);
+        }
+        var letter = await Client(64).GetAsync($"/api/worksheet-registration/{Case}/1/documents/excess-letter");
+        Assert.Equal(HttpStatusCode.OK, letter.StatusCode);
+        Assert.StartsWith("%PDF", System.Text.Encoding.ASCII.GetString(await letter.Content.ReadAsByteArrayAsync(), 0, 4));
+        var export = await Client(13).GetAsync($"/api/worksheet-enquiry/{Case}/1/documents/worksheet");
+        Assert.Equal("worksheet-" + Case + "-1.xlsx", export.Content.Headers.ContentDisposition!.FileName);
+        using var wb = new ClosedXML.Excel.XLWorkbook(new MemoryStream(await export.Content.ReadAsByteArrayAsync()));
+        Assert.Contains(wb.Worksheet(1).CellsUsed(), c => c.GetString() == "Room & Board");
+
+        Assert.Equal(HttpStatusCode.NotFound, (await Client(13).GetAsync($"/api/worksheet-enquiry/{Case}/1/documents/credit-note")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await Client(13).GetAsync($"/api/worksheet-enquiry/{Case}/9/documents")).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await Client(22).GetAsync($"/api/worksheet-enquiry/{Case}/1/documents")).StatusCode);
     }
 }

@@ -8,7 +8,8 @@ namespace GenesisFIS.Infrastructure.Cases;
 
 /// <summary>
 /// Invoice > Invoice Processing (legacy frmInvoice). An invoice is one row in ClaimInvoice plus its amounts in ClaimInvoiceActual,
-/// ClaimInvoiceActualOthers and ClaimInvoiceNotCover, all in the worksheet database. Not yet ported: the MMA procedure entry (CASOthers). Changing an
+/// ClaimInvoiceActualOthers and ClaimInvoiceNotCover, all in the worksheet database. The procedure entry (legacy frmMMAEntry) edits the case's doctors and
+/// procedures in CASOthers / CASOthersTwo (main database), saved with the invoice as legacy SaveCASOthers did. Changing an
 /// invoice that is already in a worksheet leaves the worksheet as it was; Worksheet Adjustment recalculates it (the legacy form's partial ClaimLimit update is not copied).
 /// </summary>
 internal sealed class CaseInvoiceRepository(IDbConnectionFactory connections, IAuditLog audit) : SqlRepository(connections), ICaseInvoiceRepository
@@ -25,6 +26,82 @@ internal sealed class CaseInvoiceRepository(IDbConnectionFactory connections, IA
     }
 
     private static IEnumerable<InvoiceField> In(InvoiceTable t) => CaseInvoiceCatalog.Fields.Where(f => f.Table == t);
+    private static string Like(string v) => v.Replace("[", "[[]").Replace("%", "[%]").Replace("_", "[_]");
+
+    /// <summary>The case's doctors, medical management, investigations and procedures, every slot included (blank ones as null).</summary>
+    private async Task<InvoiceCaseProcedures> ProceduresAsync(string no, CancellationToken ct)
+    {
+        var o = (await QueryAsync(GenesisDb.Main, "SELECT * FROM CASOthers WHERE CASNumber = @no", new { no }, ct)).FirstOrDefault();
+        var o2 = (await QueryAsync(GenesisDb.Main, "SELECT * FROM CASOthersTwo WHERE CASNumber = @no", new { no }, ct)).FirstOrDefault();
+        string? Get(IDictionary<string, object?>? r, string c) => r is null ? null : Blank(S(r, c));
+        decimal? Fee(string c) => o is null ? null : Dec(o, c) is { } d && d != 0 ? d : null;
+        List<string?> Slots(IDictionary<string, object?>? r, string c, int n) => Enumerable.Range(1, n).Select(i => Get(r, c + i)).ToList();
+        return new InvoiceCaseProcedures(Slots(o2, "CASAttendDoctor", 5), Slots(o2, "CASAnaesName", 3), Slots(o, "CASOMedSurMgmt", 3),
+            Enumerable.Range(1, 3).Select(i => new CaseInvestigationInput(Get(o, "CASOProcInvestigationDone" + i), Get(o, "CASInvCode" + i))).ToList(),
+            Enumerable.Range(1, 6).Select(i => new InvoiceProcedure(Get(o, "CASOPROCRequired" + i), Get(o, "CASCptCode" + i), Fee("CASProcActSurgFees" + i), Fee("CASProcActAnaeFees" + i))).ToList(),
+            Enumerable.Range(1, 6).Select(i => new InvoiceProcedure(Get(o, "CASONonSurgPROCRequired" + i), Get(o, "CASNonSurgCptCode" + i), Fee("CASProcActNonSurgFees" + i))).ToList());
+    }
+
+    /// <summary>
+    /// VIEW_MMA_Schedule rates by OPCS code. A code can have more than one schedule row; the legacy form took whichever came last, here the one with the
+    /// highest 13th schedule surgeon rate is used so the result does not depend on row order.
+    /// </summary>
+    private async Task<Dictionary<string, MmaRate>> RatesAsync(IReadOnlyCollection<string> codes, CancellationToken ct)
+    {
+        if (codes.Count == 0) return new(StringComparer.OrdinalIgnoreCase);
+        var rows = await QueryAsync(GenesisDb.Maintenance, """
+            SELECT OPCSCode, OPCSNarrative, ProcedureDescription, ProcMainBPCode, BodyParts, ProcPageNo, Page, SurgeonsFees, AnaesthetistsFees, Surgeon13thMin, Surgeon13th, Anesthetist13th
+            FROM VIEW_MMA_Schedule WHERE OPCSCode IN @codes
+            """, new { codes }, ct);
+        return rows.GroupBy(r => S(r, "OPCSCode")!.Trim(), StringComparer.OrdinalIgnoreCase)
+            .Select(g => g.OrderByDescending(r => Dec(r, "Surgeon13th") ?? 0).ThenByDescending(r => Dec(r, "SurgeonsFees") ?? 0).First())
+            .Select(r => new MmaRate(S(r, "OPCSCode")!.Trim(), Blank(S(r, "OPCSNarrative")), Blank(S(r, "ProcedureDescription")), Blank(S(r, "ProcMainBPCode")), Blank(S(r, "ProcPageNo")),
+                Blank(S(r, "BodyParts")), Blank(S(r, "Page")), Dec(r, "SurgeonsFees") ?? 0, Dec(r, "AnaesthetistsFees") ?? 0, Dec(r, "Surgeon13thMin") ?? 0, Dec(r, "Surgeon13th") ?? 0,
+                Dec(r, "Anesthetist13th") ?? 0))
+            .ToDictionary(x => x.Code, StringComparer.OrdinalIgnoreCase);
+    }
+
+    public async Task<MmaRate?> MmaRateAsync(string code, CancellationToken ct = default) =>
+        string.IsNullOrWhiteSpace(code) ? null : (await RatesAsync([code.Trim()], ct)).Values.FirstOrDefault();
+
+    public async Task<IReadOnlyList<MmaCode>> MmaCodesAsync(string? code, string? narrative, bool investigations, CancellationToken ct = default)
+    {
+        var c = Blank(code); var n = Blank(narrative);
+        var sql = "SELECT TOP 200 OPCSCode, OPCSNarrative FROM MMAProcedures WHERE ISNULL(OPCSCode, '') <> ''"
+            + (investigations ? " AND ProcPart = 'A'" : "") + (c is null ? "" : " AND OPCSCode LIKE @c") + (n is null ? "" : " AND OPCSNarrative LIKE @n") + " ORDER BY OPCSCode";
+        return (await QueryAsync(GenesisDb.Maintenance, sql, new { c = c is null ? null : Like(c) + "%", n = n is null ? null : "%" + Like(n) + "%" }, ct))
+            .Select(r => new MmaCode(S(r, "OPCSCode")!.Trim(), Blank(S(r, "OPCSNarrative")))).ToList();
+    }
+
+    /// <summary>
+    /// Legacy SaveCASOthers (Case_AdjInvCASOthers, Case_AdjInvCASOthersTwo): every slot is written, blank text as '' and blank fees as 0. CASTotalProc is
+    /// left as it is (legacy always wrote 0).
+    /// </summary>
+    private static async Task SaveProceduresAsync(IDbSession s, string no, InvoiceCaseProcedures p, CancellationToken ct)
+    {
+        static string T(string? v) => v?.Trim() ?? "";
+        static TItem At<TItem>(IReadOnlyList<TItem>? xs, int i, TItem none) => xs is not null && i < xs.Count ? xs[i] : none;
+        var none = new InvoiceProcedure(null, null, null);
+        var a = new Dictionary<string, object?> { ["no"] = no };
+        for (var i = 1; i <= 6; i++)
+        {
+            var sp = At(p.Surgical, i - 1, none); var np = At(p.NonSurgical, i - 1, none);
+            a[$"p{i}"] = T(sp.Text); a[$"c{i}"] = T(sp.Code); a[$"sf{i}"] = sp.ActualFee ?? 0; a[$"af{i}"] = sp.ActualAnaesFee ?? 0;
+            a[$"np{i}"] = T(np.Text); a[$"nc{i}"] = T(np.Code); a[$"nf{i}"] = np.ActualFee ?? 0;
+        }
+        for (var i = 1; i <= 3; i++)
+        {
+            var inv = At(p.Investigations, i - 1, new CaseInvestigationInput(null, null));
+            a[$"m{i}"] = T(At(p.MedicalManagement, i - 1, null)); a[$"id{i}"] = T(inv.Done); a[$"ic{i}"] = T(inv.Code); a[$"an{i}"] = T(At(p.Anaesthetists, i - 1, null));
+        }
+        for (var i = 1; i <= 5; i++) a[$"d{i}"] = T(At(p.AttendingDoctors, i - 1, null));
+        static string Set(string col, string param, int n) => string.Join(", ", Enumerable.Range(1, n).Select(i => $"{col}{i} = @{param}{i}"));
+        await s.ExecuteAsync(
+            $"UPDATE CASOthers SET {Set("CASOMedSurMgmt", "m", 3)}, {Set("CASOProcInvestigationDone", "id", 3)}, {Set("CASInvCode", "ic", 3)}, "
+            + $"{Set("CASOProcRequired", "p", 6)}, {Set("CASCPTCode", "c", 6)}, {Set("CASProcActSurgFees", "sf", 6)}, {Set("CASProcActAnaeFees", "af", 6)}, "
+            + $"{Set("CASONonSurgProcRequired", "np", 6)}, {Set("CASNonSurgCPTCode", "nc", 6)}, {Set("CASProcActNonSurgFees", "nf", 6)} WHERE CASNumber = @no; "
+            + $"UPDATE CASOthersTwo SET {Set("CASAttendDoctor", "d", 5)}, {Set("CASAnaesName", "an", 3)} WHERE CASNumber = @no;", a, ct);
+    }
 
     public async Task<CaseInvoiceOptions> OptionsAsync(CancellationToken ct = default)
     {
@@ -38,14 +115,22 @@ internal sealed class CaseInvoiceRepository(IDbConnectionFactory connections, IA
     private async Task<(CaseInvoiceCase Case, bool NewSmPlan)?> CaseAsync(string no, CancellationToken ct)
     {
         var r = (await QueryAsync(GenesisDb.Main, """
-            SELECT c.CASNumber, c.MBMNumber, c.MBMPatientCovID, c.CASHOSCode, c.CASDateAdmitted, c.CASDischargeDate, c.CASStayType, m.MBMName, m.MBMPolicyNo, m.PLNCode, h.HOSName,
+            SELECT c.CASNumber, c.MBMNumber, c.MBMPatientCovID, c.CASHOSCode, c.CASDateAdmitted, c.CASDischargeDate, c.CASStayType, c.ModalityCode, m.MBMName, m.MBMPolicyNo, m.PLNCode, h.HOSName, cp.MBMCName,
+                   m.MBMDOB, ps.PStatusDesc, g.CoPolicyEffDate, g.CoPolicyExpDate,
                    (SELECT TOP 1 p.NewSMPlan FROM PLN p WHERE p.PLNCode = m.PLNCode AND p.HLTCode = m.HLTCode ORDER BY p.PLNEffDate DESC) AS NewSMPlan
             FROM CAS c LEFT JOIN MBM m ON m.MBMNumber = c.MBMNumber LEFT JOIN HOS h ON h.HOSCode = c.CASHOSCode
+                 LEFT JOIN MBMCoveredPersons cp ON cp.MBMCNumber = c.MBMNumber AND cp.MBMCCoverID = c.MBMPatientCovID
+                 LEFT JOIN PolicyStatus ps ON ps.PStatusCode = m.MBMStatus
+                 OUTER APPLY (SELECT TOP 1 CoPolicyEffDate, CoPolicyExpDate FROM GroupCompanyFW WHERE CoGRPPaycode = m.PAYCode AND CoInsurerRefNo = m.MBMInsurerUniqueNo) g
             WHERE c.CASNumber = @no
             """, new { no }, ct)).FirstOrDefault();
         if (r is null) return null;
         return (new CaseInvoiceCase(S(r, "CASNumber")!, S(r, "MBMNumber"), S(r, "MBMName"), S(r, "MBMPolicyNo"), S(r, "MBMPatientCovID"), S(r, "PLNCode"), S(r, "CASHOSCode"), S(r, "HOSName"),
-            Day(r, "CASDateAdmitted"), Day(r, "CASDischargeDate"), S(r, "CASStayType")), S(r, "NewSMPlan") == "Y");
+            Day(r, "CASDateAdmitted"), Day(r, "CASDischargeDate"), S(r, "CASStayType"),
+            // Legacy txtPatientName: the principal, or the covered person the case is for. Legacy txtModal: S surgical, N non-surgical, B both.
+            (S(r, "MBMPatientCovID")?.Trim() is null or "00" ? null : S(r, "MBMCName")?.Trim()) ?? S(r, "MBMName")?.Trim(), S(r, "ModalityCode")?.Trim(),
+            Day(r, "CoPolicyEffDate"), Day(r, "CoPolicyExpDate"), S(r, "PStatusDesc")?.Trim(), Day(r, "MBMDOB")),
+            S(r, "NewSMPlan") == "Y");
     }
 
     /// <summary>Legacy getVersion: new invoices belong to the version after the last completed (status C) worksheet.</summary>
@@ -54,7 +139,7 @@ internal sealed class CaseInvoiceRepository(IDbConnectionFactory connections, IA
 
     private static string Select(string where) => $"""
         SELECT i.INVIndex, i.InvNo, i.InvDate, i.INVPayTo, i.INVStayType, i.INVPayee, i.CLMINVRecMode, i.CLMINVRecDate, i.INVFolUpDate, i.INVAmount, i.InvExcessAmt, i.InvPayAmt,
-               i.INVInitialActAmt, i.CLMUHCNo, i.INVWSversion, i.INVWSed, i.INVBordxed, i.INVEnteredBy, i.INVEnteredDate,
+               i.INVInitialActAmt, i.CLMUHCNo, i.INVPaidByMem, i.INVWSversion, i.INVWSed, i.INVBordxed, i.INVEnteredBy, i.INVEnteredDate,
                a.CLMOther1Desc, a.CLMOthers2Desc, a.CLMOthersDescNoCOPay, n.ReimOtherRemarks, n.INVHospName,
                {string.Join(", ", CaseInvoiceCatalog.Fields.Select(f => $"{(f.Table switch { InvoiceTable.Actual => "a", InvoiceTable.ActualOthers => "o", _ => "n" })}.{f.Column} AS [{f.Key}]"))},
                {string.Join(", ", CaseInvoiceCatalog.Flags.Select(f => $"o.{f.Column} AS [{f.Key}]"))}
@@ -78,7 +163,7 @@ internal sealed class CaseInvoiceRepository(IDbConnectionFactory connections, IA
                 S(r, "CLMINVRecMode"), Day(r, "CLMINVRecDate"), Day(r, "INVFolUpDate"), Dec(r, "INVAmount") ?? 0, Dec(r, "InvExcessAmt") ?? 0, Dec(r, "InvPayAmt") ?? 0, Dec(r, "INVInitialActAmt"), S(r, "CLMUHCNo"),
                 int.TryParse(S(r, "INVWSversion"), out var v) ? v : null, Flag(r, "INVWSed"), Flag(r, "INVBordxed"), S(r, "INVEnteredBy"), Day(r, "INVEnteredDate"),
                 CaseInvoiceCatalog.Fields.ToDictionary(f => f.Key, f => Dec(r, f.Key) ?? 0), CaseInvoiceCatalog.Flags.Where(f => S(r, f.Key) == "Y").Select(f => f.Key).ToList(),
-                S(r, "CLMOther1Desc"), S(r, "CLMOthers2Desc"), S(r, "CLMOthersDescNoCOPay"), S(r, "ReimOtherRemarks"));
+                S(r, "CLMOther1Desc"), S(r, "CLMOthers2Desc"), S(r, "CLMOthersDescNoCOPay"), S(r, "ReimOtherRemarks"), Dec(r, "INVPaidByMem") ?? 0);
         }).ToList();
     }
 
@@ -90,7 +175,9 @@ internal sealed class CaseInvoiceRepository(IDbConnectionFactory connections, IA
         var next = await NextVersionAsync(s, no, ct);
         var remarks = await s.ScalarAsync<string?>("SELECT Remarks FROM ClaimInvoiceRemarks WHERE CASNumber = @no", new { no }, ct);
         var invoices = await InvoicesAsync((sql, a) => s.QueryAsync(sql, a, ct), "i.CASNumber = @no", new { no }, ct);
-        return new CaseInvoiceScreen(c.Case, next, Blank(remarks), invoices);
+        var procedures = await ProceduresAsync(no, ct);
+        var codes = (procedures.Surgical ?? []).Concat(procedures.NonSurgical ?? []).Select(x => x.Code).OfType<string>().Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        return new CaseInvoiceScreen(c.Case, next, Blank(remarks), invoices, procedures, await RatesAsync(codes, ct));
     }
 
     /// <summary>Validates the request against the case and the code tables; returns the cleaned header values and every amount (computed ones worked out).</summary>
@@ -171,10 +258,13 @@ internal sealed class CaseInvoiceRepository(IDbConnectionFactory connections, IA
             """, h, ct);
         await SaveDetailsAsync(s, index, h, amounts, ct);
         var created = await ReadBackAsync(this, s, index, ct);
+        await using var main = request.Procedures is null ? null : await Db.BeginSessionAsync(GenesisDb.Main, ct);
+        if (main is not null) await SaveProceduresAsync(main, no, request.Procedures!, ct);
         await s.CommitAsync(ct);
+        if (main is not null) await main.CommitAsync(ct);
 
         audit.Record(new AuditEntry("Case.CreateInvoice", "ClaimInvoice", index.ToString(System.Globalization.CultureInfo.InvariantCulture), user,
-            new Dictionary<string, object?> { ["case"] = no, ["invoice"] = created }));
+            new Dictionary<string, object?> { ["case"] = no, ["invoice"] = created, ["procedures"] = request.Procedures }));
         return created;
     }
 
@@ -215,10 +305,13 @@ internal sealed class CaseInvoiceRepository(IDbConnectionFactory connections, IA
             """, h, ct);
         await SaveDetailsAsync(s, index, h, amounts, ct);
         var after = await ReadBackAsync(this, s, index, ct);
+        await using var main = request.Procedures is null ? null : await Db.BeginSessionAsync(GenesisDb.Main, ct);
+        if (main is not null) await SaveProceduresAsync(main, no, request.Procedures!, ct);
         await s.CommitAsync(ct);
+        if (main is not null) await main.CommitAsync(ct);
 
         audit.Record(new AuditEntry("Case.UpdateInvoice", "ClaimInvoice", index.ToString(System.Globalization.CultureInfo.InvariantCulture), user,
-            new Dictionary<string, object?> { ["case"] = no, ["before"] = before, ["after"] = after }));
+            new Dictionary<string, object?> { ["case"] = no, ["before"] = before, ["after"] = after, ["procedures"] = request.Procedures }));
         return after;
     }
 

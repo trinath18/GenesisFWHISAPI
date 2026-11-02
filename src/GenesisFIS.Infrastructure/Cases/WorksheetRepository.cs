@@ -33,7 +33,8 @@ internal sealed partial class WorksheetRepository(IDbConnectionFactory connectio
 
         var headers = await QueryAsync(GenesisDb.Worksheet, """
             SELECT ClaimVersion, ClaimStatus, CLMWSStatus, ClaimOpenDate, ClaimCloseDate, ClaimOpenBy, CLMTotalActual, CLMTotalApproved, CLMPayableByMedix2H, CLMPayableByMedix2M,
-                   CLMExcess, CLMBalanceLimit, CLMPreviousBalance, CLMStayType, CLMCashType, BordxRefNo, DebitCreditRefNo, DebitCreditDate, CLMPayorAppStatus
+                   CLMExcess, CLMBalanceLimit, CLMPreviousBalance, CLMStayType, CLMCashType, BordxRefNo, DebitCreditRefNo, DebitCreditDate, CLMPayorAppStatus,
+                   CLMFinalApprove, CLMLimitExceeded
             FROM Claim WHERE CASNumber = @no ORDER BY ClaimVersion
             """, new { no }, ct);
 
@@ -51,7 +52,7 @@ internal sealed partial class WorksheetRepository(IDbConnectionFactory connectio
                 S(h, "ClaimOpenBy"), Dec(h, "CLMTotalActual"), Dec(h, "CLMTotalApproved"), Dec(h, "CLMPayableByMedix2H"), Dec(h, "CLMPayableByMedix2M"), Dec(h, "CLMExcess"),
                 Dec(h, "CLMBalanceLimit"), Dec(h, "CLMPreviousBalance"), S(h, "CLMStayType"), S(h, "CLMCashType"), S(h, "BordxRefNo"), S(h, "DebitCreditRefNo"), Day(h, "DebitCreditDate"),
                 S(h, "CLMPayorAppStatus"), LimitDays.ToDictionary(d => d, d => Cell("ClaimLimit", d)), lines,
-                screen.Invoices.Where(i => i.Version == v).Select(Ref).ToList());
+                screen.Invoices.Where(i => i.Version == v).Select(Ref).ToList(), Dec(h, "CLMFinalApprove"), Dec(h, "CLMLimitExceeded"));
         }).ToList();
         return new WorksheetEnquiry(screen.Case, combined, versions);
     }

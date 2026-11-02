@@ -107,6 +107,20 @@ public class MembershipEnquiryApiTests(ApiFactory factory) : IClassFixture<ApiFa
         Assert.Equal(HttpStatusCode.BadRequest, (await factory.ClientFor(AllAccess).GetAsync(url)).StatusCode);
 
     [DatabaseFact]
+    public async Task Detail_has_the_prin_detail_extras_and_pre_next_step_through_member_numbers()
+    {
+        var c = factory.ClientFor(AllAccess);
+        var m = (await c.GetFromJsonAsync<MemberDetail>($"/api/membership/members/{Uri.EscapeDataString(Member)}"))!;
+        Assert.NotNull(m.Others);
+        Assert.False(string.IsNullOrEmpty(m.Others!.HospitalClinic));
+        var next = await c.GetFromJsonAsync<System.Text.Json.JsonElement>($"/api/membership/members/{Uri.EscapeDataString(Member)}/next");
+        Assert.True(string.CompareOrdinal(next.GetProperty("number").GetString(), Member) > 0);
+        var prev = await c.GetFromJsonAsync<System.Text.Json.JsonElement>($"/api/membership/members/{Uri.EscapeDataString(Member)}/previous");
+        Assert.True(string.CompareOrdinal(prev.GetProperty("number").GetString(), Member) < 0);
+        Assert.Equal(HttpStatusCode.NotFound, (await c.GetAsync("/api/membership/members/0/previous")).StatusCode);
+    }
+
+    [DatabaseFact]
     public async Task Search_returns_prefix_matches()
     {
         var page = await factory.ClientFor(AllAccess).GetFromJsonAsync<MemberSearchPage>("/api/membership/members?q=WMGA66398");

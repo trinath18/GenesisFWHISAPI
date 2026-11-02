@@ -22,6 +22,9 @@ public static class CaseLetters
         CaseLetterKinds.Btbg => "BACK-TO-BACK LETTER OF GUARANTEE",
         CaseLetterKinds.Repudiation => "NOTICE OF REPUDIATION",
         CaseLetterKinds.PolicyEnding => "POLICY ENDING NOTICE",
+        CaseLetterKinds.DocRequestAdmission => "REQUEST FOR DOCUMENTS - ADMISSION",
+        CaseLetterKinds.DocRequestDischarge => "REQUEST FOR DOCUMENTS - DISCHARGE",
+        CaseLetterKinds.TakeHomeDrugs => "TAKE HOME DRUGS",
         _ => "POLICY EXPIRED NOTICE"
     };
 
@@ -59,6 +62,19 @@ public static class CaseLetters
                     c.Item().Text($"{V(d.Payor)}\n{string.Join(", ", new[] { d.PayorAddress1, d.PayorAddress2, d.PayorAddress3 }.Where(x => !string.IsNullOrWhiteSpace(x)))}");
                     Fields(c, ("Patient", d.PatientName), ("Member No", d.MemberNumber), ("Policy No", d.PolicyNo), ("Policy expiry", D(d.PolicyExpiry)), ("Hospital", d.Hospital), ("Admitted", D(d.Admitted)), ("Discharged", D(d.Discharged)), ("Diagnosis / reason", d.AdmissionReason));
                     c.Item().Text($"The policy of the above patient ends in {d.PolicyExpiry?.ToString("MMMM yyyy") ?? "-"}. Please confirm whether the policy will be renewed so that the admission can be processed.");
+                    break;
+                case CaseLetterKinds.DocRequestAdmission or CaseLetterKinds.DocRequestDischarge:
+                    c.Item().Text($"To: {V(d.Hospital)}\nAttention: {V(d.HospitalContact)}    Fax: {V(d.HospitalFax)}");
+                    Fields(c, ("Patient", d.PatientName), ("IC No", d.PatientIc), ("Member No", d.MemberNumber), ("Date of admission", D(d.Admitted)), ("Date of discharge", D(d.Discharged)));
+                    c.Item().Text(d.Kind == CaseLetterKinds.DocRequestAdmission
+                        ? "To process the above admission, please send us the admission report, the doctor's notes and the estimated bill."
+                        : "To process the above claim, please send us the final bill, the discharge summary and the itemised charges.");
+                    c.Item().Text("Requested by " + d.IssuedBy).FontColor(Colors.Grey.Darken2);
+                    break;
+                case CaseLetterKinds.TakeHomeDrugs:
+                    Fields(c, ("Patient", d.PatientName), ("Member No", d.MemberNumber), ("Policy No", d.PolicyNo), ("Date of admission", D(d.Admitted)), ("Date of discharge", D(d.Discharged)));
+                    c.Item().Text("Take-home drugs supplied on discharge are covered only as provided by the policy; any amount not covered is to be settled by the member with the hospital.");
+                    c.Item().Text("Prepared by " + d.IssuedBy).FontColor(Colors.Grey.Darken2);
                     break;
                 default:
                     c.Item().Text($"{V(d.Payor)}\n{string.Join(", ", new[] { d.PayorAddress1, d.PayorAddress2, d.PayorAddress3 }.Where(x => !string.IsNullOrWhiteSpace(x)))}");

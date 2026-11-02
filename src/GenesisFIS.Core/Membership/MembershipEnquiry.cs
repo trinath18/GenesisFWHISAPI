@@ -22,7 +22,16 @@ public sealed record MemberDetail(
     DateTime? FinalExpiryDate, DateTime? EndorsementDate, string? EndorseType, DateTime? PayorSubmissionDate,
     decimal? AvailableLimit, bool AnnualLimitApplies, string? PlanSpecialNote, bool? PlanMajorMedical,
     string? GroupCompany, string? Address1, string? Address2, string? Address3, string? Address4,
-    string? City, string? PostCode, string? State, bool Reinstated, bool TopUp, MemberRefund? Refund);
+    string? City, string? PostCode, string? State, bool Reinstated, bool TopUp, MemberRefund? Refund, MemberOthers? Others = null);
+
+/// <summary>
+/// The rest of the legacy enquiry's Prin Detail tab and its "Others Details" window, from MBMTwo, MBMOthers and MBMOthersTwo: salutation, nationality,
+/// marital status, agent and employee numbers, guaranteed renewal, branch, top-up join date, hospital/clinic indicator, phones, e-mail and card sending.
+/// </summary>
+public sealed record MemberOthers(
+    string? Salutation, string? Nationality, string? MaritalStatus, string? AgentCode, string? EmployeeNo, string? GuaranteedRenewal, string? Branch,
+    DateTime? TopUpJoinDate, string? HospitalClinic, string? PhoneHome, string? PhoneMobile, string? PhoneOffice, string? Email, string? SendingMode,
+    DateTime? CardDate, DateTime? CancelDate, string? Occupation, string? Department);
 
 public sealed record MemberAmendment(
     int Id, string? Type, DateTime? AmendDate, DateTime? EffectiveDate, DateTime? BordxDate, int? BatchNo);
@@ -59,6 +68,9 @@ public interface IMembershipEnquiryRepository
 {
     Task<MemberSearchPage> SearchAsync(string prefix, CancellationToken ct = default);
     Task<MemberDetail?> GetAsync(string number, CancellationToken ct = default);
+
+    /// <summary>Legacy cmdPrev / CmdNext: the previous or next membership number (MBM order), or null at either end.</summary>
+    Task<string?> NeighbourAsync(string number, bool next, CancellationToken ct = default);
     Task<IReadOnlyList<MemberAmendment>> GetAmendmentsAsync(string number, CancellationToken ct = default);
     Task<IReadOnlyList<MemberCase>> GetCasesAsync(string number, CancellationToken ct = default);
     Task<IReadOnlyList<MemberAccountSummary>> GetAccountSummaryAsync(string number, CancellationToken ct = default);

@@ -68,6 +68,17 @@ internal sealed class MembershipEnquiryRepository(IDbConnectionFactory connectio
             }
         }
 
+        var o = (await conn.QueryAsync(new CommandDefinition("""
+
+            SELECT t.MBMSalutation, t.NATCode, t.MBMTelnoH, t.MBMTelNoM, t.MBMTelNoO, t.MBMEmail, t.MBMSendingMode, t.MBMCardDate, t.MBMCancelDate,
+                   o.MBMAgentCode, o.MBMEmployeeNo, o.MBMGuaRenewal, o.MBMBranch, o.MBMDepartment, o2.MBMMaritalStatus, o2.MBMTopupJoinDate, o2.MBMOccupation, m.HSCLNInd
+            FROM MBM m LEFT JOIN MBMTwo t ON t.MBMNumber = m.MBMNumber LEFT JOIN MBMOthers o ON o.MBMNumber = m.MBMNumber LEFT JOIN MBMOthersTwo o2 ON o2.MBMNumber = m.MBMNumber
+            WHERE m.MBMNumber = @number
+            """, new { number = number.Trim() }, commandTimeout: Timeout, cancellationToken: ct))).FirstOrDefault() is IDictionary<string, object?> x ? x : null;
+        var others = o is null ? null : new MemberOthers(S(o, "MBMSalutation"), S(o, "NATCode"), S(o, "MBMMaritalStatus"), S(o, "MBMAgentCode"), S(o, "MBMEmployeeNo"),
+            S(o, "MBMGuaRenewal"), S(o, "MBMBranch"), D(o, "MBMTopupJoinDate"), S(o, "HSCLNInd") ?? "H", S(o, "MBMTelnoH"), S(o, "MBMTelNoM"), S(o, "MBMTelNoO"), S(o, "MBMEmail"),
+            S(o, "MBMSendingMode"), D(o, "MBMCardDate"), D(o, "MBMCancelDate"), S(o, "MBMOccupation"), S(o, "MBMDepartment"));
+
         var health = S(r, "HLTCode");
         var annLmt = S(r, "AnnLmtIND");
         var annualLimitApplies = health == "S" || annLmt != "N";
@@ -81,7 +92,13 @@ internal sealed class MembershipEnquiryRepository(IDbConnectionFactory connectio
             D(r, "MBMFinalExpiryDate"), D(r, "MBMEndorsementDate"), S(r, "MBMEndorseType"), D(r, "MBMPAYDateSubmission"),
             Dec(r, "MBMAvailableLimit"), annualLimitApplies, S(r, "PLNSpecialNote"), S(r, "PLNMajorMedInd") is { } mm ? mm == "Y" : null,
             S(r, "MBMGroupCompany"), S(r, "MBMAddress1"), S(r, "MBMAddress2"), S(r, "MBMAddress3"), S(r, "MBMAddress4"),
-            S(r, "CTYCode"), S(r, "MBMPostCode"), S(r, "StaCode"), D(r, "MBMReinstate") is not null, S(r, "MBMTopupInd") == "Y", refund);
+            S(r, "CTYCode"), S(r, "MBMPostCode"), S(r, "StaCode"), D(r, "MBMReinstate") is not null, S(r, "MBMTopupInd") == "Y", refund, others);
+    }
+
+    public async Task<string?> NeighbourAsync(string number, bool next, CancellationToken ct = default)
+    {
+        var sql = next ? "SELECT TOP 1 MBMNumber FROM MBM WHERE MBMNumber > @number ORDER BY MBMNumber" : "SELECT TOP 1 MBMNumber FROM MBM WHERE MBMNumber < @number ORDER BY MBMNumber DESC";
+        return (await QueryAsync(GenesisDb.Main, sql, new { number = number.Trim() }, ct)).Select(r => S(r, "MBMNumber")).FirstOrDefault();
     }
 
     public async Task<IReadOnlyList<MemberAmendment>> GetAmendmentsAsync(string number, CancellationToken ct = default)
