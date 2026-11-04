@@ -143,7 +143,7 @@ internal sealed partial class WorksheetRepository
     /// Legacy UpdateCreditDebit: the member's share gets a credit note (paid to the member) or a debit note (owed by the member), numbered per payor.
     /// A version that already has a note keeps it.
     /// </summary>
-    private static async Task<string?> RaiseNoteAsync(IDbSession ws, string no, int version, string payor, decimal payableToMember, CancellationToken ct)
+    internal static async Task<string?> RaiseNoteAsync(IDbSession ws, string no, int version, string payor, decimal payableToMember, CancellationToken ct)
     {
         var existing = Blank(await ws.ScalarAsync<string?>("SELECT DebitCreditRefNo FROM Claim WHERE CASNumber = @no AND ClaimVersion = @version", new { no, version }, ct));
         if (existing is not null || payableToMember == 0) return existing;

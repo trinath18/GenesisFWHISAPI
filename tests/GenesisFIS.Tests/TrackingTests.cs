@@ -98,6 +98,21 @@ public class TrackingQueryBuilderTests
     }
 
     [Fact]
+    public void Number_ranges_bind_whole_numbers_inclusively()
+    {
+        var def = TrackingCatalog.Find("claim-report3-case")!;
+        var q = TrackingQueryBuilder.Build(def, F(("dayInsured.from", "-5"), ("dayInsured.to", "30")), 10);
+        Assert.Contains("DayInsured >= @p0", q.Sql);
+        Assert.Contains("DayInsured <= @p1", q.Sql);
+        Assert.Equal(-5, q.Parameters["p0"]);
+        Assert.Equal(30, q.Parameters["p1"]);
+        Assert.StartsWith("SELECT TOP (@take)", q.Sql);
+        Assert.Contains(") AS CaseLag WHERE", q.Sql);
+        var ex = Assert.Throws<TrackingFilterException>(() => TrackingQueryBuilder.Build(def, F(("dayInsured.from", "1.5"), ("dayInsured.to", "3 OR 1=1")), 10));
+        Assert.Equal(2, ex.Errors.Count);
+    }
+
+    [Fact]
     public void Empty_filters_are_ignored() =>
         Assert.DoesNotContain("@p0", TrackingQueryBuilder.Build(Def, F(("member", "  "), ("lgDate.from", "")), 10).Sql);
 }
@@ -115,6 +130,8 @@ public class TrackingCatalogTests
             Assert.Matches(source, d.Source);
             Assert.DoesNotContain(";", d.FixedWhere ?? "");
             Assert.DoesNotContain("--", d.FixedWhere ?? "");
+            Assert.DoesNotContain(";", d.SourceQuery ?? "");
+            Assert.DoesNotContain("--", d.SourceQuery ?? "");
             Assert.All(d.Columns, c => Assert.Matches(identifier, c.Column));
             Assert.All(d.Filters, f => Assert.Matches(identifier, f.Column));
             Assert.Equal(d.Filters.Count, d.Filters.Select(f => f.Key).Distinct(StringComparer.OrdinalIgnoreCase).Count());
@@ -133,7 +150,7 @@ public class TrackingCatalogTests
             conn.Open();
             var allColumns = d.Columns.Select(c => c.Column).Concat(d.Filters.Select(f => f.Column)).Distinct();
             // Selects every column a screen uses (columns, filters) and the order-by, returning no rows: fails on any wrong name.
-            using var cmd = new SqlCommand($"SELECT TOP 0 {string.Join(", ", allColumns)} FROM {d.Source} WHERE {d.FixedWhere ?? "1 = 1"} ORDER BY {d.OrderBy}", conn);
+            using var cmd = new SqlCommand($"SELECT TOP 0 {string.Join(", ", allColumns)} FROM {d.From} WHERE {d.FixedWhere ?? "1 = 1"} ORDER BY {d.OrderBy}", conn);
             var ex = Record.Exception(() => cmd.ExecuteNonQuery());
             Assert.True(ex is null, $"{d.Id} ({d.Source}): {ex?.Message}");
         }

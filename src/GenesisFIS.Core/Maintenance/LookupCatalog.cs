@@ -14,6 +14,8 @@ public static class LookupCatalog
     private static readonly LookupSource AgeTypes = new(GenesisDb.Main, "AGE", "AGECode", "AGEDescription");
     private static readonly LookupSource ProductCategories = new(GenesisDb.Maintenance, "ProductCategory", "ProductCode", "ProductName");
     private static readonly LookupSource PolicyWordings = new(GenesisDb.Maintenance, "PolicyCategory", "PolicyWording");
+    private static readonly LookupSource HospitalGroups = new(GenesisDb.Main, "HOSGrp", "HOSGrpCode", "HOSGrpName");
+    private static readonly LookupSource PayorGroups = new(GenesisDb.Main, "PAYGRP", "PAYGRPCode", "PAYGRPName");
     private static readonly LookupSource SuppMcoStatuses = new(GenesisDb.Maintenance, "SuppMCOStatus", "MCOCode", "MCOStatus");
 
     private static LookupField YesNo(string key, string column, string label, bool required = false) =>
@@ -127,6 +129,41 @@ public static class LookupCatalog
              YesNo("tax", "CoGRPTax", "R&B tax"), YesNo("conversion", "CoGRPConversion", "Conversion"), YesNo("prePost", "CoGRPPrePost", "Pre & post")],
             [], UpdatedByColumn: "CoGRPLastUpdateUser", UpdatedDateColumn: "CoGRPLastUpdateDate", AllowDelete: false,
             CodeSequence: new("CoGrpSeq", "CoGrpCode", "CoGrpSeq", "name", "code"), UniqueField: "name"),
+
+        // Legacy: Maintenance > Entity > Other Entity Tabs (frmMaintenanceGeneral). Tab n is enabled by USRAccess position 69 + n. Only the tabs FWHS still
+        // edits are migrated: Hospital Info (70, HOS: 114 changes since 2011, last 2021), Payor Info (72, PAY) and Payor Group (77, PAYGRP, last 2016).
+        // Access Fees, Clinic, Payor Branch, Service Provider, Hospital Group, Agent, Special Approval and Invoice Rec. Mode were last changed in 1999-2010.
+        // The legacy required group and address on every save; they are optional here because 150 hospitals and most payors have none, and requiring them
+        // would block editing those rows. Payee, state and town (hospital) and the A/C account code (payor) are editable too, although the legacy tabs did not
+        // show them: payment vouchers use the payee, and A/C Export needs HOSAccCode / PAYAccCode.
+        new("entity-hospital", "Hospital Info", "Maintenance > Entity", 70, GenesisDb.Main, "HOS", "HOSName",
+            [new("code", "HOSCode", "Hospital code", 7, Required: true, IsKey: true), new("name", "HOSName", "Hospital name", 100, Required: true),
+             Code("group", "HOSGrpCode", "Hospital group", 8, HospitalGroups), new("accCode", "HOSAccCode", "A/C code", 7),
+             new("address1", "HOSAdd1", "Address", 200), new("address2", "HOSAdd2", "Address line 2", 200), new("address3", "HOSAdd3", "Address line 3", 200),
+             new("town", "HOSTown", "Town", 50), new("state", "HOSState", "State", 50), new("phone", "HOSTelNo", "Tel no", 12), new("fax", "HOSFaxNo", "Fax no", 12),
+             new("email", "HOSEmail", "Email", 100), new("homepage", "HOSHomepage", "Homepage", 100), new("contact", "HOSContact", "Contact person", 200),
+             new("doctor", "HOSDocName", "Doctor name", 200), new("payee", "HOSPayee", "Payee", 100), new("remark", "HOSRemark", "Remark", 200, Multiline: true)],
+            [new(GenesisDb.Main, "CAS", "CASHOSCode", "cases"), new(GenesisDb.Worksheet, "ClaimInvoice", "INVPayee", "claim invoices")],
+            UpdatedByColumn: "HOSLastUpdateUser", UpdatedDateColumn: "HOSLastUpdateDate"),
+
+        new("entity-payor", "Payor Info", "Maintenance > Entity", 72, GenesisDb.Main, "PAY", "PAYCode",
+            [new("code", "PAYCode", "Payor code", 2, Required: true, IsKey: true), Code("health", "HLTCode", "Health type", 2, HealthTypes, required: true),
+             new("name", "PAYCompanyName", "Payor name", 50, Required: true), Code("group", "PAYGRPCode", "Payor group", 3, PayorGroups),
+             new("accCode", "PAYAccCode", "A/C code", 7),
+             new("address1", "PAYAddress1", "Address", 50), new("address2", "PAYAddress2", "Address line 2", 50), new("address3", "PAYAddress3", "Address line 3", 50),
+             new("ceo", "PAYContactCEO", "CEO", 60), new("contact", "PAYMainContact", "Main contact", 60), new("admContact", "PAYAdmissionContact", "Admission contact", 60),
+             new("phone", "PAYTELno", "Tel no", 13), new("fax", "PAYFAXno", "Fax no", 13), new("email", "PAYEmail", "Email", 50), new("homepage", "PAYHomePage", "Homepage", 150),
+             new("effective", "PAYEffDate", "Effective date", 10, Kind: LookupFieldKind.Date),
+             YesNo("conversion", "Conversion", "Conversion"), YesNo("tax", "PAYRBTax", "R&B tax"), YesNo("prePost", "PAYPrePost", "Pre & post"),
+             YesNo("coPayment", "PAYCoPayment", "Co-payment"), YesNo("cancelStatus", "MBMCancelStatus", "Member cancel status")],
+            [new(GenesisDb.Main, "MBM", "PAYCode", "members"), new(GenesisDb.Main, "PRM", "PAYCode", "premiums")],
+            UpdatedByColumn: "PAYLastUpdateUser", UpdatedDateColumn: "PAYLastUpdateDate"),
+
+        new("entity-payor-group", "Payor Group", "Maintenance > Entity", 77, GenesisDb.Main, "PAYGRP", "PAYGRPName",
+            [new("code", "PAYGRPCode", "Payor group code", 3, Required: true, IsKey: true), new("name", "PAYGRPName", "Payor group name", 200, Required: true),
+             new("description", "PAYGRPDesc", "Description", 200)],
+            [new(GenesisDb.Main, "PAY", "PAYGRPCode", "payors")],
+            UpdatedByColumn: "PAYGRPLastUpdatedUser", UpdatedDateColumn: "PAYGRPLastUpdatedDate"),
 
         // Legacy: Maintenance > Plan (frmMaintenencePlan). Tab n is enabled by USRAccess positions 80-85 (health 80, insured 81, plan 82, premium 83, annual limit 84, MCO fee 85); the later tabs share the nearest one.
         // Drop-downs are filled from the same tables as the legacy combo boxes (PLNComboListing, PRMComboListing, AnnualComboListing, MCOComboListing, ALBComboListing, MgmtFeeCombolisting).

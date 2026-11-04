@@ -29,7 +29,7 @@ public static class TrackingQueryBuilder
         var select = string.Join(", ", def.Columns.Select(c => c.Column));
         compiled.Parameters["take"] = maxRows + 1;
         var fixedWhere = string.IsNullOrWhiteSpace(def.FixedWhere) ? "" : $" AND ({def.FixedWhere})";
-        var sql = $"SELECT TOP (@take) {select} FROM {def.Source} WHERE 1 = 1{fixedWhere}{compiled.Where} ORDER BY {def.OrderBy}";
+        var sql = $"SELECT TOP (@take) {select} FROM {def.From} WHERE 1 = 1{fixedWhere}{compiled.Where} ORDER BY {def.OrderBy}";
         return new BuiltQuery(sql, compiled.Parameters);
     }
 
@@ -41,7 +41,7 @@ public static class TrackingQueryBuilder
         foreach (var key in filters.Keys)
         {
             var baseKey = key.EndsWith(".from", StringComparison.OrdinalIgnoreCase) || key.EndsWith(".to", StringComparison.OrdinalIgnoreCase) ? key[..key.LastIndexOf('.')] : key;
-            if (!known.TryGetValue(baseKey, out var f) || (key != baseKey && f.Kind is not (TrackingFilterKind.DateRange or TrackingFilterKind.TextRange)))
+            if (!known.TryGetValue(baseKey, out var f) || (key != baseKey && f.Kind is not (TrackingFilterKind.DateRange or TrackingFilterKind.TextRange or TrackingFilterKind.NumberRange)))
                 errors.Add(new(key, "Unknown filter."));
         }
 
@@ -80,6 +80,14 @@ public static class TrackingQueryBuilder
                 case TrackingFilterKind.TextRange:
                     if (Text(Get(".from"), f.Key + ".from") is { } tf) Add($"{f.Column} >= {P(tf)}");
                     if (Text(Get(".to"), f.Key + ".to") is { } tt) Add($"{f.Column} <= {P(tt)}");
+                    break;
+                case TrackingFilterKind.NumberRange:
+                    foreach (var (suffix, op) in new[] { (".from", ">="), (".to", "<=") })
+                        if (Get(suffix) is { } nr)
+                        {
+                            if (int.TryParse(nr, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var v)) Add($"{f.Column} {op} {P(v)}");
+                            else errors.Add(new(f.Key + suffix, "Enter a whole number."));
+                        }
                     break;
                 case TrackingFilterKind.DateRange:
                     if (Get(".from") is { } df)

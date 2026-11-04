@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using GenesisFIS.Api.Infrastructure;
 using GenesisFIS.Core.Security;
 using GenesisFIS.Core.Tracking;
@@ -25,7 +25,7 @@ public static class TrackingEndpoints
             if (!user.CanAccess(def.ScreenPosition)) return Results.Forbid();
             return Results.Ok(new
             {
-                def.Id, def.Title, def.Module, def.Description, def.RequiresFilter, maxRows = TrackingDefinition.DefaultMaxRows,
+                def.Id, def.Title, def.Module, def.Description, def.RequiresFilter, maxRows = TrackingDefinition.DefaultMaxRows, prints = def.Prints ?? [],
                 filters = def.Filters.Select(f => new { f.Key, f.Label, kind = f.Kind.ToString(), choices = f.Choices }),
                 columns = def.Columns.Select(c => new { key = c.Column, c.Header, type = c.Type.ToString().ToLowerInvariant() }),
             });
@@ -39,6 +39,16 @@ public static class TrackingEndpoints
             {
                 var result = await service.SearchAsync(def, filters, TrackingDefinition.ExportMaxRows, ct);
                 return Results.File(TrackingWorkbook.ToExcel(def, result, filters, user.Identity?.Name ?? "unknown"), Xlsx, $"{def.Id}-{DateTime.Now:yyyyMMdd-HHmm}.xlsx");
+            }));
+
+        // A screen's printouts (TrackingDefinition.Prints), made from the same filters as the listing.
+        g.MapGet("/{id}/print/{key}.pdf", (string id, string key, HttpRequest request, ClaimsPrincipal user, IEnumerable<ITrackingPrinter> printers, CancellationToken ct) =>
+            Run(id, request, user, TrackingDefinition.PrintMaxRows, async (def, filters) =>
+            {
+                var printer = def.Prints?.Any(p => p.Key == key) == true ? printers.FirstOrDefault(p => p.Key == key) : null;
+                if (printer is null) return Results.NotFound(new { error = "Unknown printout." });
+                var file = await printer.PrintAsync(def, filters, user.Identity?.Name ?? "unknown", ct);
+                return Results.File(file.Content, file.ContentType, file.FileName);
             }));
     }
 

@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using System.Text.RegularExpressions;
 using GenesisFIS.Api.Infrastructure;
 using GenesisFIS.Core.Membership;
@@ -72,13 +72,15 @@ public static partial class MembershipEndpoints
 
         var print = g.MapGroup("/{number}/print");
 
-        print.MapGet("/enquiry.pdf", async (string number, ClaimsPrincipal user, IMembershipEnquiryRepository repo, CancellationToken ct) =>
+        print.MapGet("/enquiry.pdf", async (string number, ClaimsPrincipal user, IMembershipEnquiryRepository repo, IMembershipTabsRepository tabs, CancellationToken ct) =>
         {
             if (!MemberNumber.IsValid(number)) return Results.BadRequest(new { error = "Invalid membership number." });
             var member = await repo.GetAsync(number, ct);
             if (member is null) return Results.NotFound(new { error = "Report cannot be printed without any record." });
             var cases = await repo.GetCasesAsync(number, ct);
-            return Results.File(MemberEnquiryReport.ToPdf(member, cases, user.Identity?.Name ?? "unknown"), "application/pdf", FileName(number, "enquiry", "pdf"));
+            var extras = new MemberEnquiryExtras(await tabs.GetFeesAsync(number, ct), await tabs.GetPrintExtrasAsync(number, ct),
+                await repo.GetExclusionsAsync(number, ct), await repo.GetRemarksAsync(number, ct));
+            return Results.File(MemberEnquiryReport.ToPdf(member, cases, user.Identity?.Name ?? "unknown", extras), "application/pdf", FileName(number, "enquiry", "pdf"));
         });
 
         print.MapGet("/exclusion-form.xlsx", async (string number, IMembershipEnquiryRepository repo, IMembershipTabsRepository tabs, CancellationToken ct) =>

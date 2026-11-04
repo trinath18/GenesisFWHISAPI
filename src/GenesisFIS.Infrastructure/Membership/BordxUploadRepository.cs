@@ -30,7 +30,7 @@ internal sealed class BordxUploadRepository(IDbConnectionFactory connections, IA
 
     private static string Clean(string s) => new(s.Where(XmlConvert.IsXmlChar).ToArray());
 
-    private static string Keys(IEnumerable<string[]> keys) =>
+    internal static string Keys(IEnumerable<string[]> keys) =>
         new XElement("r", keys.Distinct(new KeyComparer()).Select(k => new XElement("k", k.Select((v, i) => new XAttribute("a" + i, Clean(v)))))).ToString(SaveOptions.DisableFormatting);
 
     private sealed class KeyComparer : IEqualityComparer<string[]>

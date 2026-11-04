@@ -1,4 +1,4 @@
-﻿using GenesisFIS.Core.Data;
+using GenesisFIS.Core.Data;
 
 namespace GenesisFIS.Core.Tracking;
 
@@ -18,6 +18,8 @@ public enum TrackingFilterKind
     TextRange,
     /// <summary>One of a fixed list of options.</summary>
     Choice,
+    /// <summary>Inclusive whole-number range (from / to, either may be empty; negative numbers allowed), e.g. days between two dates.</summary>
+    NumberRange,
 }
 
 public enum TrackingColumnType { Text, Date, Money, Number }
@@ -34,10 +36,27 @@ public sealed record TrackingColumn(string Column, string Header, TrackingColumn
 /// </summary>
 public sealed record TrackingDefinition(
     string Id, string Title, string Module, int ScreenPosition, GenesisDb Database, string Source, string OrderBy,
-    IReadOnlyList<TrackingFilter> Filters, IReadOnlyList<TrackingColumn> Columns, string? Description = null, bool RequiresFilter = false, string? FixedWhere = null)
+    IReadOnlyList<TrackingFilter> Filters, IReadOnlyList<TrackingColumn> Columns, string? Description = null, bool RequiresFilter = false, string? FixedWhere = null,
+    string? SourceQuery = null, IReadOnlyList<TrackingPrint>? Prints = null)
 {
     public const int DefaultMaxRows = 500;
     public const int ExportMaxRows = 50_000;
+    public const int PrintMaxRows = 5_000;
+
+    /// <summary>The FROM clause: the view, or (for computed columns) the catalog's own <see cref="SourceQuery"/> under the alias <see cref="Source"/>.</summary>
+    public string From => SourceQuery is null ? Source : $"({SourceQuery}) AS {Source}";
+}
+
+/// <summary>A printout a screen offers beside the listing (legacy report choices such as Print Label); <see cref="ITrackingPrinter"/> with the same key makes it.</summary>
+public sealed record TrackingPrint(string Key, string Label);
+
+public sealed record TrackingPrintFile(byte[] Content, string FileName, string ContentType = "application/pdf");
+
+/// <summary>Makes one <see cref="TrackingPrint"/> from the screen's filters (the same filters the listing uses).</summary>
+public interface ITrackingPrinter
+{
+    string Key { get; }
+    Task<TrackingPrintFile> PrintAsync(TrackingDefinition definition, IReadOnlyDictionary<string, string> filters, string user, CancellationToken ct = default);
 }
 
 public sealed record TrackingResultColumn(string Key, string Header, string Type);

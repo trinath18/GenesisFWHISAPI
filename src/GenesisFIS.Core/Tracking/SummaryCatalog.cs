@@ -94,6 +94,34 @@ public static class SummaryCatalog
             ],
             ["payor"], ["cases", "actual", "approved"], RequiresFilter: true),
 
+        new("claim-report3-bordx", "Claim Report 3: Bordereaux", "Claim", 46, GenesisDb.Worksheet, "VIEW_NEWCLMReport", ClaimFilters,
+            [Dim("bordxDate", "Bordx date", "CONVERT(char(10), BordxDate, 23)"), .. ClaimDimensions()],
+            [
+                Num("claims", "Claims", "COUNT(*)"), Num("cases", "Cases", "COUNT(DISTINCT CASNumber)"), Money("actual", "Total actual", "SUM(CLMTotalActual)"),
+                Money("approved", "Total approved", "SUM(CLMTotalApproved)"), Money("bordxAmount", "Bordx amount", "SUM(CLMBordxAmt)"),
+            ],
+            ["bordxRef", "bordxDate"], ["claims", "actual", "approved"], RequiresFilter: true,
+            Description: "Legacy Claim Report 3 > Bordx: claims, actual and approved totals per bordereau (filter by bordx date or number)."),
+
+        new("member-summary-simple", "Membership Tracking (Simple): Summary", "Membership", 6, GenesisDb.Main, "VIEW_MBM_Search2_Simple",
+            TrackingCatalog.MemberSimpleFilters(listing: false),
+            [
+                Dim("payor", "Payor", "PAYCode"), Dim("insurer", "INS type", "INSCode"), Dim("health", "HLT type", "HLTCode"), Dim("plan", "Plan", "PLNCode"),
+                Dim("product", "Product", "ProductName"), Dim("productCategory", "Product category", "PLNProCat"), Dim("ageBand", "Age band", "AGECode"), Dim("sex", "Sex", "MBMSex"),
+                Dim("race", "Race", "RACCode"), Dim("adultChild", "Adult / child", "MBMAdultChild"), Dim("relation", "Relation", "RELCode"), Dim("state", "State", "STACode"),
+                Dim("agent", "Agent", "MBMAgentCode"), Dim("group", "Group company", "MBMGroupCompany"), Dim("department", "Department", "MBMDepartment"),
+                Dim("status", "Policy status", "MBMStatus"), Dim("dataStatus", "Data status", "MBMDataStatus"), Dim("expired", "Expired", "MBMExpiredStatus"),
+                Dim("renew", "Renewal", "MBMRenewFlag"), Dim("takeover", "Take over", "MBMTakeover"), Dim("premiumMode", "Premium mode", "MBMInstallment"),
+                Dim("policyYear", "Policy year", "MBMPolicyYear"), Dim("batch", "Batch No", "MBMBatchNo"), Dim("regDate", "Date registered", "CONVERT(char(10), MBMRegDate, 23)"),
+                ..DateParts(("reg", "Registered", "MBMRegDate"), ("eff", "Eff", "MBMPayorEffDate"), ("bordx", "Bordx", "MBMBordxDate"), ("billing", "Billing", "MBMInvoiceDate")),
+            ],
+            [
+                Num("members", "Members", "COUNT(*)"), Money("mco", "MCO fee", "SUM(MBMMCOFee)"), Money("premium", "Premium", "SUM(MBMPremium)"),
+                Money("basicMco", "Basic MCO", "SUM(MBMBasicMCO)"), Money("basicPremium", "Basic premium", "SUM(MBMBasicPrem)"), Money("accessFee", "Access fee", "SUM(MBMAccessFee)"),
+            ],
+            ["payor"], ["members", "mco", "premium"], RequiresFilter: true,
+            Description: "Legacy Membership > Tracking (Simple): every \"By ...\" / Summary / Top 20 report type, chosen as groupings (up to 4) with Top N."),
+
         Cost("claim-cost-actual", "Claim Cost Breakdown (Actual)", 45, "VIEW_CLMReport_Act"),
         Cost("claim-cost-approved", "Claim Cost Breakdown (Approved)", 45, "VIEW_CLMReport_App"),
         Cost("claim-cost-hospital", "Claim Cost Breakdown (Hospital)", 45, "VIEW_CLMReport_Hos"),

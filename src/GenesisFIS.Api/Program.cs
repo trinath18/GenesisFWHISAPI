@@ -3,9 +3,13 @@ using GenesisFIS.Api.Features.Cases;
 using GenesisFIS.Api.Features.Health;
 using GenesisFIS.Api.Features.Maintenance;
 using GenesisFIS.Api.Features.Membership;
+using GenesisFIS.Api.Features.Bordereaux;
+using GenesisFIS.Api.Features.Payments;
+using GenesisFIS.Api.Features.Posting;
 using GenesisFIS.Api.Features.Reports;
 using GenesisFIS.Api.Features.Tracking;
 using GenesisFIS.Api.Infrastructure;
+using GenesisFIS.Core.Tracking;
 using GenesisFIS.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -29,6 +33,8 @@ builder.Services.AddSingleton(jwt);
 builder.Services.AddSingleton<TokenService>();
 builder.Services.AddSingleton<IAuthorizationHandler, ScreenAccessHandler>();
 builder.Services.AddInfrastructure();
+builder.Services.AddScoped<ITrackingPrinter, MemberLabelPrinter>();
+builder.Services.AddScoped<ITrackingPrinter, BordxDetailsPrinter>();
 builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
 
@@ -48,7 +54,7 @@ builder.Services.AddAuthorization();
 
 var origins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
 if (origins.Length > 0)
-    builder.Services.AddCors(o => o.AddDefaultPolicy(p => p.WithOrigins(origins).AllowAnyHeader().AllowAnyMethod().WithExposedHeaders("Content-Disposition", "X-Records", "X-Batch", "X-Saved-To")));
+    builder.Services.AddCors(o => o.AddDefaultPolicy(p => p.WithOrigins(origins).AllowAnyHeader().AllowAnyMethod().WithExposedHeaders("Content-Disposition", "X-Records", "X-Batch", "X-Saved-To", "X-Totals", "X-Files")));
 
 var app = builder.Build();
 
@@ -92,6 +98,15 @@ app.MapBenefits();
 app.MapIcdSelection();
 app.MapMcoFees();
 app.MapBordxUpload();
+app.MapAccountPosting();
+app.MapPayorReceipts();
+app.MapHospitalPayments();
+app.MapPaymentTracking();
+app.MapBordxCreation();
+app.MapCreditDebitNotes();
+app.MapUserMaintenance();
+app.MapSppaExport();
+app.MapSppaUpload();
 
 app.Run();
 

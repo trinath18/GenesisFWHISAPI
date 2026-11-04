@@ -1,4 +1,4 @@
-﻿using System.Data;
+using System.Data;
 using System.Data.Common;
 using Dapper;
 using GenesisFIS.Core.Data;
@@ -139,6 +139,18 @@ internal sealed class MembershipTabsRepository(IDbConnectionFactory connections)
 
     private async Task<List<MemberCase>> Cases(string proc, object args, CancellationToken ct) =>
         (await QueryAsync(GenesisDb.Main, proc, args, ct, CommandType.StoredProcedure)).Select(ToMemberCase).ToList();
+
+    public async Task<MemberPrintExtras?> GetPrintExtrasAsync(string number, CancellationToken ct = default)
+    {
+        const string sql = """
+            SELECT TOP 1 MBMInstallment, MBMInvoiceBy, MBMInvoiceNo, MBMInvoiceDate, MBMFirstJoinedDate, MBMPAYRemarks FROM VIEW_MBM_ENQUIRY WHERE MBMNumber = @number
+            """;
+        var r = (await QueryAsync(GenesisDb.Main, sql, new { number = number.Trim() }, ct)).FirstOrDefault();
+        static string? T(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
+        static DateTime? Day(DateTime? d) => d is { Year: > 1900 } ? d : null;
+        return r is null ? null : new MemberPrintExtras(T(S(r, "MBMInstallment")), T(S(r, "MBMInvoiceBy")), T(S(r, "MBMInvoiceNo")), Day(D(r, "MBMInvoiceDate")),
+            Day(D(r, "MBMFirstJoinedDate")), T(S(r, "MBMPAYRemarks")));
+    }
 
     public async Task<MemberFees?> GetFeesAsync(string number, CancellationToken ct = default)
     {

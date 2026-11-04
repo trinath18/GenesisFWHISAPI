@@ -60,8 +60,14 @@ public interface IPolicyWordingStore
     PolicyWordingContent? Open(string folder, string fileName);
 }
 
+/// <summary>The VIEW_MBM_ENQUIRY fields the legacy enquiry report (RptMbmEnquiry1.rpt) printed that the enquiry screen keeps elsewhere.</summary>
+public sealed record MemberPrintExtras(string? Installment, string? InvoiceBy, string? InvoiceNo, DateTime? InvoiceDate, DateTime? FirstJoinedDate, string? PayorRemarks);
+
 public interface IMembershipTabsRepository
 {
+    /// <summary>The extra report fields, or null when the member is not in VIEW_MBM_ENQUIRY.</summary>
+    Task<MemberPrintExtras?> GetPrintExtrasAsync(string number, CancellationToken ct = default);
+
     Task<IReadOnlyList<CoveredPerson>> GetCoveredPersonsAsync(string number, CancellationToken ct = default);
     Task<MemberBenefits?> GetBenefitsAsync(string number, CancellationToken ct = default);
     Task<MemberHistory?> GetMemberHistoryAsync(string number, CancellationToken ct = default);
