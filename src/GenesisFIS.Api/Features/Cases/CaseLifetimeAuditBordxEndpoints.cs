@@ -16,6 +16,7 @@ public static class CaseLifetimeAuditBordxEndpoints
 
         var a = app.MapGroup("/api/case-audit-review").WithTags("Case Audit Review").RequireScreen(AuditScreen);
         a.MapGet("/{caseNumber}", async (string caseNumber, ICaseAuditReviewRepository repo, CancellationToken ct) => await repo.GetAsync(caseNumber, ct) is { } v ? Results.Ok(v) : Results.NotFound(new { message = "No record found!" }));
+        a.MapGet("/first", async (bool? reviewedOnly, ICaseAuditReviewRepository repo, CancellationToken ct) => await repo.NeighbourAsync("", true, reviewedOnly == true, ct) is { } n ? Results.Ok(new { caseNumber = n }) : Results.NotFound(new { message = "Last Record Reached!" }));
         a.MapGet("/{caseNumber}/next", async (string caseNumber, bool? reviewedOnly, ICaseAuditReviewRepository repo, CancellationToken ct) => await repo.NeighbourAsync(caseNumber, true, reviewedOnly == true, ct) is { } n ? Results.Ok(new { caseNumber = n }) : Results.NotFound(new { message = "Last Record Reached!" }));
         a.MapGet("/{caseNumber}/previous", async (string caseNumber, ICaseAuditReviewRepository repo, CancellationToken ct) => await repo.NeighbourAsync(caseNumber, false, false, ct) is { } n ? Results.Ok(new { caseNumber = n }) : Results.NotFound(new { message = "First Record Reached!" }));
         a.MapPut("/{caseNumber}", async (string caseNumber, CaseAuditRequest request, ClaimsPrincipal user, ICaseAuditReviewRepository repo, CancellationToken ct) => Results.Ok(new { updated = await repo.SaveAsync(caseNumber, request, user.UserCode(), ct) }));

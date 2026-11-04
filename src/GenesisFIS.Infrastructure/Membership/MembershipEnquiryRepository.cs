@@ -98,7 +98,7 @@ internal sealed class MembershipEnquiryRepository(IDbConnectionFactory connectio
     public async Task<string?> NeighbourAsync(string number, bool next, CancellationToken ct = default)
     {
         var sql = next ? "SELECT TOP 1 MBMNumber FROM MBM WHERE MBMNumber > @number ORDER BY MBMNumber" : "SELECT TOP 1 MBMNumber FROM MBM WHERE MBMNumber < @number ORDER BY MBMNumber DESC";
-        return (await QueryAsync(GenesisDb.Main, sql, new { number = number.Trim() }, ct)).Select(r => S(r, "MBMNumber")).FirstOrDefault();
+        return (await QueryAsync(GenesisDb.Main, sql, new { number = (number ?? "").Trim() }, ct)).Select(r => S(r, "MBMNumber")).FirstOrDefault();
     }
 
     public async Task<IReadOnlyList<MemberAmendment>> GetAmendmentsAsync(string number, CancellationToken ct = default)

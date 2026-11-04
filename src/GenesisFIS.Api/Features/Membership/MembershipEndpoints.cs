@@ -23,7 +23,9 @@ public static partial class MembershipEndpoints
                 ? Results.Ok(await repo.SearchAsync(q!, ct))
                 : Results.BadRequest(new { error = $"Enter at least {MemberNumber.MinSearchLength} characters (letters, digits, * and -)." }));
 
-        // Legacy Pre / Next: the neighbouring membership number.
+        // Legacy Pre / Next: the neighbouring membership number. Next on an empty box loaded the first member.
+        g.MapGet("/first", async (IMembershipEnquiryRepository repo, CancellationToken ct) =>
+            await repo.NeighbourAsync("", true, ct) is { } n ? Results.Ok(new { number = n }) : Results.NotFound(new { error = "Last Record Reached!" }));
         g.MapGet("/{number}/next", async (string number, IMembershipEnquiryRepository repo, CancellationToken ct) =>
             await repo.NeighbourAsync(number, true, ct) is { } n ? Results.Ok(new { number = n }) : Results.NotFound(new { error = "Last Record Reached!" }));
         g.MapGet("/{number}/previous", async (string number, IMembershipEnquiryRepository repo, CancellationToken ct) =>

@@ -18,8 +18,8 @@ public static class AdjustmentEndpoints
         g.MapGet("/search", async (string? q, IMembershipEnquiryRepository enquiry, CancellationToken ct) =>
             MemberNumber.IsValidSearch(q) ? Results.Ok(await enquiry.SearchAsync(q!, ct))
                 : Results.BadRequest(new { error = $"Enter at least {MemberNumber.MinSearchLength} characters (letters, digits, * and -)." }));
-        g.MapGet("/neighbour", async (string memberNumber, string direction, IAdjustmentRepository repo, CancellationToken ct) =>
-            await repo.NeighbourAsync(memberNumber, !string.Equals(direction, "previous", StringComparison.OrdinalIgnoreCase), ct) is { } n ? Results.Ok(new { memberNumber = n })
+        g.MapGet("/neighbour", async (string? memberNumber, string direction, IAdjustmentRepository repo, CancellationToken ct) =>
+            await repo.NeighbourAsync(memberNumber ?? "", !string.Equals(direction, "previous", StringComparison.OrdinalIgnoreCase), ct) is { } n ? Results.Ok(new { memberNumber = n })
                 : Results.NotFound(new { error = string.Equals(direction, "previous", StringComparison.OrdinalIgnoreCase) ? "First Record Reached!" : "Last Record Reached!" }));
         g.MapGet("/overview", async (string memberNumber, IAdjustmentRepository repo, IMembershipEnquiryRepository enquiry, CancellationToken ct) =>
             await enquiry.GetAsync(memberNumber.Trim(), ct) is { } d ? Results.Ok(new AdjustmentOverview(d, await repo.GetMgmtNoteAsync(memberNumber, ct))) : Results.NotFound(new { error = "Record not found." }));

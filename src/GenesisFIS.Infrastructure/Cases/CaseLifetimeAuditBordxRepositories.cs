@@ -87,7 +87,8 @@ internal sealed class CaseAuditReviewRepository(IDbConnectionFactory connections
 
     public async Task<string?> NeighbourAsync(string caseNumber, bool next, bool reviewedOnly, CancellationToken ct = default)
     {
-        var no = CaseNo(caseNumber);
+        // Legacy CmdNext on an empty Case No box searched "> ''", i.e. loaded the first case.
+        var no = next && string.IsNullOrWhiteSpace(caseNumber) ? "" : CaseNo(caseNumber);
         var table = reviewedOnly ? "CASAuditReview" : "CAS";
         var sql = next ? $"SELECT TOP 1 CASNumber FROM {table} WHERE CASNumber > @no ORDER BY CASNumber" : $"SELECT TOP 1 CASNumber FROM {table} WHERE CASNumber < @no ORDER BY CASNumber DESC";
         return (await QueryAsync(GenesisDb.Main, sql, new { no }, ct)).Select(r => T(S(r, "CASNumber"))).FirstOrDefault();

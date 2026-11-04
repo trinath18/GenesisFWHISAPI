@@ -19,7 +19,8 @@ internal sealed class CaseAdjustmentRepository(IDbConnectionFactory connections,
 
     public async Task<string?> NeighbourAsync(string caseNumber, bool next, CancellationToken ct = default)
     {
-        var no = CaseNo(caseNumber);
+        // Legacy CmdNext on an empty Case No box searched "> ''", i.e. loaded the first case.
+        var no = next && string.IsNullOrWhiteSpace(caseNumber) ? "" : CaseNo(caseNumber);
         var sql = next ? "SELECT TOP 1 CASNumber FROM CASCrossReference WHERE CASNumber > @no ORDER BY CASNumber" : "SELECT TOP 1 CASNumber FROM CASCrossReference WHERE CASNumber < @no ORDER BY CASNumber DESC";
         return (await QueryAsync(GenesisDb.Maintenance, sql, new { no }, ct)).Select(r => T(S(r, "CASNumber"))).FirstOrDefault();
     }

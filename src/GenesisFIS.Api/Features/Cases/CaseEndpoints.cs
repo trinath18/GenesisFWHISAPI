@@ -29,6 +29,9 @@ public static partial class CaseEndpoints
         });
 
         // Legacy cmdPrev_Click / cmdNext_Click: the previous or next case number (CASCrossReference order), as on Case Adjustment.
+        // Next on an empty Case No box loaded the first case.
+        g.MapGet("/first", async (ICaseAdjustmentRepository repo, CancellationToken ct) =>
+            await repo.NeighbourAsync("", true, ct) is { } n ? Results.Ok(new { caseNumber = n }) : Results.NotFound(new { error = "Last Record Reached!" }));
         g.MapGet("/{caseNumber}/next", async (string caseNumber, ICaseAdjustmentRepository repo, CancellationToken ct) =>
             await repo.NeighbourAsync(caseNumber, true, ct) is { } n ? Results.Ok(new { caseNumber = n }) : Results.NotFound(new { error = "Last Record Reached!" }));
         g.MapGet("/{caseNumber}/previous", async (string caseNumber, ICaseAdjustmentRepository repo, CancellationToken ct) =>

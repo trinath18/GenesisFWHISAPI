@@ -19,6 +19,8 @@ public static class CaseMenuEndpoints
             MemberNumber.IsValidSearch(q) ? Results.Ok(await repo.SearchAsync(q!, ct)) : Results.BadRequest(new { error = $"Enter at least {MemberNumber.MinSearchLength} characters (letters, digits, * and -)." }));
         nd.MapGet("/{memberNumber}", async (string memberNumber, ICaseNonDisclosureRepository repo, CancellationToken ct) =>
             await repo.GetAsync(memberNumber, ct) is { } v ? Results.Ok(v) : Results.NotFound(new { error = "No record found!" }));
+        nd.MapGet("/first", async (ICaseNonDisclosureRepository repo, CancellationToken ct) =>
+            await repo.NeighbourAsync("", true, ct) is { } n ? Results.Ok(new { memberNumber = n }) : Results.NotFound(new { error = "Last Record Reached! " }));
         nd.MapGet("/{memberNumber}/next", async (string memberNumber, ICaseNonDisclosureRepository repo, CancellationToken ct) =>
             await repo.NeighbourAsync(memberNumber, true, ct) is { } n ? Results.Ok(new { memberNumber = n }) : Results.NotFound(new { error = "Last Record Reached! " }));
         nd.MapGet("/{memberNumber}/previous", async (string memberNumber, ICaseNonDisclosureRepository repo, CancellationToken ct) =>

@@ -57,7 +57,8 @@ internal sealed class CaseNonDisclosureRepository(IDbConnectionFactory connectio
 
     public async Task<string?> NeighbourAsync(string memberNumber, bool next, CancellationToken ct = default)
     {
-        var number = Number(memberNumber);
+        // Legacy CmdNext on an empty Membership No box searched "> ''", i.e. loaded the first member.
+        var number = next && string.IsNullOrWhiteSpace(memberNumber) ? "" : Number(memberNumber);
         var sql = next ? "SELECT TOP 1 MBMNumber FROM MBM WHERE MBMNumber > @number ORDER BY MBMNumber" : "SELECT TOP 1 MBMNumber FROM MBM WHERE MBMNumber < @number ORDER BY MBMNumber DESC";
         return (await QueryAsync(GenesisDb.Main, sql, new { number }, ct)).Select(r => S(r, "MBMNumber")).FirstOrDefault();
     }

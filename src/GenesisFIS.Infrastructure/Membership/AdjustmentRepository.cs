@@ -33,7 +33,9 @@ internal sealed class AdjustmentRepository(IDbConnectionFactory connections, IAu
 
     public async Task<string?> NeighbourAsync(string memberNumber, bool next, CancellationToken ct = default)
     {
-        if (!AdjustmentRules.IsValidMember(memberNumber)) throw new BusinessRuleException("Please enter a valid membership number.", field: "memberNumber");
+        // Legacy CmdNext on an empty box searched "> ''", i.e. loaded the first member.
+        memberNumber ??= "";
+        if (!(next && string.IsNullOrWhiteSpace(memberNumber)) && !AdjustmentRules.IsValidMember(memberNumber)) throw new BusinessRuleException("Please enter a valid membership number.", field: "memberNumber");
         var sql = next ? "SELECT TOP 1 MBMNumber FROM MBM WHERE MBMNumber > @n ORDER BY MBMNumber" : "SELECT TOP 1 MBMNumber FROM MBM WHERE MBMNumber < @n ORDER BY MBMNumber DESC";
         return (await QueryAsync(GenesisDb.Main, sql, new { n = memberNumber.Trim() }, ct)).Select(r => S(r, "MBMNumber")?.Trim()).FirstOrDefault();
     }
