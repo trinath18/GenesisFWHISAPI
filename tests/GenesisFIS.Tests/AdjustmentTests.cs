@@ -29,6 +29,26 @@ public class AdjustmentRuleTests
         Assert.Equal("batchNo", AdjustmentRules.Validate(Ok() with { BatchNo = 40000 })!.Value.Field);
         Assert.Equal("address1", AdjustmentRules.Validate(Ok() with { Address1 = "a\tb" })!.Value.Field);
     }
+
+    private static readonly MemberAddress Group = new("NO 9 JALAN", "TAMAN JAYA", null, "MELAKA", "04", "75350");
+
+    [Fact]
+    public void The_group_company_address_fills_a_member_without_an_address()
+    {
+        Assert.Equal(Group, AdjustmentRules.ShownAddress(new(null, " ", "NA", null, "NA", ""), Group));
+        // A line of the member's own keeps all their lines; only a missing city, state or postcode comes from the group company.
+        Assert.Equal(new MemberAddress("OWN 1", null, null, "MELAKA", "04", "75350"), AdjustmentRules.ShownAddress(new("OWN 1", "NA", null, "NA", null, "NA"), Group));
+        Assert.Equal(new MemberAddress("OWN 1", null, null, "KL", "14", "50000"), AdjustmentRules.ShownAddress(new("OWN 1", null, null, "KL", "14", "50000"), null));
+    }
+
+    [Fact]
+    public void A_long_group_address_sent_back_unchanged_does_not_fail_the_length_check()
+    {
+        var longLine = new string('x', 80);
+        var shown = Group with { Address1 = longLine };
+        Assert.Null(AdjustmentRules.Validate(AdjustmentRules.ForValidation(Ok() with { Address1 = longLine }, shown)));
+        Assert.Equal("address1", AdjustmentRules.Validate(AdjustmentRules.ForValidation(Ok() with { Address1 = longLine + "y" }, shown))!.Value.Field);
+    }
 }
 
 public class AdjustmentTests(WriteApiFactory factory) : IClassFixture<WriteApiFactory>, IAsyncLifetime
@@ -134,5 +154,36 @@ public class AdjustmentTests(WriteApiFactory factory) : IClassFixture<WriteApiFa
         var evil = "O'BRIEN'; DELETE FROM MBM;--";
         Assert.Equal(HttpStatusCode.OK, (await Client().PutAsJsonAsync($"{Url}/amendment", Amend() with { Name = evil.Length > 60 ? "O'BRIEN" : evil })).StatusCode);
         Assert.True(await Scalar<int>(GenesisDb.Main, "SELECT COUNT(*) FROM MBM WHERE MBMNumber IN (@a, @b)", new { a = Member, b = Earlier }) == 2);
+    }
+
+    [DatabaseFact]
+    public async Task The_screen_shows_the_group_company_address_and_expiry_and_saving_keeps_mbm_unless_changed()
+    {
+        await Seed();
+        var longLine = new string('A', 80);
+        await using (var main = await factory.Db.OpenAsync(GenesisDb.Main))
+        {
+            await main.ExecuteAsync("UPDATE MBM SET MBMInsurerUniqueNo = 'ZZGRPREF' WHERE MBMNumber = @Member", new { Member });
+            await main.ExecuteAsync("""
+                INSERT INTO GroupCompanyFW (CoInsurerRefNo, CoGRPPaycode, CoGRPAdd1, CoGRPAdd2, CoGRPCity, CoGRPPCode, CoGRPPState, CoPolicyExpDate)
+                VALUES ('ZZGRPREF', 'ZZ', @longLine, 'TAMAN JAYA', 'MELAKA', '75350', '04', '2025-06-30')
+                """, new { longLine });
+        }
+        var m = await Client().GetFromJsonAsync<AdjustmentMember>($"{Url}?memberNumber={Uri.EscapeDataString(Member)}");
+        Assert.Equal((longLine, "TAMAN JAYA", "MELAKA", "04", "75350"), (m!.Address1, m.Address2, m.City, m.State, m.PostCode));
+        Assert.Equal(new DateOnly(2025, 6, 30), m.PayorExpiryDate);
+
+        // Saving what the screen showed leaves MBM's own (empty) address alone, however long the group company's is.
+        var same = Amend() with { Address1 = m.Address1, Address2 = m.Address2, Address3 = m.Address3, City = m.City, State = m.State, PostCode = m.PostCode };
+        var res = await Client().PutAsJsonAsync($"{Url}/amendment", same);
+        Assert.True(res.IsSuccessStatusCode, await res.Content.ReadAsStringAsync());
+        Assert.Null(await Scalar<string>(GenesisDb.Main, "SELECT MBMAddress1 FROM MBM WHERE MBMNumber = @Member", new { Member }));
+        Assert.Equal(new DateTime(2025, 6, 30), await Scalar<DateTime>(GenesisDb.Main, "SELECT TOP 1 MBMExpiryDate FROM MBMAmendHistory WHERE MBMNumber = @Member ORDER BY MBMAmendID DESC", new { Member }));
+
+        // A changed line is stored, and stays on screen.
+        var changed = await Client().PutAsJsonAsync($"{Url}/amendment", same with { Address1 = "1 NEW ROAD" });
+        Assert.True(changed.IsSuccessStatusCode, await changed.Content.ReadAsStringAsync());
+        Assert.Equal("1 NEW ROAD", await Scalar<string>(GenesisDb.Main, "SELECT MBMAddress1 FROM MBM WHERE MBMNumber = @Member", new { Member }));
+        Assert.Equal("1 NEW ROAD", (await Client().GetFromJsonAsync<AdjustmentMember>($"{Url}?memberNumber={Uri.EscapeDataString(Member)}"))!.Address1);
     }
 }

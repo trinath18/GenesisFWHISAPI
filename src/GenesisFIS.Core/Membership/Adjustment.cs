@@ -21,8 +21,39 @@ public sealed record MgmtNoteRequest(string? MemberNumber, string? Note);
 
 public sealed record AmendmentResult(AdjustmentMember Member, bool CrossReferenceUpdated, bool RenewalKeyUpdated);
 
+/// <summary>The address block of a member: three lines, city, state and postcode.</summary>
+public sealed record MemberAddress(string? Address1, string? Address2, string? Address3, string? City, string? State, string? PostCode);
+
 public static partial class AdjustmentRules
 {
+    /// <summary>
+    /// What the screen shows. Legacy SearchMBMCovPersonsProc returns the group company's address (GroupCompanyFW) under the MBMAddress names, and MBM itself is
+    /// nearly always empty. The member's own address wins when there is one, so an amendment stays on screen; a blank or "NA" part falls back to the group company.
+    /// </summary>
+    public static MemberAddress ShownAddress(MemberAddress own, MemberAddress? group)
+    {
+        static string? Clean(string? s) => string.IsNullOrWhiteSpace(s) || s.Trim().Equals("NA", StringComparison.OrdinalIgnoreCase) ? null : s.Trim();
+        var useOwn = group is null || new[] { own.Address1, own.Address2, own.Address3 }.Any(x => Clean(x) is not null);
+        return new MemberAddress(Clean(useOwn ? own.Address1 : group!.Address1), Clean(useOwn ? own.Address2 : group!.Address2), Clean(useOwn ? own.Address3 : group!.Address3),
+            Clean(own.City) ?? Clean(group?.City), Clean(own.State) ?? Clean(group?.State), Clean(own.PostCode) ?? Clean(group?.PostCode));
+    }
+
+    public static bool SameText(string? a, string? b) => string.Equals(string.IsNullOrWhiteSpace(a) ? null : a.Trim(), string.IsNullOrWhiteSpace(b) ? null : b.Trim(), StringComparison.Ordinal);
+
+    /// <summary>
+    /// A group company address can be longer than the MBM columns, and an unchanged address is not written back, so it must not fail the length check.
+    /// This clips only the parts sent back exactly as shown; a part the user changed is validated as typed.
+    /// </summary>
+    public static PrincipalAmendment ForValidation(PrincipalAmendment a, MemberAddress shown)
+    {
+        string? Clip(string key, string? sent, string? was) => SameText(sent, was) && sent is { } s && s.Trim().Length > MaxLengths[key] ? s.Trim()[..MaxLengths[key]] : sent;
+        return a with
+        {
+            Address1 = Clip("address1", a.Address1, shown.Address1), Address2 = Clip("address2", a.Address2, shown.Address2), Address3 = Clip("address3", a.Address3, shown.Address3),
+            City = Clip("city", a.City, shown.City), State = Clip("state", a.State, shown.State), PostCode = Clip("postCode", a.PostCode, shown.PostCode),
+        };
+    }
+
     [GeneratedRegex(@"^[A-Za-z0-9*\-+]{1,30}$")]
     private static partial Regex MemberPattern();
 

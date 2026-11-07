@@ -11,16 +11,30 @@ internal sealed class AdjustmentRepository(IDbConnectionFactory connections, IAu
     private const string Select = """
         SELECT m.MBMNumber, m.MBMName, m.MBMPolicyNo, m.MBMIcBcPp, m.MBMDOB, m.MBMSex, m.MBMAddress1, m.MBMAddress2, m.MBMAddress3, m.CTYCode, m.STACode, m.MBMPostCode, m.RACCode,
                m.MBMStatus, m.INSCode, m.PLNCode, m.PAYCode, m.MBMPayorEffDate, m.MBMPayorExpDate, m.MBMBatchNo,
-               t.NATCode, t.MBMSalutation, t.MBMEmail, t.MBMTelnoH, t.MBMTelNoM, t.MBMTelNoO
-        FROM MBM m LEFT JOIN MBMTwo t ON t.MBMNumber = m.MBMNumber WHERE m.MBMNumber = @number
+               t.NATCode, t.MBMSalutation, t.MBMEmail, t.MBMTelnoH, t.MBMTelNoM, t.MBMTelNoO,
+               g.CoInsurerRefNo, g.CoGRPAdd1, g.CoGRPAdd2, g.CoGRPAdd3, g.CoGRPCity, g.CoGRPPState, g.CoGRPPCode, g.CoPolicyExpDate
+        FROM MBM m LEFT JOIN MBMTwo t ON t.MBMNumber = m.MBMNumber
+        LEFT JOIN GroupCompanyFW g ON g.CoInsurerRefNo = m.MBMInsurerUniqueNo AND g.CoGRPPaycode = m.PAYCode
+        WHERE m.MBMNumber = @number
         """;
 
     private static DateOnly? Day(IDictionary<string, object?> r, string name) => D(r, name) is { } d ? DateOnly.FromDateTime(d) : null;
 
-    private static AdjustmentMember Map(IDictionary<string, object?> r) => new(
-        S(r, "MBMNumber") ?? "", S(r, "MBMName"), S(r, "MBMPolicyNo"), S(r, "MBMIcBcPp"), Day(r, "MBMDOB"), S(r, "MBMSex"), S(r, "MBMAddress1"), S(r, "MBMAddress2"), S(r, "MBMAddress3"),
-        S(r, "CTYCode"), S(r, "STACode"), S(r, "MBMPostCode"), S(r, "RACCode"), S(r, "NATCode"), S(r, "MBMSalutation"), S(r, "MBMEmail"), S(r, "MBMTelnoH"), S(r, "MBMTelNoM"), S(r, "MBMTelNoO"),
-        S(r, "MBMStatus"), S(r, "INSCode"), S(r, "PLNCode"), S(r, "PAYCode"), Day(r, "MBMPayorEffDate"), Day(r, "MBMPayorExpDate"), I(r, "MBMBatchNo"));
+    /// <summary>The address stored on MBM itself, which is kept when the shown address comes back unchanged.</summary>
+    private static MemberAddress Stored(IDictionary<string, object?> r) =>
+        new(S(r, "MBMAddress1"), S(r, "MBMAddress2"), S(r, "MBMAddress3"), S(r, "CTYCode"), S(r, "STACode"), S(r, "MBMPostCode"));
+
+    private static AdjustmentMember Map(IDictionary<string, object?> r)
+    {
+        var group = S(r, "CoInsurerRefNo") is null ? null : new MemberAddress(S(r, "CoGRPAdd1"), S(r, "CoGRPAdd2"), S(r, "CoGRPAdd3"), S(r, "CoGRPCity"), S(r, "CoGRPPState"), S(r, "CoGRPPCode"));
+        var a = AdjustmentRules.ShownAddress(Stored(r), group);
+        // Like the address, the expiry the legacy form showed and put in the amendment history is the group policy's (CoPolicyExpDate).
+        return new(S(r, "MBMNumber") ?? "", S(r, "MBMName"), S(r, "MBMPolicyNo"), S(r, "MBMIcBcPp"), Day(r, "MBMDOB"), S(r, "MBMSex"), a.Address1, a.Address2, a.Address3,
+            a.City, a.State, a.PostCode, S(r, "RACCode"), S(r, "NATCode"), S(r, "MBMSalutation"), S(r, "MBMEmail"), S(r, "MBMTelnoH"), S(r, "MBMTelNoM"), S(r, "MBMTelNoO"),
+            S(r, "MBMStatus"), S(r, "INSCode"), S(r, "PLNCode"), S(r, "PAYCode"), Day(r, "MBMPayorEffDate"), Day(r, "CoPolicyExpDate") ?? Day(r, "MBMPayorExpDate"), I(r, "MBMBatchNo"));
+    }
+
+    private static MemberAddress Address(AdjustmentMember m) => new(m.Address1, m.Address2, m.Address3, m.City, m.State, m.PostCode);
 
     private static string? Blank(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
     private static string RenewKey(string? payor, string? insurer, DateOnly? dob, string? name) => $"{payor?.Trim()}*{insurer?.Trim()}*{dob:yyyyMMdd}*{name?.Trim()}";
@@ -63,7 +77,8 @@ internal sealed class AdjustmentRepository(IDbConnectionFactory connections, IAu
 
     public async Task<AmendmentResult> AmendAsync(PrincipalAmendment a, string user, CancellationToken ct = default)
     {
-        if (AdjustmentRules.Validate(a) is { } problem) throw new BusinessRuleException(problem.Message, field: problem.Field);
+        var shown = AdjustmentRules.IsValidMember(a.MemberNumber) ? await GetAsync(a.MemberNumber!, ct) : null;
+        if (AdjustmentRules.Validate(shown is null ? a : AdjustmentRules.ForValidation(a, Address(shown))) is { } problem) throw new BusinessRuleException(problem.Message, field: problem.Field);
         var number = a.MemberNumber!.Trim();
         var name = a.Name!.Trim();
         var dob = a.DateOfBirth!.Value.ToDateTime(TimeOnly.MinValue);
@@ -73,14 +88,18 @@ internal sealed class AdjustmentRepository(IDbConnectionFactory connections, IAu
 
         await using (var session = await Db.BeginSessionAsync(GenesisDb.Main, ct))
         {
-            before = (await session.QueryAsync(Select, new { number }, ct)).Select(Map).FirstOrDefault() ?? throw BusinessRuleException.NotFound($"Member '{number}' does not exist.");
+            var row = (await session.QueryAsync(Select, new { number }, ct)).FirstOrDefault() ?? throw BusinessRuleException.NotFound($"Member '{number}' does not exist.");
+            before = Map(row);
+            // An address part sent back as shown is left as stored, so opening and saving does not copy the group company's address onto the member.
+            var stored = Stored(row);
+            string? Kept(string? sent, string? was, string? onFile) => AdjustmentRules.SameText(sent, was) ? onFile : Blank(sent);
             nameOrDobChanged = !string.Equals(before.Name?.Trim(), name, StringComparison.Ordinal) || before.DateOfBirth != a.DateOfBirth;
 
             await session.ExecuteAsync("""
                 UPDATE MBM SET MBMName = @name, MBMPolicyNo = @policy, MBMIcBcPp = @ic, MBMDOB = @dob, MBMSex = @sex, MBMAddress1 = @a1, MBMAddress2 = @a2, MBMAddress3 = @a3,
                        CTYCode = @city, STACode = @state, MBMPostCode = @post, RACCode = @race WHERE MBMNumber = @number
-                """, new { number, name, policy = Blank(a.PolicyNo), ic = a.IcBcPp!.Trim(), dob, sex = a.Sex, a1 = Blank(a.Address1), a2 = Blank(a.Address2), a3 = Blank(a.Address3),
-                    city = Blank(a.City), state = Blank(a.State), post = Blank(a.PostCode), race = Blank(a.Race) }, ct);
+                """, new { number, name, policy = Blank(a.PolicyNo), ic = a.IcBcPp!.Trim(), dob, sex = a.Sex, a1 = Kept(a.Address1, before.Address1, stored.Address1), a2 = Kept(a.Address2, before.Address2, stored.Address2), a3 = Kept(a.Address3, before.Address3, stored.Address3),
+                    city = Kept(a.City, before.City, stored.City), state = Kept(a.State, before.State, stored.State), post = Kept(a.PostCode, before.PostCode, stored.PostCode), race = Blank(a.Race) }, ct);
 
             // The same person across renewal years (MBMNumber prefix before the '*') shares name and date of birth, as in the legacy form.
             if (nameOrDobChanged && number.Contains('*'))
