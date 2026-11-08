@@ -16,7 +16,18 @@ internal sealed class RegistrationRepository(IDbConnectionFactory connections, I
 
     public async Task<RegistrationOptions> OptionsAsync(CancellationToken ct = default) => new(
         (await QueryAsync(GenesisDb.Main, "SELECT HLTCode, HLTDescription FROM HLT ORDER BY HLTCode", null, ct)).Select(r => new HealthPlan(T(S(r, "HLTCode")), S(r, "HLTDescription"))).ToList(),
-        (await QueryAsync(GenesisDb.Main, "SELECT PAYCode, PAYCompanyName, HLTCode FROM PAY ORDER BY PAYCode", null, ct)).Select(r => new RegistrationPayor(T(S(r, "PAYCode")), S(r, "PAYCompanyName"), T(S(r, "HLTCode")))).ToList());
+        (await QueryAsync(GenesisDb.Main, "SELECT PAYCode, PAYCompanyName, HLTCode FROM PAY ORDER BY PAYCode", null, ct)).Select(r => new RegistrationPayor(T(S(r, "PAYCode")), S(r, "PAYCompanyName"), T(S(r, "HLTCode")))).ToList(),
+        await NamesAsync(GenesisDb.Maintenance, "SELECT CTYDescription n FROM CTY", ct),
+        await NamesAsync(GenesisDb.Main, "SELECT STADescription n FROM STA", ct),
+        await CodesAsync("SELECT RACCode c, RACName n FROM RAC", ct),
+        await CodesAsync("SELECT NATCode c, NATName n FROM NAT", ct),
+        await CodesAsync("SELECT RELCode c, RELDescription n FROM REL", ct));
+
+    private async Task<IReadOnlyList<string>> NamesAsync(GenesisDb db, string sql, CancellationToken ct) =>
+        (await QueryAsync(db, sql, null, ct)).Select(r => T(S(r, "n"))).Where(n => n.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase).ToList();
+
+    private async Task<IReadOnlyList<CodeOption>> CodesAsync(string sql, CancellationToken ct) =>
+        (await QueryAsync(GenesisDb.Main, sql, null, ct)).Select(r => new CodeOption(T(S(r, "c")), S(r, "n")?.Trim())).Where(o => o.Code.Length > 0).DistinctBy(o => o.Code).OrderBy(o => o.Name, StringComparer.OrdinalIgnoreCase).ToList();
 
     public async Task<int> LastBatchAsync(string payor, DateOnly bordxDate, CancellationToken ct = default) =>
         (await QueryAsync(GenesisDb.Main, "SELECT TOP 1 BATSequence FROM BAT WHERE PAYCode = @payor AND BATBordxDate = @date AND BordxType = 'N' ORDER BY BATIndex DESC", new { payor = T(payor), date = At(bordxDate) }, ct))

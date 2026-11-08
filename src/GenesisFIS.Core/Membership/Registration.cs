@@ -5,7 +5,16 @@ namespace GenesisFIS.Core.Membership;
 
 public sealed record RegistrationPayor(string Code, string? Name, string? Health);
 
-public sealed record RegistrationOptions(IReadOnlyList<HealthPlan> HealthPlans, IReadOnlyList<RegistrationPayor> Payors);
+/// <summary>A code and its description, for a drop-down list.</summary>
+public sealed record CodeOption(string Code, string? Name);
+
+/// <summary>
+/// Lists of the registration form. As in frmMemberRegistration, cities (CTY) and states (STA) are picked by description, which is what MBM stores; races (RAC),
+/// nationalities (NAT) and relationships (REL) by code.
+/// </summary>
+public sealed record RegistrationOptions(
+    IReadOnlyList<HealthPlan> HealthPlans, IReadOnlyList<RegistrationPayor> Payors,
+    IReadOnlyList<string> Cities, IReadOnlyList<string> States, IReadOnlyList<CodeOption> Races, IReadOnlyList<CodeOption> Nationalities, IReadOnlyList<CodeOption> Relationships);
 
 /// <summary>New membership (principal member) registration. Header fields come from the legacy first screen (frmMemberEntry), the rest from frmNewMBMReg05.</summary>
 public sealed record RegistrationRequest(

@@ -86,6 +86,12 @@ public class RegistrationTests(WriteApiFactory factory) : IClassFixture<WriteApi
         var o = (await Client().GetFromJsonAsync<RegistrationOptions>($"{Url}/options"))!;
         Assert.Contains(o.HealthPlans, h => h.Code == "N");
         Assert.Contains(o.Payors, p => p.Code == "WM");
+        // The drop-down lists of the form: cities and states by name, races, nationalities and relationships by code.
+        Assert.Contains("KUALA LUMPUR", o.Cities);
+        Assert.Contains("JOHOR", o.States);
+        Assert.Contains(o.Races, r => r.Code == "C" && r.Name == "Chinese");
+        Assert.NotEmpty(o.Nationalities);
+        Assert.Contains(o.Relationships, r => r.Code == "W" && r.Name == "WIFE");
         await using (var main = await factory.Db.OpenAsync(GenesisDb.Main))
             await main.ExecuteAsync("INSERT INTO BAT (PAYCode, BATBordxDate, BATSequence, BordxType) VALUES ('ZB', '2023-02-01', 7, 'N')");
         var last = await Client().GetFromJsonAsync<System.Text.Json.JsonElement>($"{Url}/last-batch?payor=ZB&bordxDate=2023-02-01");
