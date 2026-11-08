@@ -14,6 +14,10 @@ public static class RegistrationEndpoints
         var g = app.MapGroup("/api/membership/registration").WithTags("Membership: Registration").RequireScreen(Screen);
 
         g.MapGet("/options", async (IRegistrationRepository repo, CancellationToken ct) => Results.Ok(await repo.OptionsAsync(ct)));
+
+        // Code lists of a member's details (city, state, race, nationality, relationship), read by every screen that edits them, so any signed-in user.
+        app.MapGet("/api/membership/lists", async (IRegistrationRepository repo, CancellationToken ct) => Results.Ok(await repo.ListsAsync(ct)))
+            .WithTags("Membership: Registration").RequireAuthorization();
         g.MapGet("/last-batch", async (string payor, DateOnly bordxDate, IRegistrationRepository repo, CancellationToken ct) => Results.Ok(new { lastBatch = await repo.LastBatchAsync(payor, bordxDate, ct) }));
         g.MapPost("/quote", async (RegistrationRequest request, IRegistrationRepository repo, CancellationToken ct) => Results.Ok(await repo.QuoteAsync(request, ct)));
         g.MapPost("/", async (RegistrationRequest request, ClaimsPrincipal user, IRegistrationRepository repo, CancellationToken ct) =>

@@ -16,7 +16,9 @@ internal sealed class RegistrationRepository(IDbConnectionFactory connections, I
 
     public async Task<RegistrationOptions> OptionsAsync(CancellationToken ct = default) => new(
         (await QueryAsync(GenesisDb.Main, "SELECT HLTCode, HLTDescription FROM HLT ORDER BY HLTCode", null, ct)).Select(r => new HealthPlan(T(S(r, "HLTCode")), S(r, "HLTDescription"))).ToList(),
-        (await QueryAsync(GenesisDb.Main, "SELECT PAYCode, PAYCompanyName, HLTCode FROM PAY ORDER BY PAYCode", null, ct)).Select(r => new RegistrationPayor(T(S(r, "PAYCode")), S(r, "PAYCompanyName"), T(S(r, "HLTCode")))).ToList(),
+        (await QueryAsync(GenesisDb.Main, "SELECT PAYCode, PAYCompanyName, HLTCode FROM PAY ORDER BY PAYCode", null, ct)).Select(r => new RegistrationPayor(T(S(r, "PAYCode")), S(r, "PAYCompanyName"), T(S(r, "HLTCode")))).ToList());
+
+    public async Task<MemberLists> ListsAsync(CancellationToken ct = default) => new(
         await NamesAsync(GenesisDb.Maintenance, "SELECT CTYDescription n FROM CTY", ct),
         await NamesAsync(GenesisDb.Main, "SELECT STADescription n FROM STA", ct),
         await CodesAsync("SELECT RACCode c, RACName n FROM RAC", ct),

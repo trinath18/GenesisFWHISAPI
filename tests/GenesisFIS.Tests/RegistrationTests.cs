@@ -78,6 +78,9 @@ public class RegistrationTests(WriteApiFactory factory) : IClassFixture<WriteApi
         var other = factory.ClientFor(WriteApiFactory.Access(3));
         Assert.Equal(HttpStatusCode.Forbidden, (await other.GetAsync($"{Url}/options")).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await other.PostAsJsonAsync(Url, Req())).StatusCode);
+        // The shared member lists are open to any signed-in user (adjustment, worksheet), but not to anonymous callers.
+        Assert.Equal(HttpStatusCode.OK, (await other.GetAsync("/api/membership/lists")).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await factory.CreateClient().GetAsync("/api/membership/lists")).StatusCode);
     }
 
     [DatabaseFact]
@@ -86,12 +89,13 @@ public class RegistrationTests(WriteApiFactory factory) : IClassFixture<WriteApi
         var o = (await Client().GetFromJsonAsync<RegistrationOptions>($"{Url}/options"))!;
         Assert.Contains(o.HealthPlans, h => h.Code == "N");
         Assert.Contains(o.Payors, p => p.Code == "WM");
-        // The drop-down lists of the form: cities and states by name, races, nationalities and relationships by code.
-        Assert.Contains("KUALA LUMPUR", o.Cities);
-        Assert.Contains("JOHOR", o.States);
-        Assert.Contains(o.Races, r => r.Code == "C" && r.Name == "Chinese");
-        Assert.NotEmpty(o.Nationalities);
-        Assert.Contains(o.Relationships, r => r.Code == "W" && r.Name == "WIFE");
+        // The drop-down lists of a member's details: cities and states by name, races, nationalities and relationships by code; any signed-in user reads them.
+        var l = (await Client().GetFromJsonAsync<MemberLists>("/api/membership/lists"))!;
+        Assert.Contains("KUALA LUMPUR", l.Cities);
+        Assert.Contains("JOHOR", l.States);
+        Assert.Contains(l.Races, r => r.Code == "C" && r.Name == "Chinese");
+        Assert.NotEmpty(l.Nationalities);
+        Assert.Contains(l.Relationships, r => r.Code == "W" && r.Name == "WIFE");
         await using (var main = await factory.Db.OpenAsync(GenesisDb.Main))
             await main.ExecuteAsync("INSERT INTO BAT (PAYCode, BATBordxDate, BATSequence, BordxType) VALUES ('ZB', '2023-02-01', 7, 'N')");
         var last = await Client().GetFromJsonAsync<System.Text.Json.JsonElement>($"{Url}/last-batch?payor=ZB&bordxDate=2023-02-01");

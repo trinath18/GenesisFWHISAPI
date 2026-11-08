@@ -8,13 +8,13 @@ public sealed record RegistrationPayor(string Code, string? Name, string? Health
 /// <summary>A code and its description, for a drop-down list.</summary>
 public sealed record CodeOption(string Code, string? Name);
 
+public sealed record RegistrationOptions(IReadOnlyList<HealthPlan> HealthPlans, IReadOnlyList<RegistrationPayor> Payors);
+
 /// <summary>
-/// Lists of the registration form. As in frmMemberRegistration, cities (CTY) and states (STA) are picked by description, which is what MBM stores; races (RAC),
-/// nationalities (NAT) and relationships (REL) by code.
+/// The drop-down lists of a member's details, shared by every screen that edits them (registration, adjustment, worksheet). As in frmMemberRegistration,
+/// cities (CTY) and states (STA) are picked by description, which is what MBM stores; races (RAC), nationalities (NAT) and relationships (REL) by code.
 /// </summary>
-public sealed record RegistrationOptions(
-    IReadOnlyList<HealthPlan> HealthPlans, IReadOnlyList<RegistrationPayor> Payors,
-    IReadOnlyList<string> Cities, IReadOnlyList<string> States, IReadOnlyList<CodeOption> Races, IReadOnlyList<CodeOption> Nationalities, IReadOnlyList<CodeOption> Relationships);
+public sealed record MemberLists(IReadOnlyList<string> Cities, IReadOnlyList<string> States, IReadOnlyList<CodeOption> Races, IReadOnlyList<CodeOption> Nationalities, IReadOnlyList<CodeOption> Relationships);
 
 /// <summary>New membership (principal member) registration. Header fields come from the legacy first screen (frmMemberEntry), the rest from frmNewMBMReg05.</summary>
 public sealed record RegistrationRequest(
@@ -107,6 +107,7 @@ public static partial class RegistrationRules
 public interface IRegistrationRepository
 {
     Task<RegistrationOptions> OptionsAsync(CancellationToken ct = default);
+    Task<MemberLists> ListsAsync(CancellationToken ct = default);
 
     /// <summary>The last batch number used for that payor and bordx date (0 when none), as the legacy form showed it.</summary>
     Task<int> LastBatchAsync(string payor, DateOnly bordxDate, CancellationToken ct = default);
