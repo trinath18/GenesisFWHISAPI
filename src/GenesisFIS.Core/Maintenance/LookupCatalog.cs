@@ -16,6 +16,8 @@ public static class LookupCatalog
     private static readonly LookupSource PolicyWordings = new(GenesisDb.Maintenance, "PolicyCategory", "PolicyWording");
     private static readonly LookupSource HospitalGroups = new(GenesisDb.Main, "HOSGrp", "HOSGrpCode", "HOSGrpName");
     private static readonly LookupSource PayorGroups = new(GenesisDb.Main, "PAYGRP", "PAYGRPCode", "PAYGRPName");
+    // States are stored by name (as members, cities and hospitals hold them), so the list offers the STA descriptions.
+    private static readonly LookupSource MalaysianStateNames = new(GenesisDb.Main, "STA", "STADescription");
     private static readonly LookupSource SuppMcoStatuses = new(GenesisDb.Maintenance, "SuppMCOStatus", "MCOCode", "MCOStatus");
 
     private static LookupField YesNo(string key, string column, string label, bool required = false) =>
@@ -83,7 +85,7 @@ public static class LookupCatalog
             [new("code", "LGNCode", "Language code", 2, Required: true, IsKey: true), new("description", "LGNDescription", "Description", 150, Required: true)],
             [new(GenesisDb.Main, "MBMTwo", "LGNCode", "members")], UpdatedByColumn: "LGNLastUpdateUser", UpdatedDateColumn: "LGNLastUpdateDate"),
         new("member-city", "City", "Maintenance > Member", 104, GenesisDb.Maintenance, "CTY", "CTYCode",
-            [new("code", "CTYCode", "City code", 3, Required: true, IsKey: true), new("description", "CTYDescription", "Description", 150, Required: true), new("state", "STADescription", "State", 150)],
+            [new("code", "CTYCode", "City code", 3, Required: true, IsKey: true), new("description", "CTYDescription", "Description", 150, Required: true), new("state", "STADescription", "State", 150, Source: MalaysianStateNames)],
             [new(GenesisDb.Main, "MBM", "CTYCode", "members")], UpdatedByColumn: "CTYLastUpdateUser", UpdatedDateColumn: "CTYLastUpdateDate"),
         new("member-state", "State", "Maintenance > Member", 105, GenesisDb.Main, "STA", "STACode",
             [new("code", "STACode", "State code", 3, Required: true, IsKey: true), new("description", "STADescription", "Description", 150, Required: true)],
@@ -140,7 +142,7 @@ public static class LookupCatalog
             [new("code", "HOSCode", "Hospital code", 7, Required: true, IsKey: true), new("name", "HOSName", "Hospital name", 100, Required: true),
              Code("group", "HOSGrpCode", "Hospital group", 8, HospitalGroups), new("accCode", "HOSAccCode", "A/C code", 7),
              new("address1", "HOSAdd1", "Address", 200), new("address2", "HOSAdd2", "Address line 2", 200), new("address3", "HOSAdd3", "Address line 3", 200),
-             new("town", "HOSTown", "Town", 50), new("state", "HOSState", "State", 50), new("phone", "HOSTelNo", "Tel no", 12), new("fax", "HOSFaxNo", "Fax no", 12),
+             new("town", "HOSTown", "Town", 50), new("state", "HOSState", "State", 50, Source: MalaysianStateNames), new("phone", "HOSTelNo", "Tel no", 12), new("fax", "HOSFaxNo", "Fax no", 12),
              new("email", "HOSEmail", "Email", 100), new("homepage", "HOSHomepage", "Homepage", 100), new("contact", "HOSContact", "Contact person", 200),
              new("doctor", "HOSDocName", "Doctor name", 200), new("payee", "HOSPayee", "Payee", 100), new("remark", "HOSRemark", "Remark", 200, Multiline: true)],
             [new(GenesisDb.Main, "CAS", "CASHOSCode", "cases"), new(GenesisDb.Worksheet, "ClaimInvoice", "INVPayee", "claim invoices")],

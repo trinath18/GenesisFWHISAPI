@@ -38,6 +38,23 @@ public class EntityMaintenanceTests(WriteApiFactory factory) : IClassFixture<Wri
     }
 
     [DatabaseFact]
+    public async Task A_hospital_state_is_picked_from_the_state_list_and_a_saved_legacy_state_is_kept()
+    {
+        var c = Client("entity-hospital");
+        const string url = "/api/lookups/entity-hospital/rows";
+        var states = await c.GetFromJsonAsync<List<LookupOption>>("/api/lookups/entity-hospital/options/state");
+        Assert.Contains(states!, o => o.Value == "SELANGOR");
+        var body = new Dictionary<string, string> { ["code"] = "ZZHOS3", ["name"] = "ZZ TEST HOSPITAL", ["state"] = "SELANGOR" };
+        Assert.Equal(HttpStatusCode.Created, (await c.PostAsJsonAsync(url, body)).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await c.PostAsJsonAsync(url, new Dictionary<string, string>(body) { ["code"] = "ZZHOS4", ["state"] = "NOWHERE" })).StatusCode);
+        // A row saved before the list existed keeps its state when edited without changing it.
+        await using (var main = await factory.Db.OpenAsync(GenesisDb.Main))
+            await main.ExecuteAsync("UPDATE HOS SET HOSState = 'MALACCA' WHERE HOSCode = 'ZZHOS3'");
+        Assert.Equal(HttpStatusCode.OK, (await c.PutAsJsonAsync($"{url}?key=ZZHOS3", new Dictionary<string, string>(body) { ["state"] = "MALACCA", ["phone"] = "0123" })).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await c.DeleteAsync($"{url}?key=ZZHOS3")).StatusCode);
+    }
+
+    [DatabaseFact]
     public async Task A_hospital_or_payor_in_use_cannot_be_deleted_and_a_payor_without_a_group_can_still_be_edited()
     {
         string hos, payor;
