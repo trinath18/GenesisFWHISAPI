@@ -26,7 +26,7 @@ internal sealed class AdjustmentRepository(IDbConnectionFactory connections, IAu
 
     private static AdjustmentMember Map(IDictionary<string, object?> r)
     {
-        var group = S(r, "CoInsurerRefNo") is null ? null : new MemberAddress(S(r, "CoGRPAdd1"), S(r, "CoGRPAdd2"), S(r, "CoGRPAdd3"), S(r, "CoGRPCity"), S(r, "CoGRPPState"), S(r, "CoGRPPCode"));
+        var group = S(r, "CoInsurerRefNo") is null ? null : new MemberAddress(S(r, "CoGRPAdd1"), S(r, "CoGRPAdd2"), S(r, "CoGRPAdd3"), S(r, "CoGRPCity"), MalaysianStates.Name(S(r, "CoGRPPState")), S(r, "CoGRPPCode"));
         var a = AdjustmentRules.ShownAddress(Stored(r), group);
         // Like the address, the expiry the legacy form showed and put in the amendment history is the group policy's (CoPolicyExpDate).
         return new(S(r, "MBMNumber") ?? "", S(r, "MBMName"), S(r, "MBMPolicyNo"), S(r, "MBMIcBcPp"), Day(r, "MBMDOB"), S(r, "MBMSex"), a.Address1, a.Address2, a.Address3,

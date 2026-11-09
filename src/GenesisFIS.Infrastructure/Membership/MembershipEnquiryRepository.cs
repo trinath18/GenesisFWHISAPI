@@ -92,7 +92,7 @@ internal sealed class MembershipEnquiryRepository(IDbConnectionFactory connectio
             D(r, "MBMFinalExpiryDate"), D(r, "MBMEndorsementDate"), S(r, "MBMEndorseType"), D(r, "MBMPAYDateSubmission"),
             Dec(r, "MBMAvailableLimit"), annualLimitApplies, S(r, "PLNSpecialNote"), S(r, "PLNMajorMedInd") is { } mm ? mm == "Y" : null,
             S(r, "MBMGroupCompany"), S(r, "MBMAddress1"), S(r, "MBMAddress2"), S(r, "MBMAddress3"), S(r, "MBMAddress4"),
-            S(r, "CTYCode"), S(r, "MBMPostCode"), S(r, "StaCode"), D(r, "MBMReinstate") is not null, S(r, "MBMTopupInd") == "Y", refund, others);
+            S(r, "CTYCode"), S(r, "MBMPostCode"), MalaysianStates.Name(S(r, "StaCode")), D(r, "MBMReinstate") is not null, S(r, "MBMTopupInd") == "Y", refund, others);
     }
 
     public async Task<string?> NeighbourAsync(string number, bool next, CancellationToken ct = default)

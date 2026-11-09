@@ -73,7 +73,7 @@ internal sealed class CaseRegistrationRepository(IDbConnectionFactory connection
             """, new { plan, ins = T(S(m, "INSCode")), health, eff = eff?.ToDateTime(TimeOnly.MinValue) }, ct)).Select(r => Dec(r, "AnnLimit")).FirstOrDefault();
         return new CaseMemberView(number, T(S(m, "MBMName")), Blank(S(m, "MBMIcBcPp")), Blank(S(m, "MBMPolicyNo")), health, T(S(m, "INSCode")), plan, payor, status, Day(m, "MBMDOB"), eff, Day(m, "MBMPayorExpDate"), limit, topUp, terminated, message, patients, blocked, warnings,
             Blank(S(m, "MBMRenewFlag")), Blank(S(m, "MBMTakeover")), annual, Blank(S(m, "MBMAddress1")), Blank(S(m, "MBMAddress2")), Blank(S(m, "MBMAddress3")), Blank(S(m, "MBMPostCode")),
-            Blank(S(m, "CTYCode")), Blank(S(m, "STACode")));
+            Blank(S(m, "CTYCode")), GenesisFIS.Core.Membership.MalaysianStates.Name(Blank(S(m, "STACode"))));
     }
 
     public async Task<CaseMemberExtras?> ExtrasAsync(string memberNumber, CancellationToken ct = default)

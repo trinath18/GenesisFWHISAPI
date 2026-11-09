@@ -170,7 +170,8 @@ public class AdjustmentTests(WriteApiFactory factory) : IClassFixture<WriteApiFa
                 """, new { longLine });
         }
         var m = await Client().GetFromJsonAsync<AdjustmentMember>($"{Url}?memberNumber={Uri.EscapeDataString(Member)}");
-        Assert.Equal((longLine, "TAMAN JAYA", "MELAKA", "04", "75350"), (m!.Address1, m.Address2, m.City, m.State, m.PostCode));
+        // The group company state code (04) shows as its name.
+        Assert.Equal((longLine, "TAMAN JAYA", "MELAKA", "MELAKA", "75350"), (m!.Address1, m.Address2, m.City, m.State, m.PostCode));
         Assert.Equal(new DateOnly(2025, 6, 30), m.PayorExpiryDate);
 
         // Saving what the screen showed leaves MBM's own (empty) address alone, however long the group company's is.
